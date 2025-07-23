@@ -1,4 +1,4 @@
-import { PortableText, type SanityDocument } from "next-sanity";
+import { PortableText, type PortableTextComponents } from '@portabletext/react'
 import imageUrlBuilder from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { client } from "@/lib/sanity/client";
@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Container } from "@/app/components/container";
 import { Navigation } from "@/app/components/header";
 import Image from "next/image";
+import { ProtectedContent } from "@/app/components/protected-content";
+import { type SanityDocument } from "next-sanity";
 
 const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]`;
 
@@ -16,6 +18,17 @@ const urlFor = (source: SanityImageSource) =>
     : null;
 
 const options = { next: { revalidate: 30 } };
+
+const components: PortableTextComponents = {
+  types: {},
+  marks: {},
+  block: {
+    h1: ({ children }) => <h1 className="text-4xl font-bold">{children}</h1>,
+    h2: ({ children }) => <h2 className="text-3xl font-semibold">{children}</h2>,
+    h3: ({ children }) => <h3 className="text-2xl font-medium">{children}</h3>,
+    normal: ({ children }) => <p className="text-base">{children}</p>,
+  },
+}
 
 export default async function PostPage({
   params,
@@ -28,6 +41,7 @@ export default async function PostPage({
     : null;
 
   return (
+    <ProtectedContent>
     <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
       <Navigation />
       <Container>
@@ -56,7 +70,7 @@ export default async function PostPage({
                 Published: {new Date(post.publishedAt).toLocaleDateString()}
               </p>
               <div className="prose prose-neutral">
-                {Array.isArray(post.body) && <PortableText value={post.body} />}
+                {Array.isArray(post.body) && <PortableText value={post.body} components={components} />}
               </div>
             </div>
           </div>
@@ -64,5 +78,6 @@ export default async function PostPage({
       </div>
     </Container>
     </div>
+    </ProtectedContent>
   );
 }

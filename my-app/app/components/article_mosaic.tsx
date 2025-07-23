@@ -10,7 +10,7 @@ export async function ArticleMosaic() {
     const POSTS_QUERY = `*[
         _type == "post"
         && defined(slug.current)
-      ]|order(publishedAt desc)[0...12]{_id, title, slug, publishedAt, image, excerpt}`;
+      ]|order(publishedAt desc){_id, title, slug, publishedAt, image, excerpt}`;
 
     const options = { next: { revalidate: 30 } };
     const posts = await client.fetch<SanityDocument[]>(POSTS_QUERY, {}, options);
@@ -23,14 +23,13 @@ export async function ArticleMosaic() {
     return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {posts.map((post, index) => {
-            // Determine the size class based on position
-            const sizeClass = index === 0 ? 
-                'md:col-span-8 md:row-span-2' : // First item is large
-                index === 1 || index === 2 ? 
-                'md:col-span-4' : // Second and third items are medium
-                'md:col-span-4'; // Rest are regular
+            // Use modulo to create repeating pattern of 1 large + 2 medium
+            const position = index % 3; // Will give 0, 1, or 2
+            const sizeClass = position === 0
+                ? 'md:col-span-8 md:row-span-2' // Every 3rd item (0, 3, 6, ...) is large
+                : 'md:col-span-4'; // Others are medium
 
-            const imageHeight = index === 0 ? 'h-[500px]' : 'h-[280px]';
+            const imageHeight = position === 0 ? 'h-[566px]' : 'h-[280px]'; // 566px = 280px + 280px + 6px gap
 
             return (
                 <div 

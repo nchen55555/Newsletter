@@ -26,15 +26,15 @@ export default function BlogTypingDemo() {
   }, [])
 
   return (
-    <div className="relative w-full flex items-center">
+    <div className="relative w-full flex items-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
-        className="relative z-10 max-w-xl mx-auto bg-white/90 backdrop-blur-md rounded-xl shadow-2xl p-4"
+        className="relative z-10 w-full max-w-xl mx-auto bg-white/90 backdrop-blur-md rounded-xl shadow-2xl p-4"
       >
         <h2 className="text-2xl font-semibold mb-4 text-gray-800">news alert 🔔</h2>
-        <div className="border border-gray-300 rounded p-4 h-32 font-mono whitespace-pre-wrap text-gray-700 bg-gray-50">
+        <div className="border border-gray-300 rounded p-4 min-h-[8rem] font-mono whitespace-pre-wrap text-gray-700 bg-gray-50 break-words">
           {typedText}
           <span className="animate-pulse">{!typingDone && '|'}</span>
         </div>
@@ -49,7 +49,7 @@ export default function BlogTypingDemo() {
             onClick={() => setPosted(true)}
             className="mt-4 px-4 py-2 rounded bg-black text-white"
           >
-            Post
+            post
           </motion.button>
         )}
 

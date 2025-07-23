@@ -8,7 +8,7 @@ export default async function Home() {
   return ( 
     <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white"> 
       <Navigation />
-      <div className="pt-12 pb-8 relative">
+      <div className="pt-12 pb-4 relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.02),transparent)] pointer-events-none"></div>
         <Container>
           <div className="flex gap-16 items-center">

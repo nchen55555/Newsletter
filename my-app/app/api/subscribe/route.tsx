@@ -9,6 +9,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid email or LinkedIn URL' }, { status: 400 })
     }
 
+    const {data: existingSubscribers, error: existingSubscriberError} = await supabase
+      .from('subscribers')
+      .select('email')
+      .eq('email', email)
+      
+    if (existingSubscriberError) {
+      console.error('Supabase query error:', existingSubscriberError)
+      return NextResponse.json({ error: existingSubscriberError.message }, { status: 500 })
+    }
+
+    const existingSubscriber = existingSubscribers && existingSubscribers.length > 0
+
+
+
+    if (existingSubscriber) {
+      console.log('User already subscribed')
+      return NextResponse.json({ existingSubscriber: true }, { status: 400 })
+    }
+
     const { error } = await supabase
       .from('subscribers')
       .insert([{ email, linkedin_url }])
