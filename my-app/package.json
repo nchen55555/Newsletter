@@ -16,6 +16,7 @@
     "@radix-ui/react-navigation-menu": "^1.2.13",
     "@radix-ui/react-slot": "^1.2.3",
     "@sanity/image-url": "^1.1.0",
+    "@sanity/vision": "^4.1.1",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.52.0",
     "@tailwindcss/typography": "^0.5.16",
