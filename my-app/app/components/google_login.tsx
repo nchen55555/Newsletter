@@ -3,6 +3,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useSubscriptionContext } from "./subscription_context"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface GoogleLoginProps {
     buttonText: string
@@ -19,7 +20,7 @@ export function GoogleLogin({
 }: GoogleLoginProps) {
     const supabase = createClientComponentClient()
     const [isAuthLoading, setIsAuthLoading] = useState(false)
-    const { refreshSubscription } = useSubscriptionContext()
+    const { refreshSubscription, loading } = useSubscriptionContext()
 
     // Set up auth listener
     useEffect(() => {
@@ -61,6 +62,10 @@ export function GoogleLogin({
                 setIsAuthLoading(false)
             })
       }
+
+    if (loading) {
+    return <Skeleton className="h-12 w-full" />; // or customize size
+    }
     
     return (
         <Button

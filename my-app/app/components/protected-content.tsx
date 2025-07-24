@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
 export function ProtectedContent({ children }: { children: React.ReactNode }) {
-    const { isSubscribed } = useSubscriptionContext();
+    const { isSubscribed, loading } = useSubscriptionContext();
     const router = useRouter();
     
     const LoadingSkeleton = () => (
@@ -33,7 +33,7 @@ export function ProtectedContent({ children }: { children: React.ReactNode }) {
         }
     }, [isSubscribed, router]);
     
-    if (!isSubscribed) {
+    if (!isSubscribed || loading) {
         return <LoadingSkeleton />;
     }
 

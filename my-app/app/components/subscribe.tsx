@@ -13,7 +13,7 @@ import { CheckCircle2Icon, Terminal } from 'lucide-react'
 
 import {GoogleLogin} from './google_login'
 import { useSubscriptionContext } from './subscription_context';
-
+import { Skeleton } from '@/components/ui/skeleton'
 
 export function Subscribe() {
   const [linkedinUrl, setLinkedinUrl] = useState('')
@@ -30,7 +30,7 @@ export function Subscribe() {
   }
 
 
-    const { isSubscribed, refreshSubscription } = useSubscriptionContext();
+    const { isSubscribed, refreshSubscription, loading } = useSubscriptionContext();
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,6 +57,10 @@ export function Subscribe() {
       setExistingSubscriber(data.existingSubscriber)
       setFormError(true)
     }
+  }
+  
+  if (loading) {
+    return <Skeleton className="h-12 w-full" />; // or customize size
   }
 
     return (

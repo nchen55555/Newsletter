@@ -5,9 +5,10 @@ import { Avatar, AvatarImage } from '@/components/ui/avatar'
 import { Login } from './login'
 import { useSubscriptionContext } from './subscription_context'
 import { useRouter } from 'next/navigation'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export function NavActions() {
-    const { isSubscribed } = useSubscriptionContext();
+    const { isSubscribed, loading } = useSubscriptionContext();
     const router = useRouter();
 
     const supabase = createClientComponentClient()
@@ -20,6 +21,9 @@ export function NavActions() {
             router.push('/')
         }
     }
+    if (loading) {
+        return <Skeleton className="h-12 w-full" />; // or customize size
+      }
     return (
         <div>
         {!isSubscribed && (

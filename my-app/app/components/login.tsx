@@ -3,11 +3,12 @@
 import { useRouter } from 'next/navigation'
 import { useSubscriptionContext } from './subscription_context'
 import { GoogleLogin } from './google_login'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export function Login() {
     const router = useRouter()
    
-    const { refreshSubscription } = useSubscriptionContext()
+    const { refreshSubscription, loading } = useSubscriptionContext()
 
     // Handle successful sign in
     const handleSignInSuccess = async () => {
@@ -18,6 +19,10 @@ export function Login() {
             router.push('/access')  // Keep loading while redirecting
         }
     }
+
+    if (loading) {
+        return <Skeleton className="h-12 w-full" />; // or customize size
+      }
 
     return (
         <GoogleLogin 

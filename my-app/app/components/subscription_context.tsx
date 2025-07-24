@@ -6,6 +6,7 @@ type SubscriptionContextType = {
   isSubscribed: boolean;
   setIsSubscribed: (val: boolean) => void;
   refreshSubscription: () => Promise<boolean>;
+  loading: boolean;
 };
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -13,6 +14,16 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const supabase = createClientComponentClient()
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsSubscribed(!!session); // or your real subscription check
+      setLoading(false);
+    });
+  }, []);
+
 
   const refreshSubscription = useCallback(async () => {
     const res = await fetch("/api/subscription");
@@ -36,7 +47,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <SubscriptionContext.Provider value={{ isSubscribed, setIsSubscribed, refreshSubscription }}>
+    <SubscriptionContext.Provider value={{ isSubscribed, setIsSubscribed, refreshSubscription, loading }}>
       {children}
     </SubscriptionContext.Provider>
   );
