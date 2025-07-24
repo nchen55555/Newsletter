@@ -9,8 +9,8 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Newsletter",
-  description: "A simple newsletter application",
+  title: "the niche",
+  description: "shop all startups",
 };
 
 export default function RootLayout({

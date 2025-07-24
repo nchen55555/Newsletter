@@ -18,11 +18,16 @@ export function Login() {
         if (!isSubscribed) {
             router.push('/access')  // Keep loading while redirecting
         }
+        router.push('/articles')
     }
     
     if (loading) {
         return <Skeleton className="h-12 w-full" />; // or customize size
       }
+    
+    if (isSubscribed){
+        return null
+    }
 
     return (
         <GoogleLogin 

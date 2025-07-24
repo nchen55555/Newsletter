@@ -28,7 +28,7 @@ export function ProtectedContent({ children }: { children: React.ReactNode }) {
     )
 
     useEffect(() => {
-        if (!isSubscribed) {
+        if (!loading && !isSubscribed) {
             router.push('/access');
         }
     }, [isSubscribed, router]);

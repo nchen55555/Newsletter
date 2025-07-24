@@ -23,12 +23,12 @@ const components: PortableTextComponents = {
   types: {},
   marks: {},
   block: {
-    h1: ({ children }) => <h1 className="text-4xl font-bold">{children}</h1>,
-    h2: ({ children }) => <h2 className="text-3xl font-semibold">{children}</h2>,
-    h3: ({ children }) => <h3 className="text-2xl font-medium">{children}</h3>,
-    normal: ({ children }) => <p className="text-base">{children}</p>,
+    h1: ({ children }) => <h1 className="text-4xl font-bold mb-6">{children}</h1>,
+    h2: ({ children }) => <h2 className="text-3xl font-semibold mb-5">{children}</h2>,
+    h3: ({ children }) => <h3 className="text-2xl font-medium mb-4">{children}</h3>,
+    normal: ({ children }) => <p className="text-base mb-4">{children}</p>, // Add mb-4 or whatever spacing you want
   },
-}
+};
 
 export default async function PostPage({
   params,
