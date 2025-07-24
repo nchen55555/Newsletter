@@ -18,7 +18,7 @@ export default function Access(){
                       </span>
                       <span className="absolute inset-0 bg-yellow-200/50 -rotate-1 rounded-lg transform -skew-x-6" />
                     </h1>
-                    <p className="text-xl text-neutral-600 mb-12">the platform to discover and connect with (wouldn&#39;t uk it) the best, nichest startups 📰</p>
+                    <p className="text-xl text-neutral-600 mb-12">the marketplace-turned-newsletter for you to shop the startups you want to join</p>
                     <div className="flex justify-center">
                       <Subscribe />
                     </div>

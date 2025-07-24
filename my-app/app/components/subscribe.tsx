@@ -30,7 +30,7 @@ export function Subscribe() {
   }
 
 
-    const { isSubscribed } = useSubscriptionContext();
+    const { isSubscribed, refreshSubscription } = useSubscriptionContext();
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,7 +52,7 @@ export function Subscribe() {
       setDialogOpen(false)
       setFormError(false)
       setLinkedinUrl('')
-    //   checkSubscription()
+      await refreshSubscription();
     } else {
       setExistingSubscriber(data.existingSubscriber)
       setFormError(true)
@@ -73,13 +73,13 @@ export function Subscribe() {
                 setDialogOpen(true)
             }}
             onEmailChange={setUserEmail}
-            buttonText="access now"
+            buttonText="access the niche today"
             flowType="subscribe"
             />
             {formSuccess && (
             <Alert>
                 <CheckCircle2Icon />
-                <AlertTitle>Success! You&#39;re subscribed.</AlertTitle>
+                <AlertTitle>success! you&#39;re subscribed</AlertTitle>
             </Alert>
             )}
         </>
