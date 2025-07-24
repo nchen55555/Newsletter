@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 
-const fullText = 'reve just went public! the new best ai image generation model is here and we are speaking to researcher and engineer arden ma w/ exclusive access to the product!';
+const fullText = '🔔 let`s talk reve image, or the much-anticipated `half-moon`, who emerged from stealth in march...';
 
 export default function BlogTypingDemo() {
   const [typedText, setTypedText] = useState('')
@@ -33,7 +33,7 @@ export default function BlogTypingDemo() {
         transition={{ duration: 1 }}
         className="relative z-10 w-full max-w-xl mx-auto bg-white/90 backdrop-blur-md rounded-xl shadow-2xl p-4"
       >
-        <h2 className="text-2xl font-semibold mb-4 text-gray-800">news alert 🔔</h2>
+        {/* <h2 className="text-2xl font-semibold mb-4 text-gray-800"> 🔔🔔🔔</h2> */}
         <div className="border border-gray-300 rounded p-4 min-h-[8rem] font-mono whitespace-pre-wrap text-gray-700 bg-gray-50 break-words">
           {typedText}
           <span className="animate-pulse">{!typingDone && '|'}</span>

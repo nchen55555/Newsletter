@@ -44,7 +44,6 @@ export const columns: ColumnDef<CompanyProfile>[] = [
         return (
           <div className="flex gap-2 flex-wrap">
             {tags.map((tag, index) => {
-              const slug = tag.split('/').pop()
               return (
                 <Link href={tag} key={index} title={`View Article ${index + 1}`}>
                   <SquareArrowUpRight className="h-5 w-5 text-gray-600 hover:text-gray-900 transition-colors" />

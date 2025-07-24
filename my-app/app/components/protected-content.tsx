@@ -1,33 +1,15 @@
 'use client'
-
-import { useEffect, useState } from "react"
 import { Navigation } from "./header"
 import { Container } from "./container"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSubscriptionContext } from "./subscription_context"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 
 export function ProtectedContent({ children }: { children: React.ReactNode }) {
     const { isSubscribed } = useSubscriptionContext();
-    // const [loading, setLoading] = useState(true)
-    // const [email, setEmail] = useState<string | null>(null)
-
-    // useEffect(() => {
-    //     setLoading(true)
-    //     fetch('/api/subscription')
-    //         .then(res => res.json())
-    //         .then(data => {
-    //             setIsSubscribed(data.isSubscribed)
-    //             setEmail(data.email)
-    //         })
-    //         .catch(error => {
-    //             console.error('Error checking subscription:', error)
-    //             setIsSubscribed(false)
-    //             setEmail(null)
-    //         })
-    //         .finally(() => setLoading(false))
-    // }, [])
-    // console.log("Are we subscribed?", isSubscribed)
-
+    const router = useRouter();
+    
     const LoadingSkeleton = () => (
         <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
             <Navigation />
@@ -45,9 +27,14 @@ export function ProtectedContent({ children }: { children: React.ReactNode }) {
         </div>
     )
 
+    useEffect(() => {
+        if (!isSubscribed) {
+            router.push('/access');
+        }
+    }, [isSubscribed, router]);
+    
     if (!isSubscribed) {
-        window.location.href = '/access'
-        return <LoadingSkeleton />
+        return <LoadingSkeleton />;
     }
 
     return <>{children}</>

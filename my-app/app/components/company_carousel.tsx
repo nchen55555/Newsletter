@@ -8,10 +8,12 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
+import { SanityImageSource } from "@sanity/image-url/lib/types/types";
+import Image from "next/image";
 
 interface Media {
     _id: string
-    image: any
+    image: SanityImageSource
     alt: string
     description?: string
     caption?: string
@@ -61,7 +63,7 @@ export default function CompanyCarousel({ medias }: { medias: Media[] }) {
                     >
                         <div className="group relative overflow-hidden rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 mb-2">
                             <div className="aspect-[4/3] w-full overflow-hidden">
-                                <img
+                                <Image
                                     src={media.imageUrl}
                                     alt={media.alt}
                                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"

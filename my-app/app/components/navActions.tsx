@@ -1,35 +1,14 @@
 'use client'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useEffect, useState } from 'react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarImage } from '@/components/ui/avatar'
-import { GoogleLogin } from './google_login'
-import Link from 'next/link'
 import { Login } from './login'
+import { useSubscriptionContext } from './subscription_context'
+import { useRouter } from 'next/navigation'
 
 export function NavActions() {
-    const [isSubscribed, setIsSubscribed] = useState(false)
-    const [loading, setLoading] = useState(true)
-
-    const checkSubscription = () => {
-        setLoading(true)
-        return fetch('/api/subscription')
-            .then(res => res.json())
-            .then(data => {
-                setIsSubscribed(data.isSubscribed)
-                return data.isSubscribed
-            })
-            .catch(error => {
-                console.error('Error checking subscription:', error)
-                setIsSubscribed(false)
-                return false
-            })
-            .finally(() => setLoading(false))
-    }
-
-    useEffect(() => {
-        checkSubscription()
-    }, [])
+    const { isSubscribed } = useSubscriptionContext();
+    const router = useRouter();
 
     const supabase = createClientComponentClient()
 
@@ -38,24 +17,24 @@ export function NavActions() {
         if (error) {
             console.error("Logout error:", error)
         } else {
-            window.location.href = '/'
+            router.push('/')
         }
     }
     return (
         <div>
-        {!isSubscribed && !loading && (
+        {!isSubscribed && (
            <Login />
         )}
-        {isSubscribed && !loading && (
+        {isSubscribed &&  (
             <DropdownMenu>
                 <DropdownMenuTrigger><Avatar className="cursor-pointer">
-                    <AvatarImage src="https://github.com/shadcn.png" />
+                    <AvatarImage src="https://robohash.org/b0d01379a58b0ce340795fb04211a2fb?set=set4&bgset=&size=400x400" />
                     {/* <AvatarFallback>NC</AvatarFallback> */}
                 </Avatar> </DropdownMenuTrigger>
                 <DropdownMenuContent>
                     <DropdownMenuLabel>account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem><Link href="/profile">profile</Link></DropdownMenuItem>
+                    {/* <DropdownMenuItem><Link href="/profile">profile</Link></DropdownMenuItem> */}
                     <DropdownMenuItem onClick={handleLogout}>logout</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

@@ -11,8 +11,8 @@ export function Navigation() {
                     <Link href="/" className="text-lg font-medium tracking-tight hover:text-neutral-500 transition-colors">the niche</Link>
                 </div>
                 <div className="flex items-center gap-12 text-sm font-medium">
-                    <Link href="/articles" className="py-2 hover:text-neutral-500 transition-colors">articles</Link>
-                    <Link href="/companies" className="py-2 hover:text-neutral-500 transition-colors">companies</Link>
+                    <Link href="/articles" className="py-2 hover:text-neutral-500 transition-colors">portfolio</Link>
+                    {/* <Link href="/companies" className="py-2 hover:text-neutral-500 transition-colors">companies</Link> */}
                     <NavActions />
                 </div>
             </div>

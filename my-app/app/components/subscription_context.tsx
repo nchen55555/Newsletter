@@ -1,5 +1,6 @@
 'use client'
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 type SubscriptionContextType = {
   isSubscribed: boolean;
@@ -11,6 +12,7 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const supabase = createClientComponentClient()
 
   const refreshSubscription = useCallback(async () => {
     const res = await fetch("/api/subscription");
@@ -20,9 +22,18 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }, []);
 
   // Optionally: fetch on mount
-  React.useEffect(() => {
+  useEffect(() => {
     refreshSubscription();
   }, [refreshSubscription]);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string) => {
+      if (event === 'SIGNED_OUT') {
+        setIsSubscribed(false);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <SubscriptionContext.Provider value={{ isSubscribed, setIsSubscribed, refreshSubscription }}>

@@ -6,9 +6,9 @@ import { Subscribe } from "./subscribe";
 export function Introduction(){
     return (
         <div>
-            <p className="text-neutral-600 mb-6">a newsletter-turned-marketplace that helps students discover and connect with (wouldn't uk it) top, niche startups 📰 </p>
-            <p className="text-neutral-600 mb-6">each week (so much writing ahh), we break down one company (product, marketing, gtm strat, ...) to actually UNDERSTAND the company (not the VC buzzwords they put on their website) 👀 </p>
-            <p className="text-neutral-600 mb-6">as we grow, so does the nic(h)e list: a curated set of high-growth partner startups you can actually apply to through us!</p>
+            <p className="text-neutral-600 mb-6"> the marketplace-turned-newsletter for you to shop for our portfolio&#39;s breakout, high-growth startups 📰 </p> 
+            <p className="text-neutral-600 mb-6"> every week, we break down one company - their product, marketing, GTM  - to actually understand their trajectory and <strong>connect you with the founding team to see if there is mutual fit</strong> </p> 
+            <p className="text-neutral-600 mb-6"><em>AND we&#39;ve only hand-picked a set of 100 students for this beta</em></p> 
             <Subscribe />
         </div>
     );

@@ -8,7 +8,6 @@ import imageUrlBuilder from "@sanity/image-url"
 import CompanyCarousel from "../components/company_carousel"
 import { DataTable } from "./company_data_table"
 import { columns } from "./company_columns"
-import { CompanyProfile } from './company_columns'
 
 export default async function CarouselSize() {
     const MEDIA_QUERY = `*[
@@ -66,6 +65,7 @@ export default async function CarouselSize() {
                         </span>
                         <span className="absolute inset-0 bg-yellow-200/50 -rotate-1 rounded-lg transform -skew-x-6" />
                     </h1>
+                    <p className="text-neutral-600 mb-6"><em>publishing full list of portfolio companies soon - for now, here are some spotlights that we plan on covering</em></p> 
                     <CompanyCarousel medias={carouselMedias} />
                     <h2 className="text-xl font-medium tracking-tight mb-6 mt-12 relative inline-block">
                         <span className="relative z-10">all companies</span>

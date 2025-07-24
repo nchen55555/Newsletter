@@ -1,23 +1,21 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog, DialogClose, DialogContent, DialogFooter,
+  Dialog, DialogContent, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger, DialogDescription
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Alert, AlertTitle } from '@/components/ui/alert'
 import { CheckCircle2Icon, Terminal } from 'lucide-react'
 
 import {GoogleLogin} from './google_login'
-import { Skeleton } from '@/components/ui/skeleton'
 import { useSubscriptionContext } from './subscription_context';
 
 
-export function Subscribe({enableButton = true}: {enableButton?: boolean}) {
+export function Subscribe() {
   const [linkedinUrl, setLinkedinUrl] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [formError, setFormError] = useState(false)
@@ -25,12 +23,6 @@ export function Subscribe({enableButton = true}: {enableButton?: boolean}) {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [existingSubscriber, setExistingSubscriber] = useState(false)
 
-  // Check if we should show dialog on mount
-//   useEffect(() => {
-//     if (localStorage.getItem('googleAuthFlow') === 'subscribe') {
-//       setDialogOpen(true)
-//     }
-//   }, [])
 
   const validateLinkedInUrl = (url: string): boolean => {
     const linkedinRegex = /^https:\/\/(?:www\.)?linkedin\.com\/in\/[\w-]+\/?$/
@@ -38,25 +30,7 @@ export function Subscribe({enableButton = true}: {enableButton?: boolean}) {
   }
 
 
-    const [loading, setLoading] = useState(false)
     const { isSubscribed } = useSubscriptionContext();
-
-
-    // const checkSubscription = () => {
-    //     setLoading(true)
-    //     return fetch('/api/subscription')
-    //         .then(res => res.json())
-    //         .then(data => {
-    //             setLoading(false)
-    //             return data.isSubscribed
-    //         })
-    //         .catch(error => {
-    //             console.error('Error checking subscription:', error)
-    //             setLoading(false)
-    //             return false
-    //         })
-    // }
-
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -85,39 +59,30 @@ export function Subscribe({enableButton = true}: {enableButton?: boolean}) {
     }
   }
 
-  if (loading) {
-    return (
-    <div className="flex items-center space-x-4">
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-[250px]" />
-        <Skeleton className="h-4 w-[200px]" />
-      </div>
-    </div>
-    )
-  }
-
     return (
     <div>
-        {!isSubscribed && (
       <div className="flex flex-col w-full max-w-sm gap-4">
-        <GoogleLogin 
-          onSignInSuccess={(isSubscribed) => {
-            if (isSubscribed) {
-                console.log("User is subscribed")
-                setExistingSubscriber(true)
-            }
-            setDialogOpen(true)
-          }}
-          onEmailChange={setUserEmail}
-          buttonText="subscribe to get access" 
-          redirectOnFail={false}
-          flowType="subscribe" />
-        
-        {formSuccess && (
-          <Alert>
-            <CheckCircle2Icon />
-            <AlertTitle>Success! You're subscribed.</AlertTitle>
-          </Alert>
+      {!isSubscribed && (
+        <>
+            <GoogleLogin 
+            onSignInSuccess={(isSubscribed) => {
+                if (isSubscribed) {
+                    console.log("User is subscribed")
+                    setExistingSubscriber(true)
+                }
+                setDialogOpen(true)
+            }}
+            onEmailChange={setUserEmail}
+            buttonText="access now"
+            flowType="subscribe"
+            />
+            {formSuccess && (
+            <Alert>
+                <CheckCircle2Icon />
+                <AlertTitle>Success! You&#39;re subscribed.</AlertTitle>
+            </Alert>
+            )}
+        </>
         )}
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -149,10 +114,10 @@ export function Subscribe({enableButton = true}: {enableButton?: boolean}) {
                   />
                 </div>
                 {existingSubscriber && (
-                  <Alert variant="destructive">
-                    <Terminal className="h-4 w-4" />
-                    <AlertTitle>You are already subscribed! Please login to access your content.</AlertTitle>
-                  </Alert>
+                  <Alert>
+                  <CheckCircle2Icon />
+                  <AlertTitle>You&#39;re already subscribed! We&#39;ve logged you in</AlertTitle>
+              </Alert>
                 )}
                 {formError && !existingSubscriber && (
                   <Alert variant="destructive">
@@ -168,7 +133,6 @@ export function Subscribe({enableButton = true}: {enableButton?: boolean}) {
           </DialogContent>
         </Dialog>
       </div>
-        )}
     </div>
   )
 }
