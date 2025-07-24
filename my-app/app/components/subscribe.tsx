@@ -59,14 +59,10 @@ export function Subscribe() {
     }
   }
   
-  if (loading) {
-    return <Skeleton className="h-12 w-full" />; // or customize size
-  }
-
     return (
     <div>
       <div className="flex flex-col w-full max-w-sm gap-4">
-      {!isSubscribed && (
+      { !isSubscribed && ( 
         <>
             <GoogleLogin 
             onSignInSuccess={(isSubscribed) => {

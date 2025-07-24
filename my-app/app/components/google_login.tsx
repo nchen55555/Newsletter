@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 interface GoogleLoginProps {
     buttonText: string
-    onSignInSuccess: (isSubscribed: boolean) => void
+    onSignInSuccess: (isSubscribedNow: boolean) => void
     onEmailChange?: (email: string) => void
     flowType: 'login' | 'subscribe'
 }
@@ -20,7 +20,7 @@ export function GoogleLogin({
 }: GoogleLoginProps) {
     const supabase = createClientComponentClient()
     const [isAuthLoading, setIsAuthLoading] = useState(false)
-    const { refreshSubscription, loading } = useSubscriptionContext()
+    const { isSubscribed, refreshSubscription, loading} = useSubscriptionContext()
 
     // Set up auth listener
     useEffect(() => {
@@ -30,8 +30,8 @@ export function GoogleLogin({
             if (flow === flowType) {
                 onEmailChange?.(session.user.email);
                 (async () => {
-                    const isSubscribed = await refreshSubscription();
-                    onSignInSuccess(isSubscribed);
+                    const isSubscribedNow = await refreshSubscription();
+                    onSignInSuccess(isSubscribedNow);
                     localStorage.removeItem('googleAuthFlow');
                     setIsAuthLoading(false);
                 })();
@@ -66,17 +66,43 @@ export function GoogleLogin({
     if (loading) {
     return <Skeleton className="h-12 w-full" />; // or customize size
     }
+
     
     return (
-        <Button
-            onClick={handleGoogleLogin}
-            disabled={isAuthLoading}
-            variant="default"
-            size="lg"
-            className="bg-black hover:bg-black/90"
+    <div>
+    {!isSubscribed && (<Button
+        onClick={handleGoogleLogin}
+        disabled={isAuthLoading || loading}
+        variant="default"
+        size="lg"
+        className="bg-black hover:bg-black/90"
         >
-            {!isAuthLoading && buttonText}
-        </Button>
+        {(loading || isAuthLoading) ? (
+            <>
+            <svg
+                className="mr-2 h-4 w-4 animate-spin"
+                viewBox="0 0 24 24"
+                fill="none"
+            >
+                <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                />
+                <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
+            </svg>
+            loading...
+            </>
+        ) : buttonText}
+        </Button>)}
+        </div>   
     )
 
 }

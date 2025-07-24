@@ -32,19 +32,17 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     return data.isSubscribed;
   }, []);
 
-  // Optionally: fetch on mount
   useEffect(() => {
-    refreshSubscription();
-  }, [refreshSubscription]);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        refreshSubscription();
+      }
       if (event === 'SIGNED_OUT') {
         setIsSubscribed(false);
       }
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [refreshSubscription]);
 
   return (
     <SubscriptionContext.Provider value={{ isSubscribed, setIsSubscribed, refreshSubscription, loading }}>
