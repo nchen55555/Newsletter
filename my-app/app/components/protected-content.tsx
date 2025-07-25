@@ -31,7 +31,7 @@ export function ProtectedContent({ children }: { children: React.ReactNode }) {
         if (!loading && !isSubscribed) {
             router.push('/access');
         }
-    }, [isSubscribed, router]);
+    }, [isSubscribed, router, loading]);
     
     if (!isSubscribed || loading) {
         return <LoadingSkeleton />;

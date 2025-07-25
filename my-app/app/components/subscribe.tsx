@@ -24,7 +24,6 @@ export function Subscribe() {
   const {
     isSubscribed,
     refreshSubscription,
-    loading,
     userEmail,
     showSubscribeDialog,
     setShowSubscribeDialog,

@@ -70,7 +70,6 @@ export default async function PostPage({
                 {Array.isArray(post.body) && <PortableText value={post.body} components={components} />}
               </div>
             </div>
-            
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useSubscriptionContext } from "./subscription_context"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -14,10 +14,9 @@ export function GoogleLogin({
     buttonText,
     flowType,
 }: GoogleLoginProps) {
-    console.log("GoogleLogin rendered with flowType:", flowType);
     const supabase = createClientComponentClient()
     const [isAuthLoading, setIsAuthLoading] = useState(false)
-    const { isSubscribed, refreshSubscription, loading} = useSubscriptionContext()
+    const { isSubscribed, loading} = useSubscriptionContext()
 
     // Set up auth listener
     // useEffect(() => {
