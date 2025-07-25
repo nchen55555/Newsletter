@@ -13,13 +13,11 @@ import { CheckCircle2Icon, Terminal } from 'lucide-react'
 
 import {GoogleLogin} from './google_login'
 import { useSubscriptionContext } from './subscription_context';
-import { Skeleton } from '@/components/ui/skeleton'
 
 export function Subscribe() {
   const [linkedinUrl, setLinkedinUrl] = useState('')
   const [formError, setFormError] = useState(false)
   const [formSuccess, setFormSuccess] = useState(false)
-  const [existingSubscriber, setExistingSubscriber] = useState(false)
 
   const {
     isSubscribed,
@@ -57,9 +55,7 @@ export function Subscribe() {
       setLinkedinUrl('')
       await refreshSubscription();
       setShowSubscribeDialog(false);
-
     } else {
-      setExistingSubscriber(data.existingSubscriber)
       setFormError(true)
     }
   }
@@ -107,13 +103,13 @@ export function Subscribe() {
                     className="h-12 text-lg px-4"
                   />
                 </div>
-                {existingSubscriber && (
+                {isSubscribed && (
                   <Alert>
                   <CheckCircle2Icon />
                   <AlertTitle>You&#39;re already subscribed! We&#39;ve logged you in</AlertTitle>
               </Alert>
                 )}
-                {formError && !existingSubscriber && (
+                {formError && !isSubscribed && (
                   <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>Please enter a valid LinkedIn URL!</AlertTitle>
@@ -121,7 +117,7 @@ export function Subscribe() {
                 )}
               </div>
               <DialogFooter className="mt-8 gap-4">
-                <Button type="submit" disabled={existingSubscriber}className="h-12 px-8 text-lg">subscribe</Button>
+                <Button type="submit" disabled={isSubscribed}className="h-12 px-8 text-lg">subscribe</Button>
               </DialogFooter>
             </form>
           </DialogContent>
