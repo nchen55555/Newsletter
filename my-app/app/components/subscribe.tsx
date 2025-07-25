@@ -17,25 +17,29 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export function Subscribe() {
   const [linkedinUrl, setLinkedinUrl] = useState('')
-  const [dialogOpen, setDialogOpen] = useState(false)
   const [formError, setFormError] = useState(false)
   const [formSuccess, setFormSuccess] = useState(false)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
   const [existingSubscriber, setExistingSubscriber] = useState(false)
 
+  const {
+    isSubscribed,
+    refreshSubscription,
+    loading,
+    userEmail,
+    showSubscribeDialog,
+    setShowSubscribeDialog,
+  } = useSubscriptionContext();
 
   const validateLinkedInUrl = (url: string): boolean => {
     const linkedinRegex = /^https:\/\/(?:www\.)?linkedin\.com\/in\/[\w-]+\/?$/
     return linkedinRegex.test(url)
   }
 
-
-    const { isSubscribed, refreshSubscription, loading } = useSubscriptionContext();
-
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!userEmail || !linkedinUrl || !validateLinkedInUrl(linkedinUrl)) {
       setFormError(true)
+      setFormSuccess(false)
       return
     }
 
@@ -49,10 +53,11 @@ export function Subscribe() {
     
     if (res.ok && !data.existingSubscriber) {
       setFormSuccess(true)
-      setDialogOpen(false)
       setFormError(false)
       setLinkedinUrl('')
       await refreshSubscription();
+      setShowSubscribeDialog(false);
+
     } else {
       setExistingSubscriber(data.existingSubscriber)
       setFormError(true)
@@ -64,18 +69,7 @@ export function Subscribe() {
       <div className="flex flex-col w-full max-w-sm gap-4">
       { !isSubscribed && ( 
         <>
-            <GoogleLogin 
-            onSignInSuccess={(isSubscribed) => {
-                if (isSubscribed) {
-                    console.log("User is subscribed")
-                    setExistingSubscriber(true)
-                }
-                setDialogOpen(true)
-            }}
-            onEmailChange={setUserEmail}
-            buttonText="access the niche today"
-            flowType="subscribe"
-            />
+            <GoogleLogin buttonText="access the niche today" flowType="subscribe" />
             {formSuccess && (
             <Alert>
                 <CheckCircle2Icon />
@@ -85,7 +79,7 @@ export function Subscribe() {
         </>
         )}
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={showSubscribeDialog} onOpenChange={setShowSubscribeDialog}>
           <DialogTrigger asChild>
             <span style={{ display: 'none' }} />
           </DialogTrigger>
@@ -127,7 +121,7 @@ export function Subscribe() {
                 )}
               </div>
               <DialogFooter className="mt-8 gap-4">
-                <Button type="submit" disabled={existingSubscriber}className="h-12 px-8 text-lg">Subscribe</Button>
+                <Button type="submit" disabled={existingSubscriber}className="h-12 px-8 text-lg">subscribe</Button>
               </DialogFooter>
             </form>
           </DialogContent>

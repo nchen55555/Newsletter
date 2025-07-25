@@ -7,48 +7,53 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 interface GoogleLoginProps {
     buttonText: string
-    onSignInSuccess: (isSubscribedNow: boolean) => void
-    onEmailChange?: (email: string) => void
     flowType: 'login' | 'subscribe'
 }
 
 export function GoogleLogin({
     buttonText,
-    onSignInSuccess,
-    onEmailChange,
     flowType,
 }: GoogleLoginProps) {
+    console.log("GoogleLogin rendered with flowType:", flowType);
     const supabase = createClientComponentClient()
     const [isAuthLoading, setIsAuthLoading] = useState(false)
     const { isSubscribed, refreshSubscription, loading} = useSubscriptionContext()
 
     // Set up auth listener
-    useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'SIGNED_IN' && session?.user?.email) {
-            const flow = localStorage.getItem('googleAuthFlow');
-            if (flow === flowType) {
-                onEmailChange?.(session.user.email);
-                (async () => {
-                    const isSubscribedNow = await refreshSubscription();
-                    onSignInSuccess(isSubscribedNow);
-                    localStorage.removeItem('googleAuthFlow');
-                    setIsAuthLoading(false);
-                })();
-            } else {
-                setIsAuthLoading(false);
-            }
-          }
-        })
+    // useEffect(() => {
+    //     console.log("GoogleLogin useEffect for flowType:", flowType);
+    //     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    //         console.log("Auth state changed:", event, session);
+    //         const storedType = localStorage.getItem('googleAuthFlowType');
+    //         if (event === 'SIGNED_IN' && session?.user?.email) {
+    //         // const flow = localStorage.getItem('googleAuthFlow');
+    //         // console.log("Flow from localStorage:", flow, "Expected flowType:", flowType);
+    //         // if (flow === flowType && storedKey === flowType) {
+    //             console.log("Outside ", storedType, flowType)
+    //             if (storedType === 'login' || storedType === 'subscribe') {
+    //                 onEmailChange?.(session.user.email);
+    //                 (async () => {
+    //                     const isSubscribedNow = await refreshSubscription();
+    //                     console.log("Calling onSignInSuccess...");
+    //                     onSignInSuccess(isSubscribedNow);
+    //                     localStorage.removeItem('googleAuthFlowType');
+    //                     setIsAuthLoading(false);
+    //                 })();
+    //         } else {
+    //             setIsAuthLoading(false);
+    //         }
+    //       }
+    //     })
     
-        return () => {
-          subscription.unsubscribe()
-        }
-    }, [onEmailChange, refreshSubscription, onSignInSuccess, supabase.auth, flowType])
+    //     return () => {
+    //       subscription.unsubscribe()
+    //     }
+    // }, [onEmailChange, refreshSubscription, onSignInSuccess, supabase.auth, flowType])
 
     const handleGoogleLogin = async () => {
         setIsAuthLoading(true)
-        localStorage.setItem('googleAuthFlow', flowType)
+        localStorage.setItem('googleAuthFlowType', flowType);
+        // localStorage.setItem('googleAuthFlow', flowType)
         supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
