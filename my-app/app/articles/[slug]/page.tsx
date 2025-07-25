@@ -47,20 +47,21 @@ export default async function PostPage({
           ← back to the nic(h)e list
         </Link>
         <div className="mt-8">
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
+          <div>
             {post.image && (
-              <div className="relative w-full max-w-xl lg:w-[650px] aspect-[4/3] rounded-2xl overflow-hidden shrink-0 mx-auto lg:mx-0 mb-6 lg:mb-0">
+              <div className="relative w-full mb-12">
                 <Image
                   src={urlFor(post.image)?.url() || ''}
                   alt={post.title}
-                  fill
-                  className="object-cover"
+                  width={post.image.asset?.metadata?.dimensions?.width || 800}
+                  height={post.image.asset?.metadata?.dimensions?.height || 600}
+                  className="rounded-2xl object-contain w-full h-auto"
                   sizes="(max-width: 1024px) 100vw, 650px"
                   priority
                 />
               </div>
             )}
-            <div className="flex-1 w-full">
+            <div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight mb-4 text-center lg:text-left">{post.title}</h1>
               <p className="text-xs sm:text-sm text-neutral-500 mb-6 lg:mb-8 text-center lg:text-left">
                 Published: {new Date(post.publishedAt).toLocaleDateString()}
@@ -69,6 +70,7 @@ export default async function PostPage({
                 {Array.isArray(post.body) && <PortableText value={post.body} components={components} />}
               </div>
             </div>
+            
           </div>
         </div>
       </div>

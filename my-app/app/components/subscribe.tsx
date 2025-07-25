@@ -13,8 +13,10 @@ import { CheckCircle2Icon, Terminal } from 'lucide-react'
 
 import {GoogleLogin} from './google_login'
 import { useSubscriptionContext } from './subscription_context';
+import { useRouter } from 'next/navigation';
 
 export function Subscribe() {
+  const router = useRouter();
   const [linkedinUrl, setLinkedinUrl] = useState('')
   const [formError, setFormError] = useState(false)
   const [formSuccess, setFormSuccess] = useState(false)
@@ -55,6 +57,7 @@ export function Subscribe() {
       setLinkedinUrl('')
       await refreshSubscription();
       setShowSubscribeDialog(false);
+      router.push('/articles')
     } else {
       setFormError(true)
     }
