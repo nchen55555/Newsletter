@@ -6,6 +6,7 @@ import { Login } from './login'
 import { useSubscriptionContext } from './subscription_context'
 import { useRouter } from 'next/navigation'
 import { Skeleton } from '@/components/ui/skeleton'
+import Link from 'next/link'
 
 export function NavActions() {
     const { isSubscribed, loading } = useSubscriptionContext();
@@ -38,7 +39,8 @@ export function NavActions() {
                 <DropdownMenuContent>
                     <DropdownMenuLabel>account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {/* <DropdownMenuItem><Link href="/profile">profile</Link></DropdownMenuItem> */}
+                    <DropdownMenuItem><Link href="/profile">profile</Link></DropdownMenuItem>
+                    <DropdownMenuItem><Link href="/bookmarks">bookmarks</Link></DropdownMenuItem>
                     <DropdownMenuItem onClick={handleLogout}>logout</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

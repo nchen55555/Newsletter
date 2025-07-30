@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import { Nunito_Sans } from "next/font/google";
 import "./globals.css";
 import { SubscriptionProvider } from "./components/subscription_context";
 
-const mono = JetBrains_Mono({
+const sans = Nunito_Sans({
   subsets: ["latin"],
-  variable: "--font-mono",
+  variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
@@ -19,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={mono.variable}>
-      <body className={`antialiased font-mono bg-[#FFFCF8] min-h-screen ${mono.className}`}>
+    <html lang="en" className={sans.variable}>
+      <body className={`antialiased font-sans bg-[#FFFCF8] min-h-screen ${sans.className}`}>
         <SubscriptionProvider>
           {children}
         </SubscriptionProvider>
