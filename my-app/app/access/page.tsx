@@ -13,7 +13,6 @@ export default function Access() {
           <h1 className="text-6xl font-medium tracking-tight mb-8 bg-clip-text text-transparent bg-gradient-to-r from-neutral-950 via-neutral-800 to-neutral-600 animate-gradient">
             the nic(h)e list
           </h1>
-          <p className="text-xl text-neutral-600 mb-12">the click access to subscribe and join</p>
           <div className="flex justify-center">
             <Subscribe />
           </div>
