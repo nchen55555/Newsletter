@@ -18,37 +18,6 @@ export function GoogleLogin({
     const [isAuthLoading, setIsAuthLoading] = useState(false)
     const { isSubscribed, loading} = useSubscriptionContext()
 
-    // Set up auth listener
-    // useEffect(() => {
-    //     console.log("GoogleLogin useEffect for flowType:", flowType);
-    //     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-    //         console.log("Auth state changed:", event, session);
-    //         const storedType = localStorage.getItem('googleAuthFlowType');
-    //         if (event === 'SIGNED_IN' && session?.user?.email) {
-    //         // const flow = localStorage.getItem('googleAuthFlow');
-    //         // console.log("Flow from localStorage:", flow, "Expected flowType:", flowType);
-    //         // if (flow === flowType && storedKey === flowType) {
-    //             console.log("Outside ", storedType, flowType)
-    //             if (storedType === 'login' || storedType === 'subscribe') {
-    //                 onEmailChange?.(session.user.email);
-    //                 (async () => {
-    //                     const isSubscribedNow = await refreshSubscription();
-    //                     console.log("Calling onSignInSuccess...");
-    //                     onSignInSuccess(isSubscribedNow);
-    //                     localStorage.removeItem('googleAuthFlowType');
-    //                     setIsAuthLoading(false);
-    //                 })();
-    //         } else {
-    //             setIsAuthLoading(false);
-    //         }
-    //       }
-    //     })
-    
-    //     return () => {
-    //       subscription.unsubscribe()
-    //     }
-    // }, [onEmailChange, refreshSubscription, onSignInSuccess, supabase.auth, flowType])
-
     const handleGoogleLogin = async () => {
         setIsAuthLoading(true)
         localStorage.setItem('googleAuthFlowType', flowType);
@@ -56,7 +25,7 @@ export function GoogleLogin({
         supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${location.origin}`,
+                redirectTo:  flowType === 'subscribe' ? `${location.origin}/access` : `${location.origin}`,
                 queryParams: {
                     prompt: 'consent',
                 },

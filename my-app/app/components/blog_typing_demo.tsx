@@ -1,5 +1,4 @@
 'use client'
-import { Subscribe } from '@/app/components/subscribe'
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 
@@ -56,16 +55,6 @@ export default function BlogTypingDemo({ onTypingDone }: { onTypingDone?: () => 
           })()}
           <span className="animate-pulse text-neutral-400">{!typingDone && '|'}</span>
         </div>
-
-        
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: typingDone ? 0.3 : 0 }}
-          className={`mt-8${typingDone ? '' : ' pointer-events-none opacity-0 select-none'}`}
-        >
-          <Subscribe />
-        </motion.div>
 
       </motion.div>
     </div>

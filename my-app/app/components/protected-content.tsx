@@ -29,7 +29,7 @@ export function ProtectedContent({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (!loading && !isSubscribed) {
-            router.push('/access');
+            router.push('/access_denied');
         }
     }, [isSubscribed, router, loading]);
     

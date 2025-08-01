@@ -3,9 +3,11 @@ import Link from "next/link"
 import { NavActions } from "./navActions"
 
 import { useState } from "react";
+import { useSubscriptionContext } from "./subscription_context";
 
 export function Navigation() {
     const [menuOpen, setMenuOpen] = useState(false);
+    const { isSubscribed } = useSubscriptionContext();
 
     return (
         <nav className="border-b border-neutral-100 bg-white">
@@ -26,8 +28,13 @@ export function Navigation() {
                 {/* Desktop Nav */}
                 <div className="hidden md:flex items-center gap-12 text-sm font-medium">
                     <Link href="/about" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">about</Link>
-                    <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">portfolio</Link>
-                    <Link href="/companies" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">companies</Link>
+                    <Link href="/clients" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">pricing</Link>
+                    {isSubscribed && (
+                        <>
+                            <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">portfolio</Link>
+                            <Link href="/companies" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">companies</Link>
+                        </>
+                    )}
                     <NavActions />
                 </div>
             </div>
@@ -35,8 +42,12 @@ export function Navigation() {
             {menuOpen && (
                 <div className="md:hidden px-8 pb-4 flex flex-col gap-4 text-sm font-medium bg-white border-b border-neutral-100 animate-fade-in-down">
                     <Link href="/about" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>about</Link>
-                    <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>portfolio</Link>
-                    <Link href="/companies" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>companies</Link>
+                    {isSubscribed && (
+                        <>
+                            <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>portfolio</Link>
+                            <Link href="/companies" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>companies</Link>
+                        </>
+                    )}
                     <NavActions />
                 </div>
             )}

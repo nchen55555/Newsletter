@@ -56,46 +56,46 @@ export default async function CarouselSize() {
     }))
       
     return (
-        <ProtectedContent>
-        <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
-            <Navigation />
-            <Container>
-              <div className="flex flex-col md:flex-row gap-12 pt-12 pb-16 relative">
-                {/* Main content left */}
-                <div className="flex-1 min-w-0 pt-4 pb-16">
-                  <div className="text-neutral-600 text-2xl leading-relaxed mb-10 text-left">
-                    <p className="mb-6">
-                      the niche is a newsletter-turned-marketplace for
-                      <span className="relative group inline-block align-middle mx-1">
-                        <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">
-                          an exclusive cohort of students
-                        </span>
-                        <span className="absolute left-0 top-full mt-2 min-w-[220px] max-w-screen-sm w-auto bg-white border border-neutral-200 rounded shadow-md px-4 py-2 text-lg text-neutral-700 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-300 z-10 break-words whitespace-pre-line">
-                          100 students from Harvard, MIT, Stanford, and Berkeley, hand-picked through academic and industry recommendations
-                        </span>
-                      </span>
-                      that we&#39;ve chosen
-                    </p>
-                    <p className="mb-6">we&#39;ve highlighted some of the companies we&#39;re excited to be writing about in the next month with more to be added. please <span className="relative group inline-block align-middle mx-1">
-                        <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">
-                          refrain from personally reaching out
-                        </span>
-                        <span className="absolute left-0 top-full mt-2 min-w-[220px] max-w-screen-sm w-auto bg-white border border-neutral-200 rounded shadow-md px-4 py-2 text-lg text-neutral-700 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-300 z-10 break-words whitespace-pre-line">
-                          we&#39;ve put a lot of trust into our cohort. if a company would like to make a connect, we will reach out to you. otherwise, they do not and it will only reflect badly on our platform if you reach out accordingly
-                        </span>
-                      </span> to these companies. <strong>we will make the connect for you</strong></p>
+      <ProtectedContent>
+        <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white flex flex-col">
+          <Navigation />
+          <Container>
+            <div className="py-16 flex flex-col gap-12 px-4 md:px-6 lg:px-8">
+              {/* Two-column layout: left = intro + table, right = carousel */}
+              <div className="flex flex-col md:flex-row gap-8">
+                {/* Left column: intro card + data table */}
+                <div className="w-full md:flex-1 flex flex-col gap-8 max-w-3xl mx-auto">
+                  <div className="bg-white rounded-2xl shadow-lg border border-neutral-200 p-8 mb-4">
+                    <div className="text-left w-full">
+  <p className="text-2xl font-semibold mb-2 text-neutral-800">introducing our partners</p>
+  <div className="mb-6 text-base text-neutral-700">
+    we&apos;ve highlighted some of the companies we&apos;re excited to be writing about in the next month, with more to be added. we&apos;ve exclusively partnered with these companies to provide you with a direct introduction, and we&apos;ll make the connect for you as soon as you indicate
+    <span className="relative group inline-block align-middle mx-1">
+      <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">
+        interest
+      </span>
+      <span className="absolute left-0 top-full mt-2 min-w-[220px] max-w-screen-sm w-auto bg-white border border-neutral-200 rounded shadow-md px-4 py-2 text-base text-neutral-700 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-300 z-10 break-words whitespace-pre-line">
+        for each company media profile, you&apos;ll have the opportunity to bookmark and indicate interest
+      </span>
+    </span>.
+  </div>
+  <p className="mb-6 text-base text-neutral-700">
+    once you indicate interest, you&apos;ll need to update the required fields in your profile. if there is mutual interest with the startup, we will make the introduction within 72 hours – <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">let&apos;s get connecting!</span>
+  </p>
+</div>
                   </div>
-                  <div className="w-full mb-10">
+                  <div className="w-full overflow-x-auto">
                     <DataTable columns={columns} data={tableData} />
                   </div>
                 </div>
-                {/* Vertical company cards right sidebar */}
-                <div className="hidden md:block w-full max-w-[380px] flex-shrink-0 sticky top-28 self-start">
+                {/* Right column: carousel */}
+                <div className="hidden md:flex md:w-[380px] w-full flex-shrink-0 items-start">
                   <CompanyCarousel medias={carouselMedias} />
                 </div>
               </div>
-            </Container>
-        </div>  
-        </ProtectedContent>
-    )
+            </div>
+           </Container>
+        </div>
+      </ProtectedContent>
+    );
 }
