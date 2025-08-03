@@ -21,7 +21,7 @@ export default function AboutPage() {
                 private invite-based community
               </span>
               <span className="absolute left-0 top-full mt-2 min-w-[220px] max-w-screen-sm w-auto bg-white border border-neutral-200 rounded shadow-md px-4 py-2 text-lg text-neutral-700 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-300 z-10 break-words whitespace-pre-line">
-                100 students from Harvard, MIT, Stanford, and Berkeley, hand-picked through academic and industry recommendations
+                200 students from Harvard, MIT, Stanford, and Berkeley, hand-picked through academic and industry recommendations
               </span>
             </span>
             that partners with some of the highest-growth startups to connect them with the brightest students from top universities.

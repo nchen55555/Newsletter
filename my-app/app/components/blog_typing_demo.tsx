@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 
-const fullText = 'The marketplace-turned-newsletter for you to shop for today\'s highest-growth startups ';
+const fullText = 'The newsletter-turned-marketplace for you to shop for today\'s highest-growth startups ';
 
 export default function BlogTypingDemo({ onTypingDone }: { onTypingDone?: () => void }) {
   const [typedText, setTypedText] = useState('')
