@@ -26,8 +26,9 @@ export async function PATCH(req: NextRequest) {
     const formData = await req.formData();
     const requiredFields = [
       'first_name', 'last_name', 'linkedin_url', 
-      'resume_file', 'phone_number', 'id', 'email'
+      'resume_file', 'phone_number', 'id', 'email', 'bio'
     ];
+
 
     // Validate all required fields
     for (const field of requiredFields) {
@@ -36,13 +37,21 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
+
     const resume_file = formData.get('resume_file');
     if (!(resume_file instanceof File)) {
       return NextResponse.json({ error: 'Resume file is invalid' }, { status: 400 });
     }
 
+
+    const profile_image_file = formData.get('profile_image');
+    if (profile_image_file && !(profile_image_file instanceof File)) {
+      return NextResponse.json({ error: 'Profile image file is invalid' }, { status: 400 });
+    }
+
     // 4. Generate a secure file name
     const fileName = `${user.id}/resume-${Date.now()}-${resume_file.name}`;
+    let profile_image_url: string | null = null;
 
 
     // Enhanced upload logging
@@ -65,10 +74,46 @@ export async function PATCH(req: NextRequest) {
       }, { status: 500 });
     }
 
+    if (profile_image_file){
+
+      const profile_image_file_name = `${user.id}/profile_image-${Date.now()}-${(profile_image_file as File).name}`;
+
+
+      const { error: profile_image_uploadError } = await supabase.storage
+      .from('profile_image_files')
+      .upload(profile_image_file_name, (profile_image_file as File), {
+        contentType: (profile_image_file as File).type,
+        cacheControl: '3600',
+        upsert: true,
+      });
+
+
+      if (profile_image_uploadError) {
+        console.error('Profile Image Upload Error:', {
+          message: profile_image_uploadError.message,
+          details: profile_image_uploadError
+        });
+        return NextResponse.json({ 
+          error: 'Failed to upload profile image', 
+          details: profile_image_uploadError.message 
+        }, { status: 500 });
+      }
+
+      // 6. Get public URL for the uploaded file
+      const { data } = await supabase.storage
+        .from('profile_image_files')
+        .getPublicUrl(profile_image_file_name);
+
+      // Assign the value (optional chaining for safety)
+      profile_image_url = data?.publicUrl ?? null;
+
+    }
+
     // 6. Get public URL for the uploaded file
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl: resume_url } } = supabase.storage
       .from('resume_files')
       .getPublicUrl(fileName);
+
 
     // 7. Update subscriber profile
     const { error: dbError } = await supabase
@@ -79,7 +124,9 @@ export async function PATCH(req: NextRequest) {
         linkedin_url: formData.get('linkedin_url'),
         personal_website: formData.get('personal_website'),
         phone_number: formData.get('phone_number'),
-        resume_url: publicUrl,
+        resume_url: resume_url,
+        profile_image_url: profile_image_file ? profile_image_url : null,
+        bio: formData.get('bio'),
       })
       .eq('id', Number(formData.get('id')))
       .eq('email', formData.get('email'));
@@ -92,7 +139,7 @@ export async function PATCH(req: NextRequest) {
       }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, resumeUrl: publicUrl });
+    return NextResponse.json({ success: true, resumeUrl: resume_url, profileImageUrl: profile_image_url });
 
   } catch (error) {
     console.error('Unexpected error:', error);

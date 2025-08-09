@@ -2,13 +2,14 @@ import { PortableText, type PortableTextComponents } from '@portabletext/react'
 import imageUrlBuilder from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { client } from "@/lib/sanity/client";
-import Link from "next/link";
+// import Link from "next/link";
 import { Container } from "@/app/components/container";
 import { Navigation } from "@/app/components/header";
 import Image from "next/image";
-import { ProtectedContent } from "@/app/components/protected-content";
+// import { ProtectedContent } from "@/app/components/protected-content";
 import { type SanityDocument } from "next-sanity";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
+import ApplyButton from "@/app/components/apply";
 
 const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]`;
 
@@ -61,15 +62,12 @@ export default async function PostPage({
 }) {
   const post = await client.fetch<SanityDocument>(POST_QUERY, await params, options);
   return (
-    <ProtectedContent>
+    // <ProtectedContent>
     <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
       <Navigation />
       <Container>
         <div className="pt-12 pb-16 relative">
           
-        <Link href="/articles" className="text-sm hover:opacity-70 transition-opacity">
-          ← back to the nic(h)e list
-        </Link>
         <div className="mt-8">
           <div>
             {post.image && (
@@ -87,7 +85,10 @@ export default async function PostPage({
             )}
             <div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight mb-4 text-center lg:text-left">{post.title}</h1>
-              <RainbowBookmark slug={post.slug.current} />
+              <div className="flex flex-row gap-3 mb-4 items-center justify-center lg:justify-start">
+                <RainbowBookmark  company={post.company} />
+                <ApplyButton company={post.company} />
+              </div>
               <p className="text-xs sm:text-sm text-neutral-500 mb-6 lg:mb-8 text-center lg:text-left">
                 Published: {new Date(post.publishedAt).toLocaleDateString()}
               </p>
@@ -100,6 +101,6 @@ export default async function PostPage({
       </div>
     </Container>
     </div>
-    </ProtectedContent>
+    // </ProtectedContent>
   );
 }

@@ -4,18 +4,7 @@ import ProfileForm from "../components/profile_form";
 import { Navigation } from "../components/header";
 import { Container } from "../components/container";
 import { Skeleton } from "@/components/ui/skeleton";
-
-type ProfileData = {
-    id: number,
-    email: string;
-    first_name: string;
-    last_name: string;
-    linkedin_url: string;
-    resume_url: string;
-    personal_website: string;
-    phone_number: string;
-    access_token: string;
-  };
+import { ProfileData } from "@/app/types";
 
 export default function Profile() {
   const [data, setData] = useState<ProfileData | null>(null);

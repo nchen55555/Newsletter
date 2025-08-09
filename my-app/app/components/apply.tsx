@@ -1,0 +1,260 @@
+'use client'
+import React from "react";
+import { useState } from "react";
+import { useSubscriptionContext } from "./subscription_context";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ProfileData } from "@/app/types";
+import { useEffect } from "react";
+import ProfileInfo from "./profile_info";
+import { ProfileFormState } from "@/app/types";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { CheckCircle2Icon } from "lucide-react";
+import { Terminal } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+
+export default function ApplyButton({ company }: { company: string }) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { isSubscribed } = useSubscriptionContext();
+  const [data, setData] = useState<ProfileData | null>(null);
+  const [additionalInfo, setAdditionalInfo] = useState('');
+  const [appError, setAppError] = useState<string | null>(null)
+  const [appSuccess, setAppSuccess] = useState(false)
+  const [loadingApplied, setLoadingApplied] = useState(false)
+  const [form, setForm] = useState<ProfileFormState>({
+    id: 0,
+    email: "",
+    first_name: "",
+    last_name: "",
+    linkedin_url: "",
+    resume_url: "",
+    personal_website: "",
+    phone_number: "",
+    resume_file: null,
+    profile_image_url: "",
+    profile_image: null,
+    bio: "",
+  });
+  const [access_token, setAccessToken] = useState<string | null>(null);
+
+  const [applied, setApplied] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/get_profile", { credentials: "include" })
+      .then(res => res.json())
+      .then(profile => {
+        // Destructure the fields you need
+        setAccessToken(profile.access_token);
+  
+        // Set the form state
+        setForm({
+          id: profile.id,
+          email: profile.email,
+          first_name: profile.first_name || "",
+          last_name: profile.last_name || "",
+          linkedin_url: profile.linkedin_url || "",
+          resume_url: profile.resume_url || "",
+          personal_website: profile.personal_website || "",
+          phone_number: profile.phone_number || "",
+          resume_file: null,
+          profile_image_url: profile.profile_image_url || "",
+          profile_image: null,
+          bio: profile.bio || "",
+        });
+  
+        // Optionally set the raw data if you still need it
+        setData(profile);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!form.id || !company) return; // wait until both are loaded
+    fetch(`/api/get_application?candidate_id=${form.id}&company_id=${company}`, { credentials: "include" })
+      .then(res => res.json())
+      .then(app => {
+        setApplied(app.existing);
+      });
+  }, [form.id, company]);
+
+
+  if (!isSubscribed) return null;
+
+  async function urlToFile(url: string, filename: string, mimeType?: string): Promise<File> {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new File([blob], filename, { type: mimeType || blob.type });
+  }
+
+  async function handleApply(e: React.FormEvent) {
+    e.preventDefault()
+
+    if (!form) {
+      setAppError("Profile data not loaded. Please try again.");
+      return;
+    }
+
+    if (!form.first_name) {
+      setAppError("First name is required.");
+      return;
+    }
+    if (!form.last_name) {
+      setAppError("Last name is required.");
+      return;
+    }
+    if (!form.phone_number) {
+      setAppError("Phone number is required.");
+      return;
+    }
+    if (!form.linkedin_url) {
+      setAppError("LinkedIn URL is required.");
+      return;
+    }
+
+    if (!form.bio) {
+      setAppError("Bio is required.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('id', form.id.toString());
+    formData.append('first_name', form.first_name);
+    formData.append('last_name', form.last_name);
+    formData.append('linkedin_url', form.linkedin_url);
+    formData.append('personal_website', form.personal_website);
+    formData.append('phone_number', form.phone_number);
+    formData.append('email', form.email)
+    formData.append('bio', form.bio);
+    
+    let resumeFile: File | null = form.resume_file ?? null;
+
+    // If no new file, but we have a resume_url, fetch and convert to File
+    if (!resumeFile && form.resume_url) {
+      const filename = form.resume_url.split('/').pop() || 'resume.pdf';
+      resumeFile = await urlToFile(form.resume_url, filename);
+    }
+    if (!resumeFile) {
+      setAppError('Resume is required.');
+      return;
+    }
+
+    formData.append('resume_file', resumeFile);
+
+    let profileImageFile: File | null = form.profile_image ?? null;
+    if (!profileImageFile && form.profile_image_url) {
+      const filename = form.profile_image_url.split('/').pop() || 'profile.jpg';
+      profileImageFile = await urlToFile(form.profile_image_url, filename);
+    }
+    if (profileImageFile) {
+      formData.append('profile_image', profileImageFile);
+    }
+
+    // TODO: PATCH to /api/profile
+    const res = await fetch('/api/post_profile', { method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+      },
+        body: formData })
+    if (res.ok) {
+        setAppSuccess(true)
+        setLoadingApplied(false)
+    }else {
+        setAppError("Update failed")
+        setLoadingApplied(false)
+    }
+
+    const res2 = await fetch('/api/post_application', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+      },
+      body: JSON.stringify({
+        candidate_id: form.id,
+        company_id: company,
+        additional_info: additionalInfo
+      })
+    })
+    if (res2.ok) {
+      setAppSuccess(true)
+    }else {
+      setAppError("Application failed")
+    }
+  }
+
+
+  if (!data) return <Skeleton className="h-12 w-full" />; // or customize size;
+
+
+  return (
+    <div className="flex justify-center lg:justify-start mb-2">
+  <TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <span>
+        <Button
+          onClick={() => setDialogOpen(true)}
+          variant="default"
+          size="lg"
+          className="bg-black hover:bg-black/90 w-full"
+          type="button"
+          aria-label="submit interest"
+          disabled={applied}
+          style={applied ? { cursor: "not-allowed" } : {}}
+        >
+          submit interest
+        </Button>
+      </span>
+    </TooltipTrigger>
+    {applied && (
+      <TooltipContent>
+        You have already applied to this company.
+      </TooltipContent>
+    )}
+  </Tooltip>
+</TooltipProvider>
+  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <span style={{ display: 'none' }} />
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-5xl w-full p-8 max-h-[80vh] overflow-y-auto" showCloseButton={false}>
+            <DialogHeader className="mb-8">
+              <DialogTitle className="text-2xl font-semibold">Application of Interest</DialogTitle>
+              <DialogDescription className="text-lg mt-2">
+                In the notes section, indicate any additional information that you think would be beneficial for us and our partner companies to know and/or questions you have about the process, company, or more! 
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleApply}>
+            <div className="mb-10">
+              <ProfileInfo form={form} setForm={setForm} />
+            </div>
+            <div className="mb-10">
+            <Label htmlFor="add_info" className="text-base font-medium">Additional Information</Label>
+              <Input id="add_info" name="add_info" type="tel" value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} placeholder="Anything else you'd like us or our partner companies to know? Feel free to drop questions for us here too!" className="h-12 text-lg px-4 mt-2" />
+              {appSuccess && (
+                <Alert className="mt-6">
+                  <CheckCircle2Icon />
+                  <AlertTitle>Application submitted successfully!</AlertTitle>
+                </Alert>
+              )}
+              {appError && (
+                <Alert variant="destructive" className="mt-6">
+                  <Terminal className="h-4 w-4" />
+                  <AlertTitle>{appError}</AlertTitle>s
+                </Alert>
+              )}
+            <div className="flex justify-end mt-8 gap-4">
+              <Button onClick = {() => setLoadingApplied(true)} type="submit" className="h-12 px-8 text-lg">
+              {loadingApplied ? "submitting..." : "submit"}
+              </Button>
+            </div>
+            </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+</div>
+
+  );
+}

@@ -9,6 +9,7 @@ export interface ArticleCardPost {
   _id: string;
   title: string;
   slug: { current: string };
+  company: number;
   publishedAt: string;
   image?: SanityImageSource;
 }

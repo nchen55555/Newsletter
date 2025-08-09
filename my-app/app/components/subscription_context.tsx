@@ -45,9 +45,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         refreshSubscription().then((isSubscribedNow) => {
           setIsSubscribed(isSubscribedNow);
           const flowType = localStorage.getItem('googleAuthFlowType');
-          if (flowType === 'login') {
-            router.push("/articles"); // replaces onSignInSuccess for login
-          } else if (flowType === 'subscribe') {
+          if (flowType === 'subscribe') {
             setShowSubscribeDialog(true); // replaces onSignInSuccess for subscribe
           }
           localStorage.removeItem('googleAuthFlowType');

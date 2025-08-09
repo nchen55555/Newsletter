@@ -56,7 +56,7 @@ export function Subscribe() {
       setLinkedinUrl('')
       await refreshSubscription();
       setShowSubscribeDialog(false);
-      router.push('/articles')
+      router.push('/profile')
     } else {
       setFormError(true)
     }
@@ -71,7 +71,7 @@ export function Subscribe() {
             {formSuccess && (
             <Alert>
                 <CheckCircle2Icon />
-                <AlertTitle>success! you&#39;re subscribed</AlertTitle>
+                <AlertTitle>success! you have access</AlertTitle>
             </Alert>
             )}
         </>
@@ -83,9 +83,9 @@ export function Subscribe() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px] p-8" showCloseButton={false}>
             <DialogHeader className="mb-8">
-              <DialogTitle className="text-2xl font-semibold">Complete Your Subscription</DialogTitle>
+              <DialogTitle className="text-2xl font-semibold">Finish Your Access Application</DialogTitle>
               <DialogDescription className="text-lg mt-2">
-                Thanks for verifying your email with Google. Now add your LinkedIn profile to complete your subscription.
+                Thanks for verifying your email with Google. Now add your LinkedIn profile to complete your application. You&#39;ll need to fill out the rest of your profile later to access the community.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleFormSubmit}>
@@ -108,7 +108,7 @@ export function Subscribe() {
                 {isSubscribed && (
                   <Alert>
                   <CheckCircle2Icon />
-                  <AlertTitle>You&#39;re already subscribed! We&#39;ve logged you in</AlertTitle>
+                  <AlertTitle>You already have access! We&#39;ve logged you in</AlertTitle>
               </Alert>
                 )}
                 {formError && !isSubscribed && (
@@ -119,7 +119,7 @@ export function Subscribe() {
                 )}
               </div>
               <DialogFooter className="mt-8 gap-4">
-                <Button type="submit" disabled={isSubscribed}className="h-12 px-8 text-lg">subscribe</Button>
+                <Button type="submit" disabled={isSubscribed}className="h-12 px-8 text-lg">access</Button>
               </DialogFooter>
             </form>
           </DialogContent>

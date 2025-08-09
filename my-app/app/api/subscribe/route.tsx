@@ -24,7 +24,6 @@ export async function POST(req: NextRequest) {
 
 
     if (existingSubscriber) {
-      console.log('User already subscribed')
       return NextResponse.json({ existingSubscriber: true }, { status: 400 })
     }
 

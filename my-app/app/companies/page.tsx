@@ -75,12 +75,12 @@ export default async function CarouselSize() {
         interest
       </span>
       <span className="absolute left-0 top-full mt-2 min-w-[220px] max-w-screen-sm w-auto bg-white border border-neutral-200 rounded shadow-md px-4 py-2 text-base text-neutral-700 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-300 z-10 break-words whitespace-pre-line">
-        for each company media profile, you&apos;ll have the opportunity to bookmark and indicate interest
+        for each company media profile, you&apos;ll have the opportunity to bookmark and apply
       </span>
     </span>.
   </div>
   <p className="mb-6 text-base text-neutral-700">
-    once you indicate interest, you&apos;ll need to update the required fields in your profile. if there is mutual interest with the startup, we will make the introduction within 72 hours – <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">let&apos;s get connecting!</span>
+    once you indicate interest on the company profile, you&apos;ll be directed to update your profile and submit your application. if there is mutual interest with the startup, we will make the introduction within 72 hours – <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">let&apos;s get connecting!</span>
   </p>
 </div>
                   </div>

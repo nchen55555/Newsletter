@@ -21,7 +21,6 @@ export function GoogleLogin({
     const handleGoogleLogin = async () => {
         setIsAuthLoading(true)
         localStorage.setItem('googleAuthFlowType', flowType);
-        // localStorage.setItem('googleAuthFlow', flowType)
         supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {

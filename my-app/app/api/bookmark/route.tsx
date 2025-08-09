@@ -3,7 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
 export async function POST(req: NextRequest) {
-  const { slug , action } = await req.json();
+  const { company , action } = await req.json();
   
   try {
     const cookieStore = cookies();
@@ -32,11 +32,11 @@ export async function POST(req: NextRequest) {
 
     let updatedBookmarks;
     if (action === "add") {
-        updatedBookmarks = bookmarks.includes(slug)
+        updatedBookmarks = bookmarks.includes(company)
         ? bookmarks
-        : [...bookmarks, slug];
+        : [...bookmarks, company];
     } else if (action === "remove") {
-        updatedBookmarks = bookmarks.filter((s: string) => s !== slug);
+        updatedBookmarks = bookmarks.filter((c: number) => c !== company);
     }
 
     const { error: updateError } = await supabase

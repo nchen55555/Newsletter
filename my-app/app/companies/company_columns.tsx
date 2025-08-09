@@ -2,7 +2,7 @@
  
 import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, SquareArrowUpRight } from "lucide-react"
+import { ArrowUpDown, ArrowUpRight } from "lucide-react"
 import Link from 'next/link'
 
 
@@ -46,7 +46,7 @@ export const columns: ColumnDef<CompanyProfile>[] = [
             {tags.map((tag, index) => {
               return (
                 <Link href={tag} key={index} title={`View Article ${index + 1}`}>
-                  <SquareArrowUpRight className="h-5 w-5 text-gray-600 hover:text-gray-900 transition-colors" />
+                  <ArrowUpRight className="h-5 w-5 text-gray-600 hover:text-gray-900 transition-colors" />
                 </Link>
               )
             })}

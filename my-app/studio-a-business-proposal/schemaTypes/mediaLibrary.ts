@@ -14,6 +14,11 @@ export const mediaLibrary = defineType({
       },
     }),
     defineField({
+      name: 'company',
+      type: 'number',
+      validation: (rule) => rule.required(),
+    }),
+    defineField({
       name: 'publishedAt',
       type: 'datetime',
       initialValue: () => new Date().toISOString(),

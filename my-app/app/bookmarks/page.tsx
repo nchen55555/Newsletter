@@ -7,7 +7,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 
 export default async function Bookmarks() {
-    const POSTS_QUERY = `*[_type == "post" && defined(slug.current)]|order(publishedAt desc){_id, title, slug, publishedAt, image}`;
+    const POSTS_QUERY = `*[_type == "post" && defined(slug.current)]|order(publishedAt desc){_id, title, slug, company, publishedAt, image}`;
     const options = { next: { revalidate: 30 } };
     const posts = await client.fetch(POSTS_QUERY, {}, options);
 
@@ -37,8 +37,8 @@ export default async function Bookmarks() {
     const bookmarks = data?.bookmarked_companies ?? [];
 
     const bookmarkedPosts = posts.filter(
-        (post: ArticleCardPost) => bookmarks.includes(post.slug.current)
-      );
+        (post: ArticleCardPost) => bookmarks.includes(post.company)
+    );
 
 
     return (

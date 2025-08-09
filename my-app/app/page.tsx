@@ -8,6 +8,7 @@ export default async function Home() {
   const options = { next: { revalidate: 30 } };
   const posts = await client.fetch(POSTS_QUERY, {}, options);
 
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white flex flex-col">
       <Navigation />

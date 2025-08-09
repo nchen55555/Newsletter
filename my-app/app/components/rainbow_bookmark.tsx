@@ -1,7 +1,10 @@
 'use client'
+import React from "react";
 import { useState, useEffect } from "react";
+import { useSubscriptionContext } from "./subscription_context";
 
-export default function RainbowBookmark({ slug }: { slug: string }) {
+export default function RainbowBookmark({ company }: { company: number }) {
+  const { isSubscribed } = useSubscriptionContext();
   const [bookmarked, setBookmarked] = useState(false);
 
   // On mount, fetch bookmarks and set initial state
@@ -13,16 +16,18 @@ export default function RainbowBookmark({ slug }: { slug: string }) {
         if (!res.ok) return;
         const { bookmarks } = await res.json();
         if (isMounted) {
-          setBookmarked(Array.isArray(bookmarks) && bookmarks.includes(slug));
+          setBookmarked(Array.isArray(bookmarks) && bookmarks.includes(company));
         }
       } catch (e) {
-        // fail silently, default to not bookmarked
+        console.log("Failed to fetch bookmarks:", e)
       }
     }
     fetchBookmarks();
     return () => { isMounted = false; };
-  }, [slug]);
+  }, [company]);
   const [loading, setLoading] = useState(false);
+
+  if (!isSubscribed) return null;
 
   const handleBookmark = async () => {
     setLoading(true);
@@ -30,7 +35,7 @@ export default function RainbowBookmark({ slug }: { slug: string }) {
       const res = await fetch("/api/bookmark", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, action: bookmarked ? 'remove' : 'add' }),
+        body: JSON.stringify({ company, action: bookmarked ? 'remove' : 'add' }),
       });
       if (res.ok) {
         setBookmarked((b) => !b);
@@ -50,7 +55,7 @@ export default function RainbowBookmark({ slug }: { slug: string }) {
       <button
         aria-label={bookmarked ? "Remove bookmark" : "Add bookmark"}
         onClick={handleBookmark}
-        className="group p-1 rounded transition"
+        className="group p-1 rounded transition bg-black hover:bg-black/90 text-white"
         style={{ outline: "none", border: "none", background: "none" }}
         type="button"
         disabled={loading}
@@ -59,26 +64,17 @@ export default function RainbowBookmark({ slug }: { slug: string }) {
           width={32}
           height={32}
           viewBox="0 0 24 24"
-          fill={bookmarked ? "url(#rainbow-gradient)" : "none"}
-          stroke="url(#rainbow-gradient)"
+          fill={bookmarked ? "#000" : "none"}
+          stroke="#000"
           strokeWidth={2.2}
           strokeLinecap="round"
           strokeLinejoin="round"
           className={`drop-shadow-sm transition-all duration-300 ${loading ? "opacity-50" : ""}`}
         >
-          <defs>
-            <linearGradient id="rainbow-gradient" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#ec4899" />
-              <stop offset="0.25" stopColor="#fbbf24" />
-              <stop offset="0.5" stopColor="#34d399" />
-              <stop offset="0.75" stopColor="#60a5fa" />
-              <stop offset="1" stopColor="#a78bfa" />
-            </linearGradient>
-          </defs>
           <path
             d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
-            fill={bookmarked ? "url(#rainbow-gradient)" : "none"}
-            stroke="url(#rainbow-gradient)"
+            fill={bookmarked ? "#000" : "none"}
+            stroke="#000"
           />
         </svg>
       </button>
