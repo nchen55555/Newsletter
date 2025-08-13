@@ -6,7 +6,7 @@ import { client } from "@/lib/sanity/client";
 import { Container } from "@/app/components/container";
 import { Navigation } from "@/app/components/header";
 import Image from "next/image";
-// import { ProtectedContent } from "@/app/components/protected-content";
+import { ProtectedContent } from "@/app/components/protected-content";
 import { type SanityDocument } from "next-sanity";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import ApplyButton from "@/app/components/apply";
@@ -62,7 +62,7 @@ export default async function PostPage({
 }) {
   const post = await client.fetch<SanityDocument>(POST_QUERY, await params, options);
   return (
-    // <ProtectedContent>
+    <ProtectedContent>
     <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
       <Navigation />
       <Container>
@@ -101,6 +101,6 @@ export default async function PostPage({
       </div>
     </Container>
     </div>
-    // </ProtectedContent>
+    </ProtectedContent>
   );
 }

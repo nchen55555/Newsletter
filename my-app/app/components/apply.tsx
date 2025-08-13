@@ -76,9 +76,17 @@ export default function ApplyButton({ company }: { company: string }) {
     fetch(`/api/get_application?candidate_id=${form.id}&company_id=${company}`, { credentials: "include" })
       .then(res => res.json())
       .then(app => {
-        setApplied(app.existing);
-      });
+        const exists = typeof app.existing === 'string'
+          ? app.existing.toLowerCase() === 'true'
+          : !!app.existing;
+        setApplied(exists);
+      });     
   }, [form.id, company]);
+
+  useEffect(() => {
+    console.log('applied (rendered):', applied, typeof applied);
+  }, [applied]);
+  
 
 
   if (!isSubscribed) return null;

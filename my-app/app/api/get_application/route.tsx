@@ -17,19 +17,18 @@ export async function GET(req: NextRequest) {
         }
 
 
-        const { data: existing, error: fetchError } = await supabase
+        // GET
+        const { count, error } = await supabase
         .from('applications')
-        .select('*')
+        .select('id', { count: 'exact', head: true }) // HEAD request, no body
         .eq('candidate_id', candidate_id)
-        .eq('company_id', company_id)
+        .eq('company_id', company_id);
 
+        if (error) {
+        return NextResponse.json({ error: 'Failed to check application', details: error.message }, { status: 500 });
+        }
 
-      
-      if (fetchError && fetchError.code !== 'PGRST116') { // Ignore "no rows" error
-          return NextResponse.json({ error: 'Failed to check application', details: fetchError.message }, { status: 500 });
-      }
-
-        return NextResponse.json({ existing: existing });
+        return NextResponse.json({ existing: (count ?? 0) > 0 });
 
     } catch (error) {
         console.error('Unexpected error:', error);
@@ -37,6 +36,6 @@ export async function GET(req: NextRequest) {
             error: 'Unexpected error occurred', 
             details: error instanceof Error ? error.message : String(error) 
         }, { status: 500 });
-        }
+    }
     
 }
