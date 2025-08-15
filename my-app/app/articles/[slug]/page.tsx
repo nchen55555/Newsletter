@@ -1,4 +1,4 @@
-import { PortableText, type PortableTextComponents } from '@portabletext/react'
+import { PortableText, type PortableTextComponents, type PortableTextBlock } from '@portabletext/react'
 import imageUrlBuilder from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { client } from "@/lib/sanity/client";
@@ -10,6 +10,7 @@ import { ProtectedContent } from "@/app/components/protected-content";
 import { type SanityDocument } from "next-sanity";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import ApplyButton from "@/app/components/apply";
+import { TableOfContents } from "@/app/components/table-of-contents";
 
 const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]`;
 
@@ -21,7 +22,7 @@ const urlFor = (source: SanityImageSource) =>
 
 const options = { next: { revalidate: 30 } };
 
-const components: PortableTextComponents = {
+const createComponents = (content: PortableTextBlock[]): PortableTextComponents => ({
   types: {
     image: ({ value }) => {
       const imageUrl = urlFor(value)?.width(1200).url();
@@ -47,12 +48,24 @@ const components: PortableTextComponents = {
   },  
   marks: {},
   block: {
-    h1: ({ children }) => <h1 className="text-4xl font-bold mb-6">{children}</h1>,
-    h2: ({ children }) => <h2 className="text-3xl font-semibold mb-5">{children}</h2>,
-    h3: ({ children }) => <h3 className="text-2xl font-medium mb-4">{children}</h3>,
-    normal: ({ children }) => <p className="text-base mb-4">{children}</p>,
+    h1: ({ children, value }) => {
+      const index = content.findIndex(block => block === value);
+      const id = `heading-${index}`;
+      return <h1 id={id} className="text-4xl font-medium mb-6 scroll-mt-24">{children}</h1>;
+    },
+    h2: ({ children, value }) => {
+      const index = content.findIndex(block => block === value);
+      const id = `heading-${index}`;
+      return <h2 id={id} className="text-3xl font-medium mb-5 scroll-mt-24">{children}</h2>;
+    },
+    h3: ({ children, value }) => {
+      const index = content.findIndex(block => block === value);
+      const id = `heading-${index}`;
+      return <h3 id={id} className="text-2xl font-normal mb-4 scroll-mt-24">{children}</h3>;
+    },
+    normal: ({ children }) => <p className="text-base mb-4 leading-relaxed">{children}</p>,
   },
-};
+});
 
 
 export default async function PostPage({
@@ -61,45 +74,64 @@ export default async function PostPage({
   params: Promise<{ slug: string }>;
 }) {
   const post = await client.fetch<SanityDocument>(POST_QUERY, await params, options);
+  const components = createComponents(post.body || []);
+  
   return (
     <ProtectedContent>
     <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
       <Navigation />
       <Container>
-        <div className="pt-12 pb-16 relative">
-          
-        <div className="mt-8">
-          <div>
-            {post.image && (
-              <div className="relative w-full mb-12">
-                <Image
-                  src={urlFor(post.image)?.url() || ''}
-                  alt={post.title}
-                  width={post.image.asset?.metadata?.dimensions?.width || 800}
-                  height={post.image.asset?.metadata?.dimensions?.height || 600}
-                  className="rounded-2xl object-contain w-full h-auto"
-                  sizes="(max-width: 1024px) 100vw, 650px"
-                  priority
-                />
-              </div>
-            )}
-            <div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight mb-4 text-center lg:text-left">{post.title}</h1>
-              <div className="flex flex-row gap-3 mb-4 items-center justify-center lg:justify-start">
-                <RainbowBookmark  company={post.company} />
-                <ApplyButton company={post.company} />
-              </div>
-              <p className="text-xs sm:text-sm text-neutral-500 mb-6 lg:mb-8 text-center lg:text-left">
-                Published: {new Date(post.publishedAt).toLocaleDateString()}
-              </p>
-              <div className="prose prose-neutral max-w-full [&>*]:clear-both">
-                {Array.isArray(post.body) && <PortableText value={post.body} components={components} />}
-              </div>
+        <div className="pt-12 pb-16">
+          {/* Main Layout with Sidebar */}
+          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* Table of Contents Sidebar */}
+              <aside className="lg:w-64 flex-shrink-0 order-2 lg:order-1">
+                {Array.isArray(post.body) && post.body.length > 0 && (
+                  <TableOfContents content={post.body} />
+                )}
+              </aside>
+              
+              {/* Main Article Content */}
+              <main className="flex-1 order-1 lg:order-2 min-w-0">
+                <div className="px-4 lg:px-8">
+                  {/* Header Section - aligned with main content */}
+                  <div className="mb-12">
+                    {post.image && (
+                      <div className="relative w-full mb-8">
+                        <Image
+                          src={urlFor(post.image)?.url() || ''}
+                          alt={post.title}
+                          width={post.image.asset?.metadata?.dimensions?.width || 800}
+                          height={post.image.asset?.metadata?.dimensions?.height || 600}
+                          className="rounded-2xl object-contain w-full h-auto"
+                          sizes="(max-width: 1024px) 100vw, 650px"
+                          priority
+                        />
+                      </div>
+                    )}
+                    <div className="text-center lg:text-left">
+                      <h1 className="text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight mb-4">{post.title}</h1>
+                      <div className="flex flex-row gap-3 mb-4 items-center justify-center lg:justify-start">
+                        <RainbowBookmark company={post.company} />
+                        <ApplyButton company={post.company} />
+                      </div>
+                      <p className="text-xs sm:text-sm text-neutral-500 mb-8">
+                        Published: {new Date(post.publishedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Article Body */}
+                  <div className="prose prose-neutral prose-lg max-w-none">
+                    {Array.isArray(post.body) && <PortableText value={post.body} components={components} />}
+                  </div>
+                </div>
+              </main>
             </div>
           </div>
         </div>
-      </div>
-    </Container>
+      </Container>
     </div>
     </ProtectedContent>
   );
