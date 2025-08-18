@@ -124,6 +124,7 @@ export function Navigation() {
       {menuOpen && (
         <div className="md:hidden px-8 pb-4 flex flex-col gap-4 text-sm font-medium bg-white border-b border-neutral-100 animate-fade-in-down">
           <Link href="/about" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>about</Link>
+          <NavActions />
           {isSubscribed && (
             <>
               <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>portfolio</Link>
@@ -131,7 +132,7 @@ export function Navigation() {
               <Link href="/people" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>people</Link>
             </>
           )}
-        </div>
+        </div>   
       )}
     </nav>
   );
