@@ -77,7 +77,7 @@ export default async function PostPage({
   const components = createComponents(post.body || []);
   
   return (
-    <ProtectedContent>
+    // <ProtectedContent>
     <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
       <Navigation />
       <Container>
@@ -133,6 +133,6 @@ export default async function PostPage({
         </div>
       </Container>
     </div>
-    </ProtectedContent>
+    // </ProtectedContent>
   );
 }
