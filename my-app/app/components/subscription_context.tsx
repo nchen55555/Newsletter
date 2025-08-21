@@ -28,7 +28,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setIsSubscribed(!!session); // or your real subscription check
       setLoading(false);
     });
-  }, []);
+  }, [supabase.auth]);
 
 
   const refreshSubscription = useCallback(async () => {
@@ -57,7 +57,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       }
     });
     return () => subscription.unsubscribe();
-  }, [router]);
+  }, [router, refreshSubscription, supabase.auth]);
 
   return (
     <SubscriptionContext.Provider value={{ isSubscribed,

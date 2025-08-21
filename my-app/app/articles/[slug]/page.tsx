@@ -6,7 +6,7 @@ import { client } from "@/lib/sanity/client";
 import { Container } from "@/app/components/container";
 import { Navigation } from "@/app/components/header";
 import Image from "next/image";
-import { ProtectedContent } from "@/app/components/protected-content";
+
 import { type SanityDocument } from "next-sanity";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import ApplyButton from "@/app/components/apply";
