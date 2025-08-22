@@ -30,25 +30,25 @@ function CompanyRow({
           ? 'bg-neutral-50' 
           : 'hover:bg-neutral-50'
       }`}>
-        <td className="px-4 py-4 border-b border-neutral-200">
+        <td className="px-3 md:px-4 py-3 md:py-4 border-b border-neutral-200">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <span className="text-lg font-medium text-neutral-800">{company.alt || `Company ${company.company.toString()}`}</span>
+            <div className="flex items-center gap-2 md:gap-4">
+              <span className="text-base md:text-lg font-medium text-neutral-800">{company.alt || `Company ${company.company.toString()}`}</span>
               {company.tags && company.tags.length > 0 && (
-                <span className="inline-block px-3 py-1 text-xs font-medium bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 text-neutral-700 rounded-full border border-neutral-200">
+                <span className="inline-block px-2 md:px-3 py-1 text-xs font-medium bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 text-neutral-700 rounded-full border border-neutral-200">
                   article published
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-2 md:gap-8">
               {company.caption && (
-                <span className="text-base text-neutral-600">
+                <span className="text-sm md:text-base text-neutral-600 hidden sm:block">
                   {company.caption}
                 </span>
               )}
               <button
                 onClick={onToggle}
-                className="flex items-center justify-center w-8 h-8 hover:bg-black/5 transition-colors ml-4 rounded"
+                className="flex items-center justify-center w-8 h-8 hover:bg-black/5 transition-colors ml-2 md:ml-4 rounded"
               >
                 {isExpanded ? (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,10 +68,10 @@ function CompanyRow({
       {/* Expanded Content */}
       {isExpanded && (
         <tr className="bg-neutral-50">
-          <td colSpan={1} className="px-4 py-6">
-            <div className="flex flex-col lg:flex-row gap-8">
+          <td colSpan={1} className="px-3 md:px-4 py-4 md:py-6">
+            <div className="flex flex-col lg:flex-row gap-4 md:gap-8">
               {/* Company Logo */}
-              <div className="lg:w-1/3">
+              <div className="w-full lg:w-1/3">
                 {company.imageUrl && (
                   <div className="rounded-lg overflow-hidden">
                     <Image
@@ -86,18 +86,18 @@ function CompanyRow({
               </div>
               
               {/* Right: Description and Details */}
-              <div className="lg:w-2/3 space-y-6">
+              <div className="w-full lg:w-2/3 space-y-4 md:space-y-6">
                 <div>
-                  <p className="text-lg text-neutral-600 leading-relaxed mb-6">
+                  <p className="text-base md:text-lg text-neutral-600 leading-relaxed mb-4 md:mb-6">
                     {company.description}
                   </p>
                   
                   {/* Visit Profile Link or Coming Soon */}
-                  <div className="mb-6">
+                  <div className="mb-4 md:mb-6">
                     {company.tags && company.tags.length > 0 ? (
                       <Link 
                         href={`/${company.tags[0]}`}
-                        className="inline-flex items-center gap-2 text-lg font-medium text-neutral-800 hover:text-neutral-600 transition-colors underline"
+                        className="inline-flex items-center gap-2 text-base md:text-lg font-medium text-neutral-800 hover:text-neutral-600 transition-colors underline"
                       >
                         Visit Profile
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,7 +105,7 @@ function CompanyRow({
                         </svg>
                       </Link>
                     ) : (
-                      <span className="text-lg font-medium text-neutral-500 italic">
+                      <span className="text-base md:text-lg font-medium text-neutral-500 italic">
                         Article coming soon
                       </span>
                     )}

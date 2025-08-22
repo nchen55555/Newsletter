@@ -69,7 +69,7 @@ export function NavActions() {
         <DropdownMenu>
           <DropdownMenuTrigger>
             <Avatar className="cursor-pointer">
-              {avatarUrl && <AvatarImage src={avatarUrl} alt="Profile picture" />}
+              {avatarUrl && <AvatarImage src={avatarUrl} alt="Profile picture" className="object-cover w-full h-full" />}
               <AvatarFallback
                 className="text-white font-semibold"
                 style={fallbackStyle}

@@ -33,6 +33,12 @@ export default function BlogTypingDemo({ onTypingDone }: { onTypingDone?: () => 
         transition={{ duration: 1 }}
         className="relative z-10 w-full max-w-2xl mx-auto bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl p-10 border border-neutral-200"
       >
+        {/* Beta tag with rainbow gradient */}
+        <div className="absolute -top-3 -right-3 z-20">
+          <span className="inline-block px-3 py-1 text-sm font-bold text-white bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 via-indigo-500 to-purple-500 rounded-full shadow-lg animate-pulse">
+            BETA
+          </span>
+        </div>
         <div className="rounded-xl px-4 py-2 whitespace-pre-wrap text-gray-800 text-2xl leading-relaxed bg-white/95 border border-neutral-100 shadow-sm">
           {(() => {
             // The phrase to highlight
