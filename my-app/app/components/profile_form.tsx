@@ -148,7 +148,7 @@ export default function ProfileForm({
       if (res.ok) {
         setFormSuccess(true)
       } else {
-        setFormError(`Update failed, check your fields!`)
+        setFormError(`Update failed, check your fields! Your profile picture may be too large`)
       }
     } catch (e) {
       console.error("Failed to update profile:", e);
