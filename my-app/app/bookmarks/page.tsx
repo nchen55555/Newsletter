@@ -1,15 +1,29 @@
 import { Navigation } from '@/app/components/header'
 import { Container } from '@/app/components/container'
 import { client } from '@/lib/sanity/client'
-import { ArticleCards, ArticleCardPost } from '@/app/components/article_issues';
+import CompanyCards from '@/app/companies/company-cards';
+import { CompanyWithImageUrl, CompanyData } from '@/app/types';
 import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
+import imageUrlBuilder from "@sanity/image-url";
 
 export default async function Bookmarks() {
-    const POSTS_QUERY = `*[_type == "post" && defined(slug.current)]|order(publishedAt desc){_id, title, slug, company, publishedAt, image}`;
+    // Query companies from mediaLibrary instead of posts
+    const COMPANIES_QUERY = `*[
+        _type == "mediaLibrary"
+      ]{
+        _id,
+        company,
+        image,
+        publishedAt,
+        alt,
+        caption,
+        description,
+        tags
+      }`;
     const options = { next: { revalidate: 30 } };
-    const posts = await client.fetch(POSTS_QUERY, {}, options);
+    const companies = await client.fetch(COMPANIES_QUERY, {}, options);
 
     const cookieStore = cookies();
 
@@ -36,9 +50,17 @@ export default async function Bookmarks() {
 
     const bookmarks = data?.bookmarked_companies ?? [];
 
-    const bookmarkedPosts = posts.filter(
-        (post: ArticleCardPost) => bookmarks.includes(post.company)
+    // Filter companies by bookmarked company IDs
+    const bookmarkedCompanies = companies.filter(
+        (company: CompanyData) => bookmarks.includes(company.company)
     );
+
+    // Build image URLs for bookmarked companies (same logic as companies page)
+    const builder = imageUrlBuilder(client);
+    const companiesWithImageUrls: CompanyWithImageUrl[] = bookmarkedCompanies.map((company: CompanyData) => ({
+        ...company,
+        imageUrl: company.image ? builder.image(company.image).url() : null
+    }));
 
 
     return (
@@ -47,9 +69,15 @@ export default async function Bookmarks() {
             <div className="pt-12 pb-4 relative">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.02),transparent)] pointer-events-none"></div>
             <Container>
-              <div className="bg-white rounded-2xl shadow-md border border-neutral-200 px-8 py-10 w-full sm:w-5/6 md:w-4/5 lg:w-3/4 xl:w-[70%] mx-auto">
-                <h2 className="text-3xl font-semibold mb-8">Bookmarked Articles</h2>
-                <ArticleCards posts={bookmarkedPosts} compact />
+              <div className="px-8 py-10">
+                <h2 className="text-3xl font-semibold mb-8 text-center">Bookmarked Profiles</h2>
+                {companiesWithImageUrls.length > 0 ? (
+                  <CompanyCards companies={companiesWithImageUrls} />
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-neutral-600">No bookmarked companies yet. Visit the companies page to bookmark some profiles!</p>
+                  </div>
+                )}
               </div>
             </Container>
             </div>

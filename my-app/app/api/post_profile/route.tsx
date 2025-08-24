@@ -26,7 +26,7 @@ export async function PATCH(req: NextRequest) {
     const formData = await req.formData();
     const requiredFields = [
       'first_name', 'last_name', 'linkedin_url', 
-      'resume_file', 'phone_number', 'id', 'email', 'bio'
+      'resume_file', 'phone_number', 'id', 'email', 'bio', 'profile_image'
     ];
 
 
@@ -127,6 +127,8 @@ export async function PATCH(req: NextRequest) {
         resume_url: resume_url,
         profile_image_url: profile_image_file ? profile_image_url : null,
         bio: formData.get('bio'),
+        is_public_profile: formData.get('is_public_profile'),
+        newsletter_opt_in: formData.get('newsletter_opt_in')
       })
       .eq('id', Number(formData.get('id')))
       .eq('email', formData.get('email'));

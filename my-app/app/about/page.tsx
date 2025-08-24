@@ -16,45 +16,32 @@ export default function AboutPage() {
             welcome to the niche
           </h1>
           <p className="text-lg text-neutral-600 mb-10">
-            <strong>the niche</strong> is a newsletter-turned-marketplace and <span className="relative group inline-block align-middle">
+            <strong>the niche</strong> is a newsletter-turned-marketplace
+            that partners and reports on some of the highest-growth startups. We connect and match our partner startups with early talent, hand-picked and introduced by a <span className="relative group inline-block align-middle">
               <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">
                 private invite-based community
               </span>
               <span className="absolute left-0 top-full mt-2 min-w-[220px] max-w-screen-sm w-auto bg-white border border-neutral-200 rounded shadow-md px-4 py-2 text-lg text-neutral-700 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-300 z-10 break-words whitespace-pre-line">
-                200 students from Harvard, MIT, Stanford, and Berkeley, hand-picked through academic and industry recommendations
+                a referral-based network for those that want access to this beta
               </span>
-            </span>
-            that partners with some of the highest-growth startups to connect them with the brightest students from top universities.
+            </span> through our personal network and a variety of industry-specific evaluations. 
           </p>
 
           <p className="text-lg text-neutral-600 mb-10">
-            <strong>we start with a simple statement</strong> talent discovery amongst emerging startups has always been challenging. ironically, early talent is often keen on taking on more entrepreneurial pathways, but struggle to find the <span className="relative group inline-block align-middle">
-              <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">
-                right opportunities at the right time.
-              </span>
-              <span className="absolute left-0 top-full mt-2 min-w-[220px] max-w-screen-sm w-auto bg-white border border-neutral-200 rounded shadow-md px-4 py-2 text-lg text-neutral-700 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-300 z-10 break-words whitespace-pre-line">
-                Cursor back in 2022
-              </span>
-            </span>
+            early talent is introduced via referral and in this public beta, students who are referred can apply to join the network. we do a quick screen and if there is a mutual fit, they are given access to read our company profiles! <strong>to gain access to connecting with our partner startups, a candidate must complete a short evaluation geared towards their skillset and background.</strong> we use this to index upon how we filter and match each candidate to our partner startups 
           </p>
-
           <p className="text-lg text-neutral-600 mb-10">
-            in a world of <strong>increasingly ambiguous landing pages</strong> powered by <span className="relative group inline-block align-middle">
-              <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">
-                VC buzzwords
-              </span>
-              <span className="absolute left-0 top-full mt-2 min-w-[220px] max-w-screen-sm w-auto bg-white border border-neutral-200 rounded shadow-md px-4 py-2 text-lg text-neutral-700 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-300 z-10 break-words whitespace-pre-line">
-                B2B Consumer AI SaaS
-              </span>
-            </span> and AI-generated content, understanding what the startup does and betting on their trajectory is proving more and more difficult.
+            <strong>we start with a simple statement</strong> talent matching and discovery is high-friction yet both sides of the marketplace are eager to connect.
           </p>
           <p className="text-lg text-neutral-600 mb-10">
             <strong>that is what the niche is here to solve</strong>
           </p>
+
+
           <div className="mt-12 mb-10">
             <Accordion title="the marketplace">
               <ul className="space-y-4 text-neutral-700 text-lg mt-4">
-                <li><strong>our cohort</strong> invite-only, must opt-in to indicate active interest and involvement, hand-picked from Harvard, MIT, Berkeley, and Stanford based on academic excellence, work experience, and entrepreneurial drive</li>
+                <li><strong>our students</strong> are introduced invite-only with filters including an application and evaluations geared towards their specific skillset and background. our early talent must opt-in to indicate active interest and involvement</li>
                 <li><strong>our partners</strong> Series A-D, high-growth companies committed to hiring and discovering the next generation of early talent</li>
               </ul>
             </Accordion>
@@ -62,7 +49,7 @@ export default function AboutPage() {
           <div className="mt-12 mb-10">
             <Accordion title="how it works">
               <ul className="space-y-4 text-neutral-700 text-lg mt-4">
-                <li><strong>each week</strong> we drop a <span className="relative group inline-block align-middle">
+                <li><strong>every 3-5 days</strong> we drop a <span className="relative group inline-block align-middle">
               <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">
                 company profile
               </span>

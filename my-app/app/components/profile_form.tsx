@@ -20,6 +20,8 @@ export default function ProfileForm({
   access_token,
   profile_image_url,
   bio,
+  is_public_profile,
+  newsletter_opt_in,
 }: {
   id: number,
   email: string,
@@ -32,6 +34,8 @@ export default function ProfileForm({
   access_token: string,
   profile_image_url: string,
   bio: string,
+  is_public_profile?: boolean,
+  newsletter_opt_in?: boolean,
 }) {
   const router = useRouter();
   const { isSubscribed } = useSubscriptionContext()
@@ -55,6 +59,8 @@ export default function ProfileForm({
     profile_image_url: profile_image_url || null,
     profile_image: null,
     bio: bio || "",
+    is_public_profile: is_public_profile || false,
+    newsletter_opt_in: newsletter_opt_in || false,
   });
 
   const [formError, setFormError] = useState<string | null>(null)
@@ -105,6 +111,8 @@ export default function ProfileForm({
       formData.append('phone_number', form.phone_number);
       formData.append('email', form.email)
       formData.append('bio', form.bio);
+      formData.append('is_public_profile', form.is_public_profile.toString());
+      formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
       
       let resumeFile: File | null = form.resume_file ?? null;
       if (!resumeFile && form.resume_url) {
@@ -122,9 +130,12 @@ export default function ProfileForm({
         const filename = form.profile_image_url.split('/').pop() || 'profile.jpg';
         profileImageFile = await urlToFile(form.profile_image_url, filename);
       }
-      if (profileImageFile) {
-        formData.append('profile_image', profileImageFile);
+      if(!profileImageFile){
+        setFormError('Profile image is required.');
+        return;
       }
+      formData.append('profile_image', profileImageFile);
+      
 
       const res = await fetch('/api/post_profile', { 
         method: 'PATCH',

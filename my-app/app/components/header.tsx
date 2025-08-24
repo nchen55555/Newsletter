@@ -51,7 +51,8 @@ export function Navigation() {
           !profile.last_name ||
           !profile.phone_number ||
           !profile.bio || 
-          !profile.linkedin_url;
+          !profile.linkedin_url ||
+          !profile.profile_image_url;
 
         if (!didSet) setProfileAlert(incomplete);
       } catch (e) {
@@ -126,9 +127,9 @@ export function Navigation() {
           <Link href="/about" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>about</Link>
           {isSubscribed && (
             <>
-              <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>portfolio</Link>
-              <Link href="/companies" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>companies</Link>
-              <Link href="/people" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>people</Link>
+              <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>articles</Link>
+              <Link href="/companies" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>portfolio</Link>
+              {/* <Link href="/people" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>people</Link> */}
             </>
           )}
           <NavActions />

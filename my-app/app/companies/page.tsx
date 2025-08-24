@@ -6,7 +6,7 @@ import { SanityDocument } from "next-sanity"
 import { SanityImageSource } from "@sanity/image-url/lib/types/types"
 import imageUrlBuilder from "@sanity/image-url"
 import { ProtectedContent } from "../components/protected-content"
-import { CompanyTable } from "./company-table"
+import CompanyCards from "./company-cards"
 
 export interface CompanyData extends SanityDocument {
   company: number
@@ -69,8 +69,8 @@ export default async function PortfolioPage() {
                 </p>
               </div>
 
-              {/* Portfolio Table */}
-              <CompanyTable companies={companies} />
+              {/* Portfolio Cards */}
+              <CompanyCards companies={companies} />
             </div>
           </Container>
         </div>

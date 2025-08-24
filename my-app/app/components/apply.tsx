@@ -12,8 +12,7 @@ import { ProfileFormState } from "@/app/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2Icon } from "lucide-react";
-import { Terminal } from "lucide-react";
+import { CheckCircle2Icon, Terminal, Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
@@ -25,6 +24,9 @@ export default function ApplyButton({ company }: { company: string }) {
   const [appError, setAppError] = useState<string | null>(null)
   const [appSuccess, setAppSuccess] = useState(false)
   const [loadingApplied, setLoadingApplied] = useState(false)
+  const [profileSectionExpanded, setProfileSectionExpanded] = useState(false)
+  const [profileIncomplete, setProfileIncomplete] = useState(false)
+  const [checkingProfile, setCheckingProfile] = useState(true)
   const [form, setForm] = useState<ProfileFormState>({
     id: 0,
     email: "",
@@ -38,15 +40,40 @@ export default function ApplyButton({ company }: { company: string }) {
     profile_image_url: "",
     profile_image: null,
     bio: "",
+    is_public_profile: false,
+    newsletter_opt_in: false,
+    status: "",
+    evaluation_url: "",
   });
   const [access_token, setAccessToken] = useState<string | null>(null);
 
   const [applied, setApplied] = useState(false);
 
   useEffect(() => {
-    fetch("/api/get_profile", { credentials: "include" })
-      .then(res => res.json())
-      .then(profile => {
+    const ac = new AbortController();
+    
+    (async () => {
+      try {
+        const res = await fetch("/api/get_profile", {
+          credentials: "include",
+          cache: "no-store",
+          signal: ac.signal,
+        });
+        if (!res.ok) return;
+        const profile = await res.json();
+
+        // Check profile completeness
+        const incomplete =
+          !profile.resume_url ||
+          !profile.first_name ||
+          !profile.last_name ||
+          !profile.phone_number ||
+          !profile.bio || 
+          !profile.linkedin_url ||
+          !profile.profile_image_url;
+
+        setProfileIncomplete(incomplete);
+
         // Destructure the fields you need
         setAccessToken(profile.access_token);
   
@@ -64,11 +91,23 @@ export default function ApplyButton({ company }: { company: string }) {
           profile_image_url: profile.profile_image_url || "",
           profile_image: null,
           bio: profile.bio || "",
+          is_public_profile: profile.is_public_profile,
+          newsletter_opt_in: profile.newsletter_opt_ine,
+          status: profile.status,
+          evaluation_url: profile.evaluation_url,
         });
   
         // Optionally set the raw data if you still need it
         setData(profile);
-      });
+      } catch (e) {
+        console.error("Failed to fetch profile:", e);
+        setProfileIncomplete(false); // fail-closed
+      } finally {
+        setCheckingProfile(false);
+      }
+    })();
+
+    return () => ac.abort();
   }, []);
 
   useEffect(() => {
@@ -205,13 +244,13 @@ export default function ApplyButton({ company }: { company: string }) {
         <Button
           onClick={() => setDialogOpen(true)}
           variant="default"
-          size="lg"
-          className="bg-black hover:bg-black/90 w-full"
+          className="inline-flex items-center justify-center bg-neutral-900 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-neutral-800 transition-colors text-sm w-full"
           type="button"
           aria-label="submit interest"
           disabled={applied}
           style={applied ? { cursor: "not-allowed" } : {}}
         >
+          <Send className="w-4 h-4 mr-2" />
           submit interest
         </Button>
       </span>
@@ -236,11 +275,48 @@ export default function ApplyButton({ company }: { company: string }) {
             </DialogHeader>
             <form onSubmit={handleApply}>
             <div className="mb-10">
-              <ProfileInfo form={form} setForm={setForm} />
+              <div className="border border-neutral-200 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setProfileSectionExpanded(!profileSectionExpanded)}
+                  className="flex items-center justify-between w-full p-4 text-left hover:bg-neutral-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <h3 className="text-lg font-medium text-neutral-800">Profile Information{' '}
+                      {profileIncomplete && !checkingProfile && (
+                      <span className="inline-block px-2 py-1 text-xs font-semibold text-white bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 rounded-full">
+                        Incomplete
+                      </span>
+                    )}
+                    {!profileIncomplete && !checkingProfile && (
+                      <span className="inline-block px-2 py-1 text-xs font-semibold text-white bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 rounded-full">
+                        Complete
+                      </span>
+                    )}
+                      </h3>
+                      <p className="text-sm text-neutral-600">Review and update your profile details</p>
+                    </div>
+                  </div>
+                  <svg 
+                    className={`w-5 h-5 text-neutral-600 transition-transform ${profileSectionExpanded ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {profileSectionExpanded && (
+                  <div className="px-4 pb-4 border-t border-neutral-200">
+                    <ProfileInfo form={form} setForm={setForm} />
+                  </div>
+                )}
+              </div>
             </div>
             <div className="mb-10">
-            <Label htmlFor="add_info" className="text-base font-medium">Additional Information</Label>
-              <Input id="add_info" name="add_info" type="tel" value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} placeholder="Anything else you'd like us or our partner companies to know? Feel free to drop questions for us here too!" className="h-12 text-lg px-4 mt-2" />
+            <Label htmlFor="add_info" className="text-base font-medium">Intro Blurb</Label>
+              <Input id="add_info" name="add_info" type="tel" value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} placeholder="Write a quick sentence introduction to the founder of the company and any questions you have for them!" className="h-12 text-lg px-4 mt-2" />
               {appSuccess && (
                 <Alert className="mt-6">
                   <CheckCircle2Icon />

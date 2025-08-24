@@ -12,6 +12,14 @@ export async function GET(){
         if (!session?.user?.email) {
           return NextResponse.json({ isSubscribed: false })
         }
+
+        // Validate that the user actually exists in Supabase Auth
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        if (userError || !user) {
+          // User doesn't exist in auth anymore, clear the session
+          await supabase.auth.signOut()
+          return NextResponse.json({ isSubscribed: false })
+        }
         // Check if email exists in subscribers table
         const { data: subscriber, error: subError } = await supabase
         .from('subscribers')
@@ -19,6 +27,12 @@ export async function GET(){
         .eq('email', session.user.email)
         .single();
     
+        // If no subscriber found (deleted account), return not subscribed
+        if (subError && subError.code === 'PGRST116') {
+          return NextResponse.json({ isSubscribed: false })
+        }
+        
+        // For other errors, throw them
         if (subError) throw subError
 
         return NextResponse.json({ 
@@ -33,7 +47,11 @@ export async function GET(){
             first_name: subscriber?.first_name,
             last_name: subscriber?.last_name, 
             profile_image_url: subscriber?.profile_image_url,
-            access_token: accessToken
+            is_public_profile: subscriber?.is_public_profile,
+            newsletter_opt_in: subscriber?.newsletter_opt_in,
+            access_token: accessToken,
+            status: subscriber?.status,
+            evaluation_url: subscriber?.evaluation_url
         })
 
     } catch (error) {

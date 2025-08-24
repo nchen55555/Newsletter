@@ -6,7 +6,7 @@ import { client } from "@/lib/sanity/client";
 import { Container } from "@/app/components/container";
 import { Navigation } from "@/app/components/header";
 import Image from "next/image";
-
+import { ProtectedContent } from "@/app/components/protected-content";
 import { type SanityDocument } from "next-sanity";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import ApplyButton from "@/app/components/apply";
@@ -77,7 +77,7 @@ export default async function PostPage({
   const components = createComponents(post.body || []);
   
   return (
-    // <ProtectedContent>
+    <ProtectedContent>
     <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
       <Navigation />
       <Container>
@@ -87,9 +87,18 @@ export default async function PostPage({
             <div className="flex flex-col lg:flex-row gap-8">
               {/* Table of Contents Sidebar */}
               <aside className="lg:w-64 flex-shrink-0 order-2 lg:order-1">
-                {Array.isArray(post.body) && post.body.length > 0 && (
-                  <TableOfContents content={post.body} />
-                )}
+                {/* Action Buttons - Always visible */}
+                <div className="sticky top-6 mb-6">
+                  <div className="flex flex-row gap-3 mb-6">
+                    <RainbowBookmark company={post.company} />
+                    <ApplyButton company={post.company} />
+                  </div>
+                  
+                  {/* Table of Contents */}
+                  {Array.isArray(post.body) && post.body.length > 0 && (
+                    <TableOfContents content={post.body} />
+                  )}
+                </div>
               </aside>
               
               {/* Main Article Content */}
@@ -133,6 +142,6 @@ export default async function PostPage({
         </div>
       </Container>
     </div>
-    // </ProtectedContent>
+    </ProtectedContent>
   );
 }

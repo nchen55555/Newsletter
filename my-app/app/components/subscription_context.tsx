@@ -23,20 +23,52 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const supabase = createClientComponentClient();
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsSubscribed(!!session); // or your real subscription check
-      setLoading(false);
-    });
-  }, [supabase.auth]);
-
-
   const refreshSubscription = useCallback(async () => {
     const res = await fetch("/api/subscription");
     const data = await res.json();
     setIsSubscribed(data.isSubscribed);
     return data.isSubscribed;
   }, []);
+
+  useEffect(() => {
+    // Validate session and user existence
+    const validateAuth = async () => {
+      try {
+        // First get session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !session) {
+          setIsSubscribed(false);
+          setLoading(false);
+          return;
+        }
+
+        // Then validate the user actually exists in Supabase Auth
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError || !user) {
+          // User doesn't exist anymore, clear session and set not subscribed
+          await supabase.auth.signOut();
+          setIsSubscribed(false);
+          setLoading(false);
+          return;
+        }
+
+        // User exists, now check subscription status via API
+        refreshSubscription().then((isSubscribedNow) => {
+          setIsSubscribed(isSubscribedNow);
+          setLoading(false);
+        });
+        
+      } catch (error) {
+        console.error('Auth validation error:', error);
+        setIsSubscribed(false);
+        setLoading(false);
+      }
+    };
+
+    validateAuth();
+  }, [supabase.auth, refreshSubscription]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
