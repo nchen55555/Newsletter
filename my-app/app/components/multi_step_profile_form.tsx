@@ -498,7 +498,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                         </div>
                         <div className="border-l-4 border-neutral-300 pl-4">
                           <p className="text-lg text-neutral-600">
-                            <strong>mobile app:</strong> a mobile friendly app of The Niche with capabilities such as getting access and logging in, storing the candidates information in a database
+                            <strong>mobile app:</strong> a mobile app of The Niche with very basic capabilities such as getting access and logging in, storing the candidates information in a database
                           </p>
                         </div>
                       </div>
