@@ -321,7 +321,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                   <div className="flex-shrink-0 w-6 h-6 bg-neutral-900 text-white rounded-full flex items-center justify-center text-sm font-medium">3</div>
                   <div>
                     <h4 className="text-lg font-bold text-neutral-700">highlight your abilities</h4>
-                    <p className="text-lg text-neutral-600">to get connected with partner startups, you will need to complete a short evaluation of your skills completely customized to your strengths. this will be a one to two hour project and you can do it once or as many times as you would prefer! we use this to filter and determine if you would be a good fit for a particular startup. as part of The Niche, you will be categorized into one of three statuses: 
+                    <p className="text-lg text-neutral-600">to get connected with partner startups, you will need to complete a short evaluation of your skills completely customized to your strengths. this will be a two to three hour project and you can do it once or as many times as you would prefer! we use this to filter and determine if you would be a good fit for a particular startup. as part of The Niche, you will be categorized into one of three statuses: 
                     <br /><br />
                     <strong>VIEWER</strong> means you can peruse and access The Niche. 
                     <br /><br />
@@ -477,12 +477,12 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                       <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
                         <p className="text-lg font-bold text-neutral-800 mb-2">🙋🏻‍♀️ question: </p>
                         <p className="text-lg text-neutral-700">
-                          what is the underlying value proposition of The Niche (from the perspective of both early talent and partner startups) in your honest opinion? if there isn&rsquo;t one, what could be the underlying value proposition? why? you can use AI!
+                          what is the underlying value proposition of The Niche (from the perspective of both early talent and partner startups) in your honest opinion? if there isn&rsquo;t one, what could be the underlying value proposition? why? 
                         </p>
                       </div>
 
                       <p className="text-lg text-neutral-600">
-                        consider how you would expand on this value proposition using particular skillset(s) that you want to highlight. if you are non-technical but more product-oriented for example, you might want to consider what interviews, PRDs, etc. you can come up with. Some technical example avenues you can go down but would also suggest you take some time to think of projects personalized to your skillset(s):
+                        consider how you would expand on this value proposition using particular skillset(s) that you want to highlight. <strong>use AI for this evaluation</strong>. if you are non-technical but more product-oriented for example, you might want to consider what interviews, PRDs, etc. you can come up with. Some technical example avenues you can go down but would also suggest you take some time to think of projects personalized to your skillset(s):
                       </p>
 
                       <div className="space-y-3">
