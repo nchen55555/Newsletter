@@ -56,7 +56,7 @@ export async function PATCH(req: NextRequest) {
 
 
     // 4. Generate a secure file name
-    const fileName = `${user.id}/resume-${Date.now()}-${resume_file.name}`;
+    const fileName = `${user.id}/resume.pdf`;
     let profile_image_url: string | null = null;
 
 
@@ -70,7 +70,7 @@ export async function PATCH(req: NextRequest) {
     });
 
     if (uploadError) {
-      console.error('Full Upload Error:', {
+      console.error('Resume Upload Error:', {
         message: uploadError.message,
         details: uploadError
       });
@@ -80,16 +80,17 @@ export async function PATCH(req: NextRequest) {
       }, { status: 500 });
     }
 
+    const transcriptFileName = `${user.id}/transcript.pdf`;
     const { error: transcriptUploadError } = await supabase.storage
     .from('transcript_files')
-    .upload(fileName, transcript_file, {
+    .upload(transcriptFileName, transcript_file, {
       contentType: transcript_file.type,
       cacheControl: '3600',
       upsert: true,
     });
 
     if (transcriptUploadError) {
-      console.error('Full Upload Error:', {
+      console.error('Transcript Upload Error:', {
         message: transcriptUploadError.message,
         details: transcriptUploadError
       });
@@ -102,7 +103,7 @@ export async function PATCH(req: NextRequest) {
 
     if (profile_image_file){
 
-      const profile_image_file_name = `${user.id}/profile_image-${Date.now()}-${(profile_image_file as File).name}`;
+      const profile_image_file_name = `${user.id}/profile_image.jpg`;
 
 
       const { error: profile_image_uploadError } = await supabase.storage
@@ -142,7 +143,7 @@ export async function PATCH(req: NextRequest) {
 
     const { data: { publicUrl: transcript_url } } = supabase.storage
       .from('transcript_files')
-      .getPublicUrl(fileName);
+      .getPublicUrl(transcriptFileName);
     
       console.log("TRANSCRIPT URL ", transcript_url)
 
