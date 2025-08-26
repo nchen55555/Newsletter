@@ -13,7 +13,7 @@ export type ProfileData = {
     is_public_profile?: boolean;
     newsletter_opt_in?: boolean;
     status?: string;
-    evaluation_url?: string;
+    transcript_url?: string;
   };
 
 export type ProfileFormState = {
@@ -32,7 +32,8 @@ export type ProfileFormState = {
   is_public_profile: boolean;
   newsletter_opt_in: boolean;
   status?: string;
-  evaluation_url?: string;
+  transcript_url?: string;
+  transcript_file?: File | null;
 };
 
 // Company-related types

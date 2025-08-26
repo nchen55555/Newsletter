@@ -50,9 +50,7 @@ export default function ProfileInfo({
                   <p className="text-sm">
                     <strong>VIEWER</strong> status means you can peruse and access The Niche. 
                     <br /><br />
-                    <strong>APPLICANT</strong> status means you have finished the evaluation and can apply to partner startups with our filters in place to ensure that the partner startup is a good fit 
-                    <br /><br />
-                    <strong>COHORT</strong> status means that after we have checked and offered feedback on your profile and evaluation, you have performed exceptionally well such that you may reach out to any startup without our filters (+ other perks moving forward)
+                    <strong>COHORT</strong> status means that you are officially part of the Niche and can connect to our partner startups! 
                   </p>
                 </div>
               </TooltipContent>
@@ -144,6 +142,29 @@ export default function ProfileInfo({
           )}
         </div>
         <hr />
+        <div className="py-6 grid w-full max-w-sm items-center gap-3">
+          <Label htmlFor="transcript_file" className="text-base font-medium">Transcript *</Label>
+          <Input
+            id="transcript_file"
+            name="transcript_file"
+            type="file"
+            accept="application/pdf,.pdf,.doc,.docx"
+            onChange={e => {
+              const file = e.target.files && e.target.files[0];
+              setForm(f => ({ ...f, transcript_file: file || null }));
+            }}
+            className="block w-full text-lg mt-2"
+          />
+          {form.transcript_file && (
+            <div className="mt-2 text-sm text-gray-700">Selected: {form.transcript_file.name}</div>
+          )}
+          {!form.transcript_file && form.transcript_url && (
+            <div className="mt-2 text-sm text-gray-700">
+              Current transcript: <a href={form.transcript_url} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">View uploaded transcript</a>
+            </div>
+          )}
+        </div>
+        <hr />
         <div className="py-6">
           <Label htmlFor="personal_website" className="text-base font-medium">Personal Website</Label>
           <Input
@@ -163,7 +184,7 @@ export default function ProfileInfo({
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <Label htmlFor="is_public_profile" className="text-base font-medium">Make Profile Public</Label>
-              <p className="text-sm text-gray-600 mt-1">Allow your profile to be visible to partner companies and other users</p>
+              <p className="text-sm text-gray-600 mt-1">Allow your profile to be visible to partner companies that want to reach out to you and other students on The Niche</p>
             </div>
             <div className="ml-4">
               <label className="relative inline-flex items-center cursor-pointer">
@@ -192,6 +213,7 @@ export default function ProfileInfo({
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
+                  required
                   id="newsletter_opt_in"
                   checked={form.newsletter_opt_in}
                   onChange={(e) => setForm({ ...form, newsletter_opt_in: e.target.checked })}

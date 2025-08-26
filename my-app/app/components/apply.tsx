@@ -43,7 +43,7 @@ export default function ApplyButton({ company }: { company: string }) {
     is_public_profile: false,
     newsletter_opt_in: false,
     status: "",
-    evaluation_url: "",
+    transcript_file: null,
   });
   const [access_token, setAccessToken] = useState<string | null>(null);
 
@@ -94,7 +94,8 @@ export default function ApplyButton({ company }: { company: string }) {
           is_public_profile: profile.is_public_profile,
           newsletter_opt_in: profile.newsletter_opt_ine,
           status: profile.status,
-          evaluation_url: profile.evaluation_url,
+          transcript_url: profile.transcript_url,
+          transcript_file: null,
         });
   
         // Optionally set the raw data if you still need it

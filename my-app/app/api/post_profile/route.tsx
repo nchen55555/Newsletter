@@ -49,6 +49,12 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Profile image file is invalid' }, { status: 400 });
     }
 
+    const transcript_file = formData.get('transcript_file');
+    if (!(transcript_file instanceof File)) {
+      return NextResponse.json({ error: 'Transcript file is invalid' }, { status: 400 });
+    }
+
+
     // 4. Generate a secure file name
     const fileName = `${user.id}/resume-${Date.now()}-${resume_file.name}`;
     let profile_image_url: string | null = null;
@@ -73,6 +79,26 @@ export async function PATCH(req: NextRequest) {
         details: uploadError.message 
       }, { status: 500 });
     }
+
+    const { error: transcriptUploadError } = await supabase.storage
+    .from('transcript_files')
+    .upload(fileName, transcript_file, {
+      contentType: transcript_file.type,
+      cacheControl: '3600',
+      upsert: true,
+    });
+
+    if (transcriptUploadError) {
+      console.error('Full Upload Error:', {
+        message: transcriptUploadError.message,
+        details: transcriptUploadError
+      });
+      return NextResponse.json({ 
+        error: 'Failed to upload transcript', 
+        details: transcriptUploadError.message 
+      }, { status: 500 });
+    }
+
 
     if (profile_image_file){
 
@@ -114,6 +140,12 @@ export async function PATCH(req: NextRequest) {
       .from('resume_files')
       .getPublicUrl(fileName);
 
+    const { data: { publicUrl: transcript_url } } = supabase.storage
+      .from('transcript_files')
+      .getPublicUrl(fileName);
+    
+      console.log("TRANSCRIPT URL ", transcript_url)
+
 
     // 7. Update subscriber profile
     const { error: dbError } = await supabase
@@ -128,7 +160,8 @@ export async function PATCH(req: NextRequest) {
         profile_image_url: profile_image_file ? profile_image_url : null,
         bio: formData.get('bio'),
         is_public_profile: formData.get('is_public_profile'),
-        newsletter_opt_in: formData.get('newsletter_opt_in')
+        newsletter_opt_in: formData.get('newsletter_opt_in'),
+        transcript_url: transcript_url
       })
       .eq('id', Number(formData.get('id')))
       .eq('email', formData.get('email'));

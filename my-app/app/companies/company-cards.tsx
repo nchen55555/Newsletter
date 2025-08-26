@@ -103,7 +103,7 @@ function CompanyCard({ company }: { company: CompanyWithImageUrl }) {
 
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
               {company.tags && company.tags.length > 0 && (
                 <Link
                   href={`/${company.tags[0]}`}
@@ -128,7 +128,7 @@ function CompanyCard({ company }: { company: CompanyWithImageUrl }) {
 
 export default function CompanyCards({ companies }: CompanyCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
       {companies.map((company) => (
         <CompanyCard key={company._id} company={company} />
       ))}

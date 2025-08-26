@@ -52,7 +52,8 @@ export function Navigation() {
           !profile.phone_number ||
           !profile.bio || 
           !profile.linkedin_url ||
-          !profile.profile_image_url;
+          !profile.profile_image_url ||
+          !profile.transcript_url;
 
         if (!didSet) setProfileAlert(incomplete);
       } catch (e) {

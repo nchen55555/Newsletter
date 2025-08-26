@@ -51,7 +51,7 @@ export async function GET(){
             newsletter_opt_in: subscriber?.newsletter_opt_in,
             access_token: accessToken,
             status: subscriber?.status,
-            evaluation_url: subscriber?.evaluation_url
+            transcript_url: subscriber?.transcript_url
         })
 
     } catch (error) {

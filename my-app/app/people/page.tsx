@@ -1,7 +1,7 @@
 'use client'
 import { Container } from "@/app/components/container";
 import { Navigation } from "@/app/components/header";
-import { ProfileData } from "@/app/types";
+// import { ProfileData } from "@/app/types";
 import React, { useState, useEffect } from "react";
 // import Image from "next/image";
 import { useRouter } from "next/navigation";

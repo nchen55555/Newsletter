@@ -3,8 +3,6 @@ import { client } from '@/lib/sanity/client'
 import imageUrlBuilder from '@sanity/image-url'
 import { CompanyData } from '@/app/types'
 
-const builder = imageUrlBuilder(client)
-
 export async function GET() {
   try {
     const COMPANIES_QUERY = `*[

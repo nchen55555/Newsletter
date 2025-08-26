@@ -22,6 +22,7 @@ export default function ProfileForm({
   bio,
   is_public_profile,
   newsletter_opt_in,
+  transcript_url,
 }: {
   id: number,
   email: string,
@@ -36,6 +37,7 @@ export default function ProfileForm({
   bio: string,
   is_public_profile?: boolean,
   newsletter_opt_in?: boolean,
+  transcript_url?: string,
 }) {
   const router = useRouter();
   const { isSubscribed } = useSubscriptionContext()
@@ -61,6 +63,8 @@ export default function ProfileForm({
     bio: bio || "",
     is_public_profile: is_public_profile || false,
     newsletter_opt_in: newsletter_opt_in || false,
+    transcript_url: transcript_url || "",
+    transcript_file: null,
   });
 
   const [formError, setFormError] = useState<string | null>(null)
@@ -124,6 +128,17 @@ export default function ProfileForm({
         return;
       }
       formData.append('resume_file', resumeFile);
+
+      let transcriptFile: File | null = form.transcript_file ?? null;
+      if (!transcriptFile && form.transcript_url) {
+        const filename = form.transcript_url.split('/').pop() || 'transcript.pdf';
+        transcriptFile = await urlToFile(form.transcript_url, filename);
+      }
+      if (!transcriptFile) {
+        setFormError('Transcript is required.');
+        return;
+      }
+      formData.append('transcript_file', transcriptFile);
 
       let profileImageFile: File | null = form.profile_image ?? null;
       if (!profileImageFile && form.profile_image_url) {

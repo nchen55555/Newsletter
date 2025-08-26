@@ -1,13 +1,12 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { useState, useEffect } from 'react'
 import ProfileInfo from './profile_info'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ProfileFormState, ProfileData } from '@/app/types'
 import { useSubscriptionContext } from './subscription_context'
 import { Alert, AlertTitle } from '@/components/ui/alert'
-import { Terminal, CheckCircle2Icon } from 'lucide-react'
+import { Terminal } from 'lucide-react'
 import CompanyCards from '@/app/companies/company-cards'
 import { CompanyWithImageUrl } from '@/app/types'
 
@@ -24,8 +23,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [companies, setCompanies] = useState<CompanyWithImageUrl[]>([])
   const [loadingCompanies, setLoadingCompanies] = useState(false)
-  const [isEvaluationExpanded, setIsEvaluationExpanded] = useState(false)
-  const [repositoryUrl, setRepositoryUrl] = useState(props.evaluation_url || '')
+
 
   useEffect(() => {
     if (!isSubscribed) {
@@ -72,12 +70,13 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     is_public_profile: props.is_public_profile || false,
     newsletter_opt_in: props.newsletter_opt_in || false,
     status: props.status || "",
+    transcript_file: null,
+    transcript_url: props.transcript_url || "",
   });
 
   console.log("PROFILE FORM STATUS ", form.status)
 
   const [formError, setFormError] = useState<string | null>(null)
-  const [formSuccess, setFormSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
   // Load companies for step 2 (same query as companies page, limited to 20)
@@ -151,6 +150,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       formData.append('bio', form.bio);
       formData.append('is_public_profile', form.is_public_profile.toString());
       formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
+    
       
       // Handle resume file (same logic as original form)
       let resumeFile: File | null = form.resume_file ?? null;
@@ -176,6 +176,17 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       }
       formData.append('profile_image', profileImageFile);
 
+      let transcriptFile: File | null = form.transcript_file ?? null;
+      if (!transcriptFile && form.transcript_url) {
+        const filename = form.transcript_url.split('/').pop() || 'transcript.pdf';
+        transcriptFile = await urlToFile(form.transcript_url, filename);
+      }
+      if (!transcriptFile) {
+        setFormError('Transcript is required.');
+        return;
+      }
+      formData.append('transcript_file', transcriptFile);
+
       // Make request (same as original form)
       const response = await fetch('/api/post_profile', {
         method: 'PATCH',
@@ -200,43 +211,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     }
   }
 
-  const handleStep2Complete = async () => {
-    if (!repositoryUrl.trim()) {
-      setFormError('Please enter a repository URL before submitting.');
-      return;
-    }
 
-    setLoading(true);
-    setFormError(null);
-
-    try {
-      // Create FormData to update profile with evaluation
-      const formData = new FormData();
-      formData.append('id', form.id.toString());
-      formData.append('email', form.email);
-      formData.append('status', 'APPLICANT')
-      formData.append('evaluation_url', repositoryUrl.trim());
-
-      const response = await fetch('/api/post_evaluation', {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${props.access_token}`,
-        },
-        body: formData
-      });
-
-      if (response.ok) {
-        setFormSuccess(true);
-      } else {
-        setFormError("Evaluation submission failed");
-      }
-    } catch (error) {
-      console.error('Failed to submit evaluation:', error);
-      setFormError('An unexpected error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }
 
 
   return (
@@ -275,15 +250,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
           >
             2
           </button>
-          <div className={`h-1 w-16 ${currentStep >= 3 ? 'bg-neutral-900' : 'bg-neutral-200'}`} />
-          <button 
-            onClick={() => updateStep(3)}
-            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors hover:opacity-80 ${
-              currentStep >= 3 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-600'
-            }`}
-          >
-            3
-          </button>
+
         </div>
       </div>
 
@@ -291,12 +258,12 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         <div>
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-neutral-900 mb-2 flex items-center justify-center gap-3">
-              welcome to the niche
+              thanks for your interest
               <span className="inline-block px-3 py-1 text-sm font-bold text-white bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 via-indigo-500 to-purple-500 rounded-full shadow-lg animate-pulse">
                 BETA
               </span>
             </h2>
-            <p className="text-neutral-600">set up your profile to start using the platform</p>
+            <p className="text-neutral-600">we just need some additional information to process your application to be a part of our beta launch </p>
           </div>
 
           <div className="space-y-6 mx-12 md:mx-24 lg:mx-32">
@@ -307,7 +274,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                   <div className="flex-shrink-0 w-6 h-6 bg-neutral-900 text-white rounded-full flex items-center justify-center text-sm font-medium">1</div>
                   <div>
                     <h4 className="text-lg font-bold text-neutral-700">basic profile information</h4>
-                    <p className="text-lg text-neutral-600">share some basics about yourself and create your bio </p>
+                    <p className="text-lg text-neutral-600">share some basics about yourself and introduce yourself to us </p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
@@ -320,15 +287,10 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0 w-6 h-6 bg-neutral-900 text-white rounded-full flex items-center justify-center text-sm font-medium">3</div>
                   <div>
-                    <h4 className="text-lg font-bold text-neutral-700">highlight your abilities</h4>
-                    <p className="text-lg text-neutral-600">to get connected with partner startups, you will need to complete a short evaluation of your skills completely customized to your strengths. this will be a two to three hour project and you can do it once or as many times as you would prefer! we use this to filter and determine if you would be a good fit for a particular startup. as part of The Niche, you will be categorized into one of three statuses: 
+                    <h4 className="text-lg font-bold text-neutral-700">wait to hear back from us</h4>
+                    <p className="text-lg text-neutral-600">with the information you provide, we will review your profile and see if there is a mutual fit for you to be a part of The Niche. <strong>we send your profile to a select cohort of startup partners and if there is a majority interest in your profile, we accept you onto the platform. </strong> the process takes 2-3 days and we will email you of your status!
                     <br /><br />
-                    <strong>VIEWER</strong> means you can peruse and access The Niche. 
-                    <br /><br />
-                    <strong>APPLICANT</strong> means you have finished the evaluation and can apply to partner startups with our filters in place to ensure that the partner startup is a good fit 
-                    <br /><br />
-                    <strong>COHORT</strong> means that you have performed exceptionally in your evaluation, and you may reach out to any startup without our filters (+ other perks moving forward)
-                    </p>
+                    if you are not accepted, you can still continue to access our newsletter and persue our partner companies! once accepted, partner startups will reach out to you if your profile fits their needs and you are also welcome to connect directly with them!</p>
                   </div>
                 </div>
               </div>
@@ -417,154 +379,11 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
               Back
             </Button>
             <Button 
-              onClick={() => updateStep(3)}
+              onClick={() => router.push("/companies")}
               className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2"
             >
-              Next
+              Finish Setup
             </Button>
-          </div>
-        </div>
-      )}
-
-      {currentStep === 3 && (
-        <div>
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">highlight your abilities</h2>
-            <p className="text-neutral-600">learn about our evaluation process</p>
-          </div>
-
-          <div className="space-y-6 mx-12 md:mx-24 lg:mx-32">
-            <div className="bg-gradient-to-r from-yellow-50 via-pink-50 to-blue-50 border border-neutral-200 rounded-lg p-6">
-              <h3 className="text-2xl font-bold text-neutral-800 mb-4">instructions</h3>
-              <div className="space-y-4">
-                <p className="text-lg text-neutral-600">
-                  we want to have a wholistic representation of your skills and abilities so that when we make the connect to startups that you are interested in, we can provide meaningful matches to both parties. to get connected with our partner startups, you must complete a <strong>customized evaluation</strong> designed specifically to highlight your background and skillset because it follows a &ldquo;pick your own adventure&rdquo; model.
-                </p>
-                <p className="text-lg text-neutral-600">
-                  this is a <strong>2-3 hour project</strong> that showcases your abilities in a real-world context. you can complete it as many times as you&rsquo;d like via different avenues to showcase different parts of your skillset. 
-                </p>
-                
-                <div className="mt-6 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
-                  <p className="text-lg text-neutral-700">
-                    <strong>📣 timeline:</strong> you will want to have this evaluation completed within 2 weeks of receiving access to our public beta. without the evaluation, you will not be able to connect directly to our startups. you can access this page whenever during that period. 
-                  </p>
-                </div>
-
-                <hr className="my-6 border-neutral-200" />
-
-                <div className="space-y-4">
-                  <button
-                    onClick={() => setIsEvaluationExpanded(!isEvaluationExpanded)}
-                    className="flex items-center justify-between w-full p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg transition-colors"
-                  >
-                    <span className="text-lg font-bold text-neutral-800">📋 the evaluation</span>
-                    <svg 
-                      className={`w-5 h-5 text-neutral-600 transition-transform ${isEvaluationExpanded ? 'rotate-180' : ''}`}
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-
-                  {isEvaluationExpanded && (
-                    <div className="space-y-4 p-4 bg-white border border-neutral-200 rounded-lg">
-                      <p className="text-lg text-neutral-600">
-                        take what you know about The Niche and your journey getting onboarded to the platform.
-                      </p>
-                      
-                      <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-                        <p className="text-lg font-bold text-neutral-800 mb-2">🙋🏻‍♀️ question: </p>
-                        <p className="text-lg text-neutral-700">
-                          what is the underlying value proposition of The Niche (from the perspective of both early talent and partner startups) in your honest opinion? if there isn&rsquo;t one, what could be the underlying value proposition? why? 
-                        </p>
-                      </div>
-
-                      <p className="text-lg text-neutral-600">
-                        consider how you would expand on this value proposition using particular skillset(s) that you want to highlight. <strong>use AI for this evaluation</strong>. if you are non-technical but more product-oriented for example, you might want to consider what interviews, PRDs, etc. you can come up with. Some technical example avenues you can go down but would also suggest you take some time to think of projects personalized to your skillset(s):
-                      </p>
-
-                      <div className="space-y-3">
-                        <div className="border-l-4 border-neutral-300 pl-4">
-                          <p className="text-lg text-neutral-600">
-                            <strong>webscraper:</strong> that ingests resumes, transcripts, etc to auto-populate a candidate&#39;s personal information (school, gpa, companies worked at, etc) in a database that is queryable (would highly recommend researching storage technologies)
-                          </p>
-                        </div>
-                        <div className="border-l-4 border-neutral-300 pl-4">
-                          <p className="text-lg text-neutral-600">
-                            <strong>algorithm:</strong> that takes characteristics of a candidate that partner companies particularly look out for (ex. school, classes, experience level, etc) and compares that to what a candidate is looking for (ex. industry/vertical, size of company - series a, b, c, d) to rank and surface matches - welcome all implementations (even call to an OpenAI API)
-                          </p>
-                        </div>
-                        <div className="border-l-4 border-neutral-300 pl-4">
-                          <p className="text-lg text-neutral-600">
-                            <strong>mobile app:</strong> a mobile app of The Niche with very basic capabilities such as getting access and logging in, storing the candidates information in a database
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-6">
-                        <h4 className="text-lg font-bold text-neutral-800 mb-3">📤 submission instructions</h4>
-                        <p className="text-lg text-neutral-600">
-                          make your own repository on github and make your project public. once you&rsquo;re done with your implementation, attach the link to your repository below and click submit! once you submit you will be able to connect with our partner startups via the submit interest button on each company profile.
-                        </p>
-                        
-                        <form className="mt-6" onSubmit={(e) => {
-                          e.preventDefault();
-                          if (repositoryUrl.trim()) {
-                            console.log('Repository URL submitted:', repositoryUrl);
-                            // Handle repository URL submission here
-                          }
-                        }}>
-                          <label htmlFor="repository-url" className="block text-sm font-medium text-neutral-700 mb-2">
-                            GitHub Repository URL
-                          </label>
-                          <Input
-                            id="repository-url"
-                            type="url"
-                            required
-                            value={repositoryUrl}
-                            onChange={(e) => setRepositoryUrl(e.target.value)}
-                            placeholder="https://github.com/yourusername/your-project"
-                          />
-                        </form>
-                        <Button 
-                          onClick={handleStep2Complete}
-                          className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2 mt-4"
-                        >
-                          Submit
-                        </Button>
-                        <div className="mt-6">
-                        {formSuccess && 
-                            <Alert className="border-green-200 bg-green-50">
-                              <CheckCircle2Icon className="h-4 w-4 text-green-600" />
-                              <AlertTitle className="text-green-800">
-                                Evaluation submitted successfully! Feedback will be in your inbox in a week. You can now start connecting with startups and exploring opportunities.
-                              </AlertTitle>
-                            </Alert>}
-                        </div>
-                      </div>
-                      
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-between">
-              <Button 
-                onClick={() => updateStep(2)}
-                className="bg-neutral-200 hover:bg-neutral-300 text-neutral-900 px-8 py-2"
-              >
-                Back
-              </Button>
-              <Button 
-                onClick={() => router.push("/companies")}
-                className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2"
-              >
-                Finish Setup
-              </Button>
-            </div>
           </div>
         </div>
       )}
