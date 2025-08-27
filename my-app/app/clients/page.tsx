@@ -22,7 +22,7 @@ export default function ClientsPage() {
                 </span>
               </h2>
               <div className="flex items-baseline gap-3 mb-2">
-                <span className="text-5xl font-bold text-neutral-800">$300</span>
+                <span className="text-5xl font-bold text-neutral-800">$200</span>
                 <span className="text-neutral-500 text-lg">per year</span>
                 <span className="inline-block bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-3 py-1 rounded text-neutral-700 text-base font-semibold">+ 2% per extended hire</span>
               </div>
