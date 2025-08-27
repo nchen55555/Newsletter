@@ -55,12 +55,39 @@ export async function PATCH(req: NextRequest) {
     }
 
 
-    // 4. Generate a secure file name
-    const fileName = `${user.id}/resume.pdf`;
+    // 4. First, delete any existing files to ensure clean replacement
+    const userFolder = `${user.id}/`;
+    
+    // Delete existing resume files
+    const { data: existingResumeFiles } = await supabase.storage
+      .from('resume_files')
+      .list(userFolder);
+    
+    if (existingResumeFiles && existingResumeFiles.length > 0) {
+      const resumeFilesToDelete = existingResumeFiles.map(file => `${userFolder}${file.name}`);
+      await supabase.storage
+        .from('resume_files')
+        .remove(resumeFilesToDelete);
+    }
+
+    // Delete existing transcript files
+    const { data: existingTranscriptFiles } = await supabase.storage
+      .from('transcript_files')
+      .list(userFolder);
+    
+    if (existingTranscriptFiles && existingTranscriptFiles.length > 0) {
+      const transcriptFilesToDelete = existingTranscriptFiles.map(file => `${userFolder}${file.name}`);
+      await supabase.storage
+        .from('transcript_files')
+        .remove(transcriptFilesToDelete);
+    }
+
+    // Generate secure file names with original extensions
+    const resumeExtension = resume_file.name.split('.').pop() || 'pdf';
+    const fileName = `${user.id}/resume.${resumeExtension}`;
     let profile_image_url: string | null = null;
 
-
-    // Enhanced upload logging
+    // Upload resume file
     const { error: uploadError } = await supabase.storage
     .from('resume_files')
     .upload(fileName, resume_file, {
@@ -80,7 +107,9 @@ export async function PATCH(req: NextRequest) {
       }, { status: 500 });
     }
 
-    const transcriptFileName = `${user.id}/transcript.pdf`;
+    // Upload transcript file
+    const transcriptExtension = transcript_file.name.split('.').pop() || 'pdf';
+    const transcriptFileName = `${user.id}/transcript.${transcriptExtension}`;
     const { error: transcriptUploadError } = await supabase.storage
     .from('transcript_files')
     .upload(transcriptFileName, transcript_file, {
@@ -102,9 +131,21 @@ export async function PATCH(req: NextRequest) {
 
 
     if (profile_image_file){
+      // Delete existing profile image files
+      const { data: existingProfileImages } = await supabase.storage
+        .from('profile_image_files')
+        .list(userFolder);
+      
+      if (existingProfileImages && existingProfileImages.length > 0) {
+        const profileImageFilesToDelete = existingProfileImages.map(file => `${userFolder}${file.name}`);
+        await supabase.storage
+          .from('profile_image_files')
+          .remove(profileImageFilesToDelete);
+      }
 
-      const profile_image_file_name = `${user.id}/profile_image.jpg`;
-
+      // Generate secure file name with original extension
+      const profileImageExtension = (profile_image_file as File).name.split('.').pop() || 'jpg';
+      const profile_image_file_name = `${user.id}/profile_image.${profileImageExtension}`;
 
       const { error: profile_image_uploadError } = await supabase.storage
       .from('profile_image_files')
@@ -113,7 +154,6 @@ export async function PATCH(req: NextRequest) {
         cacheControl: '3600',
         upsert: true,
       });
-
 
       if (profile_image_uploadError) {
         console.error('Profile Image Upload Error:', {
@@ -126,7 +166,7 @@ export async function PATCH(req: NextRequest) {
         }, { status: 500 });
       }
 
-      // 6. Get public URL for the uploaded file
+      // Get public URL for the uploaded file
       const { data } = await supabase.storage
         .from('profile_image_files')
         .getPublicUrl(profile_image_file_name);
