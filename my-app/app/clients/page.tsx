@@ -24,7 +24,7 @@ export default function ClientsPage() {
               <div className="flex items-baseline gap-3 mb-2">
                 <span className="text-5xl font-bold text-neutral-800">$200</span>
                 <span className="text-neutral-500 text-lg">per year</span>
-                <span className="inline-block bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-3 py-1 rounded text-neutral-700 text-base font-semibold">+ 2% per extended hire</span>
+                <span className="inline-block bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-3 py-1 rounded text-neutral-700 text-base font-semibold">+ 5% per extended hire</span>
               </div>
               <div className="text-neutral-600 text-base mb-4 mt-2">annual membership fee - outbound that notifies the cohort directly, an exclusive company profile with enhanced visibility, direct connects to interested students, and enhanced screening supplemented with your requested candidate information <br /> success-based fee only applies if you extend an offer to a candidate connected through the niche</div>
               <div className="text-sm text-neutral-500 mb-4">
