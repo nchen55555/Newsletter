@@ -38,17 +38,7 @@ export default function ProfileAvatar({
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    
-    // Check file size (10 MB = 10 * 1024 * 1024 bytes = 10,485,760 bytes)
-    const maxSizeInBytes = 10 * 1024 * 1024
-    if (file.size > maxSizeInBytes) {
-      alert(`File size must be less than 10 MB. Your file is ${Math.round(file.size / (1024 * 1024))} MB.`)
-      // Clear the input
-      if (inputRef.current) {
-        inputRef.current.value = ''
-      }
-      return
-    }
+
     
     // show instant local preview
     const preview = URL.createObjectURL(file)
