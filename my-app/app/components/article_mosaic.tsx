@@ -9,6 +9,7 @@ export async function ArticleMosaic() {
     const POSTS_QUERY = `*[
         _type == "post"
         && defined(slug.current)
+        && !(slug.current match "*-beta*")
       ]|order(publishedAt desc){_id, title, slug, publishedAt, image, excerpt}`;
 
     const options = { next: { revalidate: 30 } };
