@@ -81,7 +81,7 @@ export function NavActions() {
           <DropdownMenuContent>
             <DropdownMenuLabel>account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem><Link href="/profile">your info</Link></DropdownMenuItem>
+            <DropdownMenuItem><Link href="/profile">profile</Link></DropdownMenuItem>
             <DropdownMenuItem><Link href="/bookmarks">bookmarks</Link></DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout}>logout</DropdownMenuItem>
           </DropdownMenuContent>

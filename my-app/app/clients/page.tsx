@@ -75,6 +75,7 @@ export default function ClientsPage() {
             <ol className="list-decimal ml-6 text-lg text-neutral-700 space-y-2">
               <li><strong>hop on a call with us to preserve your spot as a member and to get any questions clarified. Click <ExternalLink href="https://calendly.com/nicole_chen/an-intro-to-the-niche">here</ExternalLink></strong>.  we will use this time to get a better understanding of your needs and ask some direct questions to curate the company profile!</li>
               <li>each issue takes 1-2 weeks to launch. we will onboard you and start matching candidates directly once launched!</li>
+              <li>pay the subscription fee here <ExternalLink href="https://buy.stripe.com/00w5kE4UI1Ue5SW1iFaVa00">here</ExternalLink></li>
             </ol>
           </div>
         </div>

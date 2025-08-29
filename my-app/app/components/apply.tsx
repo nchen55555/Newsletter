@@ -92,7 +92,7 @@ export default function ApplyButton({ company }: { company: string }) {
           profile_image: null,
           bio: profile.bio || "",
           is_public_profile: profile.is_public_profile,
-          newsletter_opt_in: profile.newsletter_opt_ine,
+          newsletter_opt_in: profile.newsletter_opt_in,
           status: profile.status,
           transcript_url: profile.transcript_url,
           transcript_file: null,
@@ -177,6 +177,10 @@ export default function ApplyButton({ company }: { company: string }) {
     formData.append('email', form.email)
     formData.append('bio', form.bio);
     
+    // Add boolean toggle values (convert to string for FormData)
+    formData.append('is_public_profile', form.is_public_profile.toString());
+    formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
+    
     let resumeFile: File | null = form.resume_file ?? null;
 
     // If no new file, but we have a resume_url, fetch and convert to File
@@ -192,28 +196,42 @@ export default function ApplyButton({ company }: { company: string }) {
     formData.append('resume_file', resumeFile);
 
     let profileImageFile: File | null = form.profile_image ?? null;
-    if (!profileImageFile && form.profile_image_url) {
+    if (form.profile_image_url) {
       const filename = form.profile_image_url.split('/').pop() || 'profile.jpg';
       profileImageFile = await urlToFile(form.profile_image_url, filename);
     }
-    if (profileImageFile) {
-      formData.append('profile_image', profileImageFile);
+    if (!profileImageFile) {
+      setAppError('Profile image is required.');
+      return;
     }
+    formData.append('profile_image', profileImageFile);
 
-    // TODO: PATCH to /api/profile
+    let transcriptFile: File | null = form.transcript_file ?? null;
+    if (!transcriptFile && form.transcript_url) {
+      const filename = form.transcript_url.split('/').pop() || 'transcript.pdf';
+      transcriptFile = await urlToFile(form.transcript_url, filename);
+    }
+    if (!transcriptFile) {
+      setAppError('Transcript is required.');
+      return;
+    }
+    formData.append('transcript_file', transcriptFile);
+
+
+    // First, update the profile
     const res = await fetch('/api/post_profile', { method: 'PATCH',
       headers: {
         Authorization: `Bearer ${access_token}`,
       },
         body: formData })
-    if (res.ok) {
-        setAppSuccess(true)
+    
+    if (!res.ok) {
+        setAppError("Profile update failed")
         setLoadingApplied(false)
-    }else {
-        setAppError("Update failed")
-        setLoadingApplied(false)
+        return; // Stop here if profile update fails
     }
 
+    // Only proceed with application if profile update succeeded
     const res2 = await fetch('/api/post_application', {
       method: 'POST',
       headers: {
@@ -225,10 +243,13 @@ export default function ApplyButton({ company }: { company: string }) {
         additional_info: additionalInfo
       })
     })
+    
     if (res2.ok) {
       setAppSuccess(true)
-    }else {
-      setAppError("Application failed")
+      setLoadingApplied(false)
+    } else {
+      setAppError("Application submission failed")
+      setLoadingApplied(false)
     }
   }
 
@@ -317,7 +338,7 @@ export default function ApplyButton({ company }: { company: string }) {
             </div>
             <div className="mb-10">
             <Label htmlFor="add_info" className="text-base font-medium">Intro Blurb</Label>
-              <Input id="add_info" name="add_info" type="tel" value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} placeholder="Write a quick sentence introduction to the founder of the company and any questions you have for them!" className="h-12 text-lg px-4 mt-2" />
+              <Input id="add_info" name="add_info" type="tel" value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} required placeholder="Write a quick sentence introduction to the founder of the company and any questions you have for them!" className="h-12 text-lg px-4 mt-2" />
               {appSuccess && (
                 <Alert className="mt-6">
                   <CheckCircle2Icon />
