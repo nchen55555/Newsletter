@@ -53,7 +53,7 @@ export default async function PortfolioPage() {
                   introducing our partners
                 </h1>
                 <p className="text-base md:text-lg text-neutral-600 mb-6 md:mb-10">
-                  we&apos;ve highlighted some of the companies we&apos;re excited to be writing about in the next month, with more to be added. we&apos;ve exclusively partnered with these companies to provide you with a 
+                  we&apos;ve highlighted some of the companies we&apos;re potentially excited to be writing about in the next month, with more to be added. we&apos;ve exclusively partnered with these companies to provide you with a 
                   <span className="relative group inline-block align-middle mx-1">
                     <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">
                       direct introduction

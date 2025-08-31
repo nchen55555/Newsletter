@@ -4,7 +4,7 @@ import { Navigation } from "@/app/components/header";
 // import { ProfileData } from "@/app/types";
 import React, { useState, useEffect } from "react";
 // import Image from "next/image";
-import { useRouter } from "next/navigation";
+// import { useRouter } from 'next/navigation';
 import { Skeleton } from "@/components/ui/skeleton";
 
 // function ProfileCard({ profile, onClick }: { profile: ProfileData; onClick: () => void }) {
@@ -117,7 +117,7 @@ function LoadingSkeleton() {
 }
 
 export default function PeoplePage() {
-  const router = useRouter();
+  // const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 
   // Simulate initial loading time

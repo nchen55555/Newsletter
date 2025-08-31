@@ -44,6 +44,7 @@ export default function ApplyButton({ company }: { company: string }) {
     newsletter_opt_in: false,
     status: "",
     transcript_file: null,
+    applied: false, 
   });
   const [access_token, setAccessToken] = useState<string | null>(null);
 
@@ -96,6 +97,7 @@ export default function ApplyButton({ company }: { company: string }) {
           status: profile.status,
           transcript_url: profile.transcript_url,
           transcript_file: null,
+          applied: profile.applied,
         });
   
         // Optionally set the raw data if you still need it
@@ -268,12 +270,12 @@ export default function ApplyButton({ company }: { company: string }) {
           variant="default"
           className="inline-flex items-center justify-center bg-neutral-900 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-neutral-800 transition-colors text-sm w-full"
           type="button"
-          aria-label="submit interest"
+          aria-label="apply"
           disabled={applied}
           style={applied ? { cursor: "not-allowed" } : {}}
         >
           <Send className="w-4 h-4 mr-2" />
-          submit interest
+          apply
         </Button>
       </span>
     </TooltipTrigger>

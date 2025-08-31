@@ -9,6 +9,13 @@ import { Alert, AlertTitle } from '@/components/ui/alert'
 import { Terminal } from 'lucide-react'
 import CompanyCards from '@/app/companies/company-cards'
 import { CompanyWithImageUrl } from '@/app/types'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface MultiStepProfileFormProps extends ProfileData {
   access_token: string,
@@ -23,6 +30,8 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [companies, setCompanies] = useState<CompanyWithImageUrl[]>([])
   const [loadingCompanies, setLoadingCompanies] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [, setEmailSent] = useState(false)
 
 
   useEffect(() => {
@@ -72,9 +81,9 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     status: props.status || "",
     transcript_file: null,
     transcript_url: props.transcript_url || "",
+    applied: props.applied || false,
+    parsed_resume_json: "",
   });
-
-  console.log("PROFILE FORM STATUS ", form.status)
 
   const [formError, setFormError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -102,7 +111,42 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     }
   }
 
+  const handleFinishSetup = async () => {
+    try {
+      // Send welcome email
+      const response = await fetch('/api/send-welcome-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: form.email, 
+          first_name: form.first_name, 
+          last_name: form.last_name
+        })
+      });
 
+      if (response.ok) {
+        console.log('Welcome email sent successfully');
+        setEmailSent(true);
+      } else {
+        console.error('Failed to send welcome email');
+        setEmailSent(false);
+      }
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+      setEmailSent(false);
+    }
+    
+    // Show confirmation dialog
+    setShowConfirmation(true);
+    
+  };
+
+  const handleConfirmationClose = () => {
+    setShowConfirmation(false);
+    router.push("/profile");
+  };
 
   async function urlToFile(url: string, filename: string, mimeType?: string): Promise<File> {
     const response = await fetch(url);
@@ -186,6 +230,8 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         return;
       }
       formData.append('transcript_file', transcriptFile);
+
+      formData.append('applied', 'true');
 
       // Make request (same as original form)
       const response = await fetch('/api/post_profile', {
@@ -379,7 +425,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
               Back
             </Button>
             <Button 
-              onClick={() => router.push("/companies")}
+              onClick={handleFinishSetup}
               className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2"
             >
               Finish Setup
@@ -387,6 +433,32 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
           </div>
         </div>
       )}
+
+      {/* Application Confirmation Dialog */}
+      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <DialogContent className="sm:max-w-5xl w-full p-8 max-h-[80vh] overflow-y-auto">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-xl font-semibold">
+              Application Received
+            </DialogTitle>
+            <DialogDescription className="text-lg mt-2">
+              Hi {form.first_name}! Your application to The Niche has been submitted. If you are simply resubmitting your profile, feel free to ignore this email.
+              We will review your profile and notify you within 1-2 weeks. In the meantime, feel free to explore our partner companies and bookmark the ones you&apos;re interested in so we can expedite your interest if you are accepted as part of the cohort!
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 pt-4">
+            <p className="text-sm text-neutral-600">
+              Click below to view the external profile we send to our partner companies based on the information you submitted!
+            </p>
+            <Button 
+              onClick={handleConfirmationClose}
+              className="bg-neutral-900 hover:bg-neutral-800 text-white px-4 py-2 text-sm w-auto"
+            >
+              External Profile
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

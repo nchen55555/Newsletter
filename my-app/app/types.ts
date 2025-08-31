@@ -14,6 +14,8 @@ export type ProfileData = {
     newsletter_opt_in?: boolean;
     status?: string;
     transcript_url?: string;
+    applied?: boolean;
+    parsed_resume_json?: string;
   };
 
 export type ProfileFormState = {
@@ -34,6 +36,8 @@ export type ProfileFormState = {
   status?: string;
   transcript_url?: string;
   transcript_file?: File | null;
+  applied?: boolean;
+  parsed_resume_json?: string;
 };
 
 // Company-related types
@@ -53,3 +57,20 @@ export interface CompanyData extends SanityDocument {
 export type CompanyWithImageUrl = CompanyData & {
   imageUrl: string | null;
 };
+
+// lib/resume-types.ts
+export type ExperienceJob = {
+  company: string;
+  role: string;
+  dates: string;
+  summary?: string;
+  summary_bullets?: string[];
+  [key: string]: string | string[] | undefined; // e.g. impact_bullets, tech_bullets
+};
+
+export type ParsedResumeData = {
+  experience: ExperienceJob[];
+  education: string[];
+  _meta?: { charCount: number; preview: string };
+};
+

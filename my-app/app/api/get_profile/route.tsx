@@ -51,7 +51,9 @@ export async function GET(){
             newsletter_opt_in: subscriber?.newsletter_opt_in,
             access_token: accessToken,
             status: subscriber?.status,
-            transcript_url: subscriber?.transcript_url
+            transcript_url: subscriber?.transcript_url,
+            applied: subscriber?.applied,
+            parsed_resume_json: subscriber?.parsed_resume_json,
         })
 
     } catch (error) {
