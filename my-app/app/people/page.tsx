@@ -148,14 +148,7 @@ export default function PeoplePage() {
               our community
             </h1>
             <p className="text-base md:text-lg text-neutral-600 mb-6 md:mb-10">
-              <strong>SOON </strong>meet the talented students from <span className="relative group inline-block align-middle">
-                <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">
-                  top universities
-                </span>
-                <span className="absolute left-0 top-full mt-2 min-w-[220px] max-w-[90vw] md:max-w-screen-sm w-auto bg-white border border-neutral-200 rounded shadow-md px-3 md:px-4 py-2 text-sm md:text-lg text-neutral-700 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-300 z-10 break-words whitespace-pre-line">
-                  Harvard, MIT, Stanford, and Berkeley students hand-picked through academic and industry recommendations
-                </span>
-              </span> who are part of our exclusive community, ready to connect with high-growth startups.
+              <strong>SOON </strong>meet the talented students who are part of our exclusive cohort, ready to connect with high-growth startups.
             </p>
           </div>
 

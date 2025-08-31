@@ -2,13 +2,12 @@ import { ProfileData } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Accordion } from "@/app/components/accordion";
-import { Edit, X, Save, ExternalLink, RefreshCw, FileText } from "lucide-react";
+import { Edit, X, Save, ExternalLink, FileText } from "lucide-react";
 import { useEffect, useCallback } from 'react';
 import {ExperienceJob, ParsedResumeData} from "@/app/types";
 import { useState } from 'react';
 
-// components/Editable.tsx
+// components/Editable.tsx 
 export function EditableInput({
   value,
   onChange,
@@ -176,76 +175,74 @@ export default function EditableResume({
 
   return (
     <div className="w-full">
-     
-      <Accordion title="Resume">
-        {/* Edit Controls */}
-        <div className="flex justify-end mt-8 mb-4">
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setEdit((e) => !e)}>
-              {edit ? (
-                <>
-                  <X className="w-4 h-4 mr-2" />
-                  Cancel
-                </>
-              ) : (
-                <>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </>
-              )}
-            </Button>
-            {edit && (
-              <Button size="sm" onClick={handleSave} disabled={saving}>
-                <Save className="w-4 h-4 mr-2" />
-                {saving ? "Saving…" : "Save"}
-              </Button>
+      {/* Resume Header with Edit Controls */}
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-2xl font-semibold text-neutral-800">Resume</h3>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setEdit((e) => !e)}>
+            {edit ? (
+              <>  
+                <X className="w-4 h-4 mr-2" />
+                Cancel
+              </>
+            ) : (
+              <>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </>
             )}
-          </div>
-        </div>
-        
-        {/* Education */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold tracking-tight">Education</h2>
-            {edit && <button onClick={addEdu} className="text-sm text-blue-600">+ Add line</button>}
-          </div>
-
-          {!edit ? (
-            <ul className="mt-3 space-y-2">
-              {data.education.map((line, i) => (
-                <li key={i} className="flex"><span className="mr-2">•</span><span>{line}</span></li>
-              ))}
-            </ul>
-          ) : (
-            <div className="mt-3 space-y-2">
-              {data.education.map((line, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <EditableInput value={line} onChange={(v) => updateEdu(i, v)} />
-                  <button onClick={() => removeEdu(i)} className="text-sm text-red-600">Remove</button>
-                </div>
-              ))}
-            </div>
+          </Button>
+          {edit && (
+            <Button size="sm" onClick={handleSave} disabled={saving}>
+              <Save className="w-4 h-4 mr-2" />
+              {saving ? "Saving…" : "Save"}
+            </Button>
           )}
-        </section>
+        </div>
+      </div>
+      
+      {/* Education */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between">
+          <h4 className="text-xl font-semibold tracking-tight">Education</h4>
+          {edit && <button onClick={addEdu} className="text-sm text-blue-600">+ Add line</button>}
+        </div>
 
-        {/* Experience */}
-        <section>
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold tracking-tight mb-2">Experience</h2>
-            {edit && <button onClick={addJob} className="text-sm text-blue-600">+ Add job</button>}
+        {!edit ? (
+          <ul className="mt-3 space-y-2">
+            {data.education.map((line, i) => (
+              <li key={i} className="flex"><span className="mr-2">•</span><span>{line}</span></li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-3 space-y-2">
+            {data.education.map((line, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <EditableInput value={line} onChange={(v) => updateEdu(i, v)} />
+                <button onClick={() => removeEdu(i)} className="text-sm text-red-600">Remove</button>
+              </div>
+            ))}
           </div>
+        )}
+      </section>
 
-          {data.experience.map((job, i) => (
-            <EditableJobCard
-              key={i}
-              job={job}
-              editable={edit}
-              onChange={(next) => updateJob(i, next)}
-              onRemove={edit ? () => removeJob(i) : undefined}
-            />
-          ))}
-        </section>
-      </Accordion>
+      {/* Experience */}
+      <section>
+        <div className="flex items-center justify-between">
+          <h4 className="text-xl font-semibold tracking-tight mb-2">Experience</h4>
+          {edit && <button onClick={addJob} className="text-sm text-blue-600">+ Add job</button>}
+        </div>
+
+        {data.experience.map((job, i) => (
+          <EditableJobCard
+            key={i}
+            job={job}
+            editable={edit}
+            onChange={(next) => updateJob(i, next)}
+            onRemove={edit ? () => removeJob(i) : undefined}
+          />
+        ))}
+      </section>
     </div>
   );
 }
@@ -267,35 +264,11 @@ export function ExternalProfile(props: ProfileData) {
         return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
     };
 
-    const handleResubmitProfile = async () => {
-        try {
-            // Create FormData for the request
-            const formData = new FormData();
-            formData.append('id', String(props.id));
-            formData.append('email', props.email);
-            formData.append('applied', 'false');
-
-            // Update the applied status to false
-            const response = await fetch('/api/post_profile', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                // Refresh the page after successful update
-                window.location.reload();
-            } else {
-                console.error('Failed to update profile status');
-            }
-        } catch (error) {
-            console.error('Error updating profile status:', error);
-        }
-    };
 
     const getResumeParsedData = useCallback(async () => {
         if (!props.resume_url) return;
-
-        if(props.parsed_resume_json) {
+        console.log("parsed resume json ", props.parsed_resume_json)
+        if(props.parsed_resume_json || props.parsed_resume_json != "") {
             function asParsedResume(value: unknown): ParsedResumeData | null {
                 if (!value) return null;
               
@@ -320,11 +293,30 @@ export function ExternalProfile(props: ProfileData) {
         
         setIsLoading(true);
         try {
-            const response = await fetch(`/api/get_parsed_resume?resume_url=${encodeURIComponent(props.resume_url)}`);
+            const response = await fetch(`/api/gemini_format`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  resume_url: props.resume_url,
+                })
+              }
+            );
             if (response.ok) {
                 const data = await response.json();
                 console.log('Parsed resume data:', data);
-                setResumeData(data.parsed_resume_json);
+                await fetch('/api/post_parsed_resume', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    parsed_resume_json: data.data,
+                  })
+                })
+                setResumeData(data.data);
             } else {
                 console.error('Failed to fetch parsed resume data');
             }
@@ -394,22 +386,7 @@ export function ExternalProfile(props: ProfileData) {
                             </div>
                         </div>
 
-                        {/* Resubmit Profile Button */}
-                        <div className="relative group">
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="bg-white/80 backdrop-blur-sm hover:bg-white hover:border-blue-300 transition-colors shadow-sm"
-                                onClick={handleResubmitProfile}
-                            >
-                                <RefreshCw className="w-4 h-4 mr-2" />
-                                Resubmit Profile
-                            </Button>
-                            {/* Tooltip */}
-                            <div className="absolute right-0 top-full mt-2 w-64 bg-gray-900 text-white text-sm rounded-lg px-3 py-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-10">
-                                Resubmit profile to edit page for non-resume fields. Note that you might get an email saying your application was received again - you can ignore that!
-                            </div>
-                        </div>
+                        
                     </div>
 
                     {/* Bio - styled as a featured quote */}

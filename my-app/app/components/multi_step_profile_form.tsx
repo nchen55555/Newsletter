@@ -145,7 +145,8 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
 
   const handleConfirmationClose = () => {
     setShowConfirmation(false);
-    router.push("/profile");
+    
+    window.location.href = '/profile';
   };
 
   async function urlToFile(url: string, filename: string, mimeType?: string): Promise<File> {

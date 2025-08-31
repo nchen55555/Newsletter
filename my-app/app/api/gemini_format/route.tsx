@@ -11,6 +11,7 @@ You are a resume parser. Read the resume PDF and normalize into JSON.
 - Normalize dates like "Jan 2024 – May 2024".
 - Split bullets into summary_bullets arrays.
 - Do NOT invent information.
+- Limit to only the most recent experiences, so you can remove if there are more than 5 experiences already.
 Return JSON only, matching schema.
 `;
 
