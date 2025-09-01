@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 
-// COMMAND: curl -X POST "http://localhost:3000/api/batch_parse_resumes?service_role_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVib21wanNsY2ZnYmtpZG1mdXltIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1Mjg3NjYyMiwiZXhwIjoyMDY4NDUyNjIyfQ.q7p1OvO1bDTXREHNXc7MUURpmdcgsIVCeLmPmUL-XhY"
+// COMMAND: curl -X POST "http://localhost:3000/api/batch_parse_resumes?service_role_key="
 
 const SYSTEM_INSTRUCTIONS = `
 You are a resume parser. Read the resume PDF and normalize into JSON.
