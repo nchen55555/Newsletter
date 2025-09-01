@@ -6,6 +6,7 @@ import { Edit, X, Save, ExternalLink, FileText } from "lucide-react";
 import { useEffect, useCallback } from 'react';
 import {ExperienceJob, ParsedResumeData} from "@/app/types";
 import { useState } from 'react';
+import { useSubscriptionContext } from "@/app/components/subscription_context";
 
 // components/Editable.tsx 
 export function EditableInput({
@@ -127,50 +128,42 @@ export function EditableJobCard({
 
  // components/EditableResume.tsx
 
-export default function EditableResume({
-  initial,
-  onChange,
-  onSave, // optional async save handler to Supabase
-}: {
-  initial: ParsedResumeData;
-  onChange?: (next: ParsedResumeData) => void;
-  onSave?: (next: ParsedResumeData) => Promise<void>;
-}) {
-  const [data, setData] = useState<ParsedResumeData>(initial);
+function EditableResume({ data, onSave }: { data: ParsedResumeData; onSave?: (data: ParsedResumeData) => Promise<void> }) {
   const [edit, setEdit] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { isSubscribed } = useSubscriptionContext();
+  const [localData, setLocalData] = useState(data);
 
   const apply = (next: ParsedResumeData) => {
-    setData(next);
-    onChange?.(next);
+    setLocalData(next);
   };
 
   const addJob = () => {
     const blank: ExperienceJob = { company: "", role: "", dates: "", summary_bullets: [] };
-    apply({ ...data, experience: [...data.experience, blank] });
+    apply({ ...localData, experience: [...localData.experience, blank] });
   };
   const removeJob = (idx: number) => {
-    const next = data.experience.filter((_, i) => i !== idx);
-    apply({ ...data, experience: next });
+    const next = localData.experience.filter((_, i) => i !== idx);
+    apply({ ...localData, experience: next });
   };
   const updateJob = (idx: number, job: ExperienceJob) => {
-    const next = data.experience.map((j, i) => (i === idx ? job : j));
-    apply({ ...data, experience: next });
+    const next = localData.experience.map((j, i) => (i === idx ? job : j));
+    apply({ ...localData, experience: next });
   };
 
-  const addEdu = () => apply({ ...data, education: [...(data.education || []), ""] });
+  const addEdu = () => apply({ ...localData, education: [...(localData.education || []), ""] });
   const updateEdu = (idx: number, v: string) => {
-    const next = [...data.education];
+    const next = [...localData.education];
     next[idx] = v;
-    apply({ ...data, education: next });
+    apply({ ...localData, education: next });
   };
   const removeEdu = (idx: number) =>
-    apply({ ...data, education: data.education.filter((_, i) => i !== idx) });
+    apply({ ...localData, education: localData.education.filter((_, i) => i !== idx) });
 
   const handleSave = async () => {
     if (!onSave) return;
     setSaving(true);
-    try { await onSave(data); } finally { setSaving(false); setEdit(false); }
+    try { await onSave(localData); } finally { setSaving(false); setEdit(false); }
   };
 
   return (
@@ -179,19 +172,21 @@ export default function EditableResume({
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-2xl font-semibold text-neutral-800">Resume</h3>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setEdit((e) => !e)}>
-            {edit ? (
-              <>  
-                <X className="w-4 h-4 mr-2" />
-                Cancel
-              </>
-            ) : (
-              <>
-                <Edit className="w-4 h-4 mr-2" />
-                Edit
-              </>
-            )}
-          </Button>
+          {isSubscribed && (
+            <Button variant="outline" size="sm" onClick={() => setEdit((e) => !e)}>
+              {edit ? (
+                <>  
+                  <X className="w-4 h-4 mr-2" />
+                  Cancel
+                </>
+              ) : (
+                <>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </>
+              )}
+            </Button>
+          )}
           {edit && (
             <Button size="sm" onClick={handleSave} disabled={saving}>
               <Save className="w-4 h-4 mr-2" />
@@ -210,13 +205,13 @@ export default function EditableResume({
 
         {!edit ? (
           <ul className="mt-3 space-y-2">
-            {data.education.map((line, i) => (
+            {localData.education.map((line, i) => (
               <li key={i} className="flex"><span className="mr-2">•</span><span>{line}</span></li>
             ))}
           </ul>
         ) : (
           <div className="mt-3 space-y-2">
-            {data.education.map((line, i) => (
+            {localData.education.map((line, i) => (
               <div key={i} className="flex gap-2 items-center">
                 <EditableInput value={line} onChange={(v) => updateEdu(i, v)} />
                 <button onClick={() => removeEdu(i)} className="text-sm text-red-600">Remove</button>
@@ -233,7 +228,7 @@ export default function EditableResume({
           {edit && <button onClick={addJob} className="text-sm text-blue-600">+ Add job</button>}
         </div>
 
-        {data.experience.map((job, i) => (
+        {localData.experience.map((job, i) => (
           <EditableJobCard
             key={i}
             job={job}
@@ -338,7 +333,7 @@ export function ExternalProfile(props: ProfileData) {
                 <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">
                     External Profile for Partner Companies
                 </h1>
-                <p className="text-lg text-gray-600 leading-relaxed max-w-4xl">
+                <p className="text-lg text-gray-600 leading-relaxed">
               Click below to view the external profile we send to our partner companies based on the information you submitted! Feel free to edit any part you see fit. 
                 </p>
             </div>
@@ -437,8 +432,8 @@ export function ExternalProfile(props: ProfileData) {
                         <div className="p-6">
                                             
 
-                      <EditableResume
-                          initial={resumeData}
+                       <EditableResume
+                          data={resumeData}
                           onSave={async (next) => {
                             const res = await fetch("/api/post_parsed_resume", {
                               method: "POST",
