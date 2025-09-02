@@ -400,26 +400,48 @@ export function ExternalProfile(props: ProfileData) {
                     )}
                 </div>
 
-                {/* Additional Documents - seamlessly integrated */}
-                {props.transcript_url && (
-                        <div className="border-t border-gray-100 p-6">
-                            <h3 className="text-2xl font-semibold text-neutral-800 mb-4">Additional Documents</h3>
-                            <div className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <h4 className="font-medium">Academic Transcript</h4>
-                                        <p className="text-sm text-gray-600">Official academic record</p>
-                                    </div>
-                                    <Button variant="outline" size="sm" asChild>
-                                        <a href={props.transcript_url} target="_blank" rel="noopener noreferrer">
-                                            <ExternalLink className="w-4 h-4 mr-2" />
-                                            View
-                                        </a>
-                                    </Button>
-                                </div>
-                            </div>
+                {/* Additional Documents */}
+              {(props.transcript_url || props.resume_url) && (
+                <div className="border-t border-gray-100 p-6">
+                  <h3 className="text-2xl font-semibold text-neutral-800 mb-4">Additional Documents</h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {props.transcript_url && (
+                      <div className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">Academic Transcript</h4>
+                            <p className="text-sm text-gray-600">Official academic record</p>
+                          </div>
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={props.transcript_url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              View
+                            </a>
+                          </Button>
                         </div>
+                      </div>
                     )}
+
+                    {props.resume_url && (
+                      <div className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">Resume</h4>
+                            <p className="text-sm text-gray-600">Original PDF resume</p>
+                          </div>
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={props.resume_url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              View
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
                 {/* Resume Content - seamlessly connected */}
                 <CardContent className="p-0">
