@@ -423,7 +423,7 @@ export function ExternalProfile(props: ProfileData) {
                       </div>
                     )}
 
-                    {/* {props.resume_url && (
+                    {props.resume_url && (
                       <div className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                         <div className="flex items-center justify-between">
                           <div>
@@ -438,7 +438,7 @@ export function ExternalProfile(props: ProfileData) {
                           </Button>
                         </div>
                       </div>
-                    )} */}
+                    )}
                   </div>
                 </div>
               )}
