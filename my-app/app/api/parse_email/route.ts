@@ -12,35 +12,29 @@
   import { cookies } from 'next/headers'
 
   // Helper function to verify if company name matches sender domain
-  function verifyCompanyDomain(companyName: string, fromEmail: string | null, toEmail: string | null): boolean {
+  function verifyCompanyDomain(companyName: string, emailContent: string, fromEmail: string | null, toEmail: string | null): boolean {
     if (!companyName || (!fromEmail && !toEmail)) return false
     
     // Normalize company name for comparison
-    const normalizedCompany = companyName.toLowerCase().replace(/[^a-z0-9]/g, '')
+    const slug = companyName.toLowerCase().replace(/[^a-z0-9]/g, '')
     
-    const emails = [fromEmail, toEmail].filter(Boolean) as string[]
+    const emailMatches =
+  (emailContent || '').match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) || [];
+  
+    const allEmails = [fromEmail, toEmail, ...emailMatches]
+  .filter(Boolean)
+  .map(e => String(e).toLowerCase());
     
-    for (const email of emails) {
-      if (!email) continue
+  const domainVerified = !!slug && allEmails.some(email => {
+  const at = email.indexOf('@');
+    if (at < 0) return false;
+    const domain = email.slice(at + 1);
+    const parts = domain.split('.');
+    const registered = parts.length >= 2 ? parts.slice(-2).join('.') : domain; // e.g. sub.mail.example.com -> example.com
+    return registered.includes(slug);
+  });
       
-      // Extract domain from email
-      const domainMatch = email.match(/@([^>]+?)(?:\s|>|$)/)
-      if (!domainMatch) continue
-      
-      const domain = domainMatch[1].toLowerCase()
-      
-      // Check if domain contains company name
-      const normalizedDomain = domain.replace(/[^a-z0-9]/g, '')
-      
-      // Direct match or company name is contained in domain
-      if (normalizedDomain.includes(normalizedCompany) || normalizedCompany.includes(normalizedDomain)) {
-        console.log(`Domain verification passed: ${companyName} matches domain ${domain}`)
-        return true
-      }
-    }
-    
-    console.log(`Domain verification failed: ${companyName} does not match domains from ${fromEmail}, ${toEmail}`)
-    return false
+   return domainVerified
   }
   
   
@@ -160,7 +154,7 @@
       console.log("Validated parsed data:", parsedData)
       
       // Verify domain matches company name
-      const domainVerified = verifyCompanyDomain(parsedData.company_name, fromEmail, toEmail)
+      const domainVerified = verifyCompanyDomain(parsedData.company_name, emailContent, fromEmail, toEmail)
       console.log("Domain verification result:", domainVerified)
       
       // Adjust confidence score based on domain verification
