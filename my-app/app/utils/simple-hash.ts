@@ -39,6 +39,7 @@ export function decodeSimple(hash: string): number | null {
     
     return decoded > 0 ? decoded : null;
   } catch (error) {
+    console.log(error)
     return null;
   }
 }

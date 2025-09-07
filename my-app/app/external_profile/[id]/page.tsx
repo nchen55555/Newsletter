@@ -28,7 +28,8 @@ export default function ExternalProfilePage({ params }: { params: Promise<{ id: 
           setData(data);
         })
         .catch(error => {
-          setData(null);
+          setData(null);  
+          throw new error
         });
     };
     

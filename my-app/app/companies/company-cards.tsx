@@ -1,137 +1,150 @@
-'use client'
+"use client";
 
-import { useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { CompanyData } from "@/app/types"
-import ApplyButton from "@/app/components/apply"
-import RainbowBookmark from "@/app/components/rainbow_bookmark"
+import { useId, useMemo } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { CompanyData } from "@/app/types";
+import ApplyButton from "@/app/components/apply";
+import RainbowBookmark from "@/app/components/rainbow_bookmark";
 
 type CompanyWithImageUrl = CompanyData & {
-  imageUrl: string | null
-}
+  imageUrl: string | null;
+};
 
 interface CompanyCardsProps {
-  companies: CompanyWithImageUrl[]
+  companies: CompanyWithImageUrl[];
+}
+
+
+function PrimaryCTA({ companyId }: { companyId: string }) {
+  return (
+    <div className="relative">
+      <div className="relative">
+        <ApplyButton company={companyId} />
+      </div>
+    </div>
+  );
 }
 
 function CompanyCard({ company }: { company: CompanyWithImageUrl }) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const aboutId = useId();
+  const router = useRouter();
+
+  const facts = useMemo(() => {
+    const arr: Array<{ label: string; value: string | number | undefined }> = [];
+    if (company?.location) arr.push({ label: "Location", value: String(company.location) });
+    if (company?.employees) arr.push({ label: "Headcount", value: String(company.employees) });
+    if (company?.founded) arr.push({ label: "Founded", value: String(company.founded) });
+    if (company?.stage) arr.push({ label: "Stage", value: String(company.stage) });
+    if (company?.industry) arr.push({ label: "Industry", value: String(company.industry) });
+    return arr.filter(Boolean).slice(0, 4);
+  }, [company]);
+
+  const title = company.alt || `Company ${company.company?.toString?.() ?? ""}`;
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
-      {/* Company Header */}
-      <div className="p-6">
-        <div className="flex items-start gap-4">
-          {/* Company Logo */}
-          <div className="w-16 h-16 rounded-xl overflow-hidden bg-neutral-100 flex-shrink-0">
-            {company.imageUrl ? (
-              <Image
-                src={company.imageUrl}
-                alt={company.alt || `Company ${company.company.toString()}`}
-                width={64}
-                height={64}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 flex items-center justify-center text-neutral-600 font-bold text-lg">
-                {company.alt ? company.alt.charAt(0).toUpperCase() : 'C'}
-              </div>
-            )}
-          </div>
-
-          {/* Company Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-neutral-900 mb-1">
-                  {company.alt || `Company ${company.company.toString()}`}
-                </h3>
-                {company.caption && (
-                  <p className="text-sm text-neutral-600 mb-2">
-                    {company.caption}
-                  </p>
-                )}
-                {company.tags && company.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    <span className="inline-block px-3 py-1 text-xs font-medium bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 text-neutral-700 rounded-full border border-neutral-200">
-                      article published
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Header Action Buttons */}
-              <div className="flex items-center gap-2">
-                {/* Rainbow Bookmark Button */}
-                <RainbowBookmark company={company.company} />
-                
-                {/* Expand Button */}
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="flex items-center justify-center w-8 h-8 hover:bg-neutral-100 transition-colors rounded-lg"
-                >
-                  {isExpanded ? (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  )}
-                </button>
-              </div>
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4 border-b border-neutral-100 bg-white/80 p-5 backdrop-blur supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
+      <div className="flex min-w-0 items-center gap-4">
+        <div className="grid h-20 w-28 flex-shrink-0 place-items-center overflow-hidden rounded-xl bg-neutral-100">
+          {company.imageUrl ? (
+            <Image
+              src={company.imageUrl}
+              alt={company.alt || `Logo for ${title}`}
+              width={112}   // match w-28
+              height={80}   // match h-20
+              className="h-full w-full object-contain p-2"
+            />
+          ) : (
+            <div className="text-xl font-semibold text-neutral-600">
+              {title?.charAt(0)?.toUpperCase?.() || "C"}
             </div>
-          </div>
+          )}
+        </div>
+
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold leading-snug text-neutral-900 line-clamp-2">
+            {title}
+          </h3>
+          {company.caption && (
+            <p className="mt-0.5 text-sm leading-snug text-neutral-600 line-clamp-2">
+              {company.caption}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Expanded Content */}
-      {isExpanded && (
-        <div className="border-t border-neutral-200 bg-neutral-50">
-          <div className="p-6">
-            {company.description && (
-              <div className="mb-6">
-                <h4 className="text-sm font-semibold text-neutral-900 mb-2">About</h4>
-                <p className="text-sm text-neutral-700 leading-relaxed">
-                  {company.description}
-                </p>
-              </div>
-            )}
+      </div>
 
+      {/* Body */}
+      <div className="flex flex-1 flex-col gap-4 p-5">        
+        {/* Facts (wrap, no truncate) */}
+        {facts.length > 0 && (
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-neutral-700 md:grid-cols-4">
+            {facts.map((f) => (
+              <li key={f.label} className="break-words">
+                <span className="text-neutral-500">{f.label}: </span>
+                <span className="font-medium text-neutral-800">{f.value}</span>
+              </li>
+            ))}
+          </ul>
+        )}
 
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              {company.tags && company.tags.length > 0 && (
-                <Link
-                  href={`/${company.tags[0]}`}
-                  className="inline-flex items-center justify-center bg-neutral-900 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-neutral-800 transition-colors text-sm"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                  Read Article
-                </Link>
-              )}
-              <div className="flex-1">
-                <ApplyButton company={company.company.toString()} />
-              </div>
+        {/* About — clamped when collapsed; full when expanded */}
+        {company.description && (
+          <div>
+            <h4 className="mb-1 text-sm font-semibold text-neutral-900">About</h4>
+            <p
+              id={aboutId}
+              className={[
+                "text-sm leading-relaxed text-neutral-700",
+              ].join(" ")}
+            >
+              {company.description}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+          {company.tags?.length ? (
+            <button
+            type="button"
+            onClick={() => router.push(`/${company.tags?.[0]}`)}
+            className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-emerald-700 underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+            aria-controls={aboutId}
+          >
+            {"Read more"}
+          </button>
+            
+          ) : null}
             </div>
+            
+          </div>
+        )}
+      </div>
+
+      {/* Footer — Bookmark left, Apply right */}
+      <div className="mt-auto border-t border-neutral-100 bg-neutral-50/80 p-5">
+        <div className="flex items-center justify-between">
+          <div className="shrink-0">
+            <RainbowBookmark company={company.company} />
+            
+          </div>
+         
+          <div className="shrink-0">
+            <PrimaryCTA companyId={company.company.toString()} />
           </div>
         </div>
-      )}
-    </div>
-  )
+      </div>
+    </article>
+  );
 }
 
 export default function CompanyCards({ companies }: CompanyCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+    // Bigger cards (2-up on large screens), stretch rows to equal height
+    <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-2">
       {companies.map((company) => (
         <CompanyCard key={company._id} company={company} />
       ))}
     </div>
-  )
+  );
 }

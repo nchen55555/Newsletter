@@ -328,7 +328,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                   <div className="flex-shrink-0 w-6 h-6 bg-neutral-900 text-white rounded-full flex items-center justify-center text-sm font-medium">2</div>
                   <div>
                     <h4 className="text-lg font-bold text-neutral-700">index on your interests</h4>
-                    <p className="text-lg text-neutral-600">browse a set of ten partner companies and bookmark ones that particularly interest you so that we get a better understanding of your interests</p>
+                    <p className="text-lg text-neutral-600">browse a set of nine partner companies and bookmark ones that particularly interest you in the sense that you would actually want to interview with them. we typically send your profile for review to some of the companies you bookmarked. </p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">

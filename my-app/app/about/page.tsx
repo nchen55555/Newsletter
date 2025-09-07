@@ -28,7 +28,7 @@ export default function AboutPage() {
           </p>
 
           <p className="text-lg text-neutral-600 mb-10">
-            early talent is introduced via referral and in this public beta, can apply to join the network. our team is entirely technically and we screen the candidate. if there is a mutual fit, <strong>we send the candidate&#39;s profile to 2-3 of our partner startups and if they are interested in the candidate and think there could be a strong match, the candidate is introduced to the platform</strong>. this process allows us to index upon how we filter and match each candidate to our partner startups 
+            early talent is introduced via referral and must apply to join the network. our team is entirely technically and we screen the candidate. if there is a mutual fit, <strong>we send the candidate&#39;s profile to 2-3 of our partner startups and if they are interested in the candidate and think there could be a strong match, the candidate is introduced to the platform</strong>. this process allows us to index upon how we filter and match each candidate to our partner startups 
           </p>
           <p className="text-lg text-neutral-600 mb-10">
             <strong>we start with a simple statement</strong> talent matching and discovery is high-friction yet both sides of the marketplace are eager to connect.

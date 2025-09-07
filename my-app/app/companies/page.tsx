@@ -40,6 +40,8 @@ export default async function PortfolioPage() {
         ...company,
         imageUrl: company.image ? builder.image(company.image).width(300).height(200).url() : null
     }))
+
+    
       
     return (
       <ProtectedContent>
@@ -50,22 +52,13 @@ export default async function PortfolioPage() {
               {/* Header Section */}
               <div className="mb-10">
                 <h1 className="text-2xl md:text-4xl font-bold mb-4 text-neutral-800">
-                  introducing our partners
+                  our partner companies
                 </h1>
                 <p className="text-base md:text-lg text-neutral-600 mb-6 md:mb-10">
-                  we&apos;ve highlighted some of the companies we&apos;re potentially excited to be writing about in the next month, with more to be added. we&apos;ve exclusively partnered with these companies to provide you with a 
-                  <span className="relative group inline-block align-middle mx-1">
-                    <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">
-                      direct introduction
-                    </span>
-                    <span className="absolute left-0 top-full mt-2 min-w-[220px] max-w-[90vw] md:max-w-screen-sm w-auto bg-white border border-neutral-200 rounded shadow-md px-3 md:px-4 py-2 text-sm md:text-lg text-neutral-700 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-300 z-10 break-words whitespace-pre-line">
-                      for each company media profile, you&apos;ll have the opportunity to bookmark and apply
-                    </span>
-                  </span>, and we&apos;ll make the connect for you as soon as you indicate interest.
-                </p>
+                  we&apos;ve exclusively partnered with these companies to surface exciting opportunities for you to get involved in! each partner works exclusively with us to flesh out a company profile. for our cohort members who want to get connected to our partner startups, we provide an expedited application and introduction that is surfaced above all of their inbound. you will get a direct introduction to the founders for your first meeting.
+                </p>  
                 <p className="text-base md:text-lg text-neutral-600 mb-6 md:mb-10">
-                  once you indicate interest on the company profile, you&apos;ll be directed to update your profile and submit your application. if there is mutual interest with the startup, we will make the introduction within 72 hours – 
-                  <span className="bg-gradient-to-r from-yellow-100 via-pink-100 to-blue-100 px-2 py-1 rounded transition-colors duration-300">let&apos;s get connecting!</span>
+                 you can bookmark a company if you are interested in learning more and potentially reading the company profile. <strong>if you are ready to get connected and want to apply to join the company, click apply and if there is mutual interest with the startup, we will make the introduction to the founder! </strong>
                 </p>
               </div>
 
