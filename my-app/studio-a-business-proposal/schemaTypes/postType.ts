@@ -44,5 +44,12 @@ export const postType = defineType({
         },
       ],
     }),
+    defineField({
+      name: 'tags',
+      title: 'Role Tags',
+      type: 'array',
+      of: [{ type: 'string' }],
+      description: 'Role tags like “New Grad”, “Intern (Flexible Timing)”',
+    },),
   ],
 })
