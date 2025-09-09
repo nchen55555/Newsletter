@@ -84,8 +84,6 @@ export async function POST(req: NextRequest) {
     const jsonText = result.response.text();
     const normalized = JSON.parse(jsonText);
 
-    console.log("GEMINI PARSING RETURNED", normalized)
-
     return NextResponse.json({ success: true, data: normalized });
   } catch (err: unknown) {
     console.error("Direct Gemini parsing error:", err);

@@ -13,23 +13,19 @@ export async function POST(request: NextRequest) {
       subject: formData.get('subject') as string,
       email: formData.get('email') as string, // Full email content
     }
-    
-    console.log('Received email:', emailData)
-    
+        
     // Extract user from @theniche.fyi recipient (check email headers for any @theniche.fyi address)
     let recipientEmail = emailData.bcc
     
     // If BCC field is empty, try to extract any @theniche.fyi address from email headers
     if (!recipientEmail && emailData.email) {
       const theNicheMatch = emailData.email.match(/([^\s<]+@theniche\.fyi)/m)
-      console.log("theniche.fyi match ", theNicheMatch)
       if (theNicheMatch) {
         recipientEmail = theNicheMatch[1]
       }
     }
     
     if (!recipientEmail?.includes('@theniche.fyi')) {
-      console.log('No @theniche.fyi recipient found. BCC field:', emailData.bcc)
       return NextResponse.json({ error: 'Invalid recipient domain' }, { status: 400 })
     }
         

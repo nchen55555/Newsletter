@@ -262,7 +262,6 @@ export function ExternalProfile(props: ProfileData) {
 
     const getResumeParsedData = useCallback(async () => {
         if (!props.resume_url) return;
-        console.log("parsed resume json ", props.parsed_resume_json)
         if(props.parsed_resume_json || props.parsed_resume_json != "") {
             function asParsedResume(value: unknown): ParsedResumeData | null {
                 if (!value) return null;
@@ -301,7 +300,6 @@ export function ExternalProfile(props: ProfileData) {
             );
             if (response.ok) {
                 const data = await response.json();
-                console.log('Parsed resume data:', data);
                 await fetch('/api/post_parsed_resume', {
                   method: 'POST',
                   headers: {

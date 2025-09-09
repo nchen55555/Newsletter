@@ -26,16 +26,6 @@ async function handleProfileUpdate(req: NextRequest) {
     // 3. Parse form data
     const formData = await req.formData();
 
-    console.log("APPLIED ", formData.get('applied'))
-
-
-    // Validate all required fields
-    // for (const field of requiredFields) {
-    //   if (!formData.get(field)) {
-    //     return NextResponse.json({ error: `${field} is required` }, { status: 400 });
-    //   }
-    // }
-
 
     // Get optional files from form data
     const resume_file = formData.get('resume_file');
@@ -220,8 +210,6 @@ async function handleProfileUpdate(req: NextRequest) {
     // Reset parsed_resume_json if new resume was uploaded
     if (resume_url) updateData.parsed_resume_json = "";
 
-    console.log("Update data:", updateData);
-
     // Only proceed with update if there are fields to update
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ success: true, message: 'No fields to update' });
@@ -261,18 +249,15 @@ async function handleProfileUpdate(req: NextRequest) {
 
 // Export both POST and PATCH methods
 export async function POST(req: NextRequest) {
-  console.log('POST request received at /api/post_profile');
   return handleProfileUpdate(req);
 }
 
 export async function PATCH(req: NextRequest) {
-  console.log('PATCH request received at /api/post_profile');
   return handleProfileUpdate(req);
 }
 
 // Add debugging for unsupported methods
 export async function GET() {
-  console.log('GET request received at /api/post_profile - Method not allowed');
   return NextResponse.json({ 
     error: 'Method not allowed', 
     message: 'This endpoint only supports POST and PATCH requests',
@@ -281,7 +266,6 @@ export async function GET() {
 }
 
 export async function PUT() {
-  console.log('PUT request received at /api/post_profile - Method not allowed');
   return NextResponse.json({ 
     error: 'Method not allowed', 
     message: 'This endpoint only supports POST and PATCH requests',
@@ -290,7 +274,6 @@ export async function PUT() {
 }
 
 export async function DELETE() {
-  console.log('DELETE request received at /api/post_profile - Method not allowed');
   return NextResponse.json({ 
     error: 'Method not allowed', 
     message: 'This endpoint only supports POST and PATCH requests',

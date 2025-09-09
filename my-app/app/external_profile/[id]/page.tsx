@@ -14,8 +14,6 @@ export default function ExternalProfilePage({ params }: { params: Promise<{ id: 
     const getParams = async () => {
       const { id } = await params;
       setProfileId(id);
-
-      console.log("ID is: ", id)
       
       // Fetch profile data using the new external profile API
       const apiUrl = `/api/get_external_profile?id=${id}`;

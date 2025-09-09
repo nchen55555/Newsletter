@@ -28,7 +28,6 @@ export async function updateApplicationFromEmail(
   const { company_name, interview_stage, event_type, key_details, next_steps } = parsedData
   
   try {
-    console.log(`Updating application for user: ${userEmail}, company: ${company_name}`)
 
     // Get subscriber ID from email
     const { data: subscriber, error: subError } = await supabase
@@ -41,11 +40,9 @@ export async function updateApplicationFromEmail(
       throw new Error(`Subscriber not found for email: ${userEmail}`)
     }
 
-    console.log(`Found subscriber ID: ${subscriber.id}`)
 
     // Find or create company
     const company = await findOrCreateCompany(supabase, company_name)
-    console.log(`Company resolved: ${company.id} - ${company.company_name}`)
     
     // Find existing application
     const { data: existingApp, error: findError } = await supabase
@@ -72,13 +69,11 @@ export async function updateApplicationFromEmail(
       actionDetails = next_steps || key_details
     }
 
-    console.log(`Setting action required: ${actionRequired} - ${actionDetails}`)
     
     if (findError && findError.code === 'PGRST116') {
 
       
       // No existing application, create new one
-      console.log('Creating new application...')
       const { data: newApp, error: createError } = await supabase
         .from('applications')
         .insert({
@@ -98,15 +93,12 @@ export async function updateApplicationFromEmail(
         throw createError
       }
       applicationId = newApp.id
-      console.log(`Created new application with ID: ${applicationId}`)
     } else if (findError) {
       console.error('Error finding application:', findError)
       throw findError
     } else {
       // Update existing application
       applicationId = existingApp.id
-      console.log(`Updating existing application: ${applicationId}`)
-      console.log(`Updating stage from '${existingApp.stage}' to '${interview_stage}' with email confidence ${parsedData.confidence_score}`)
       
       const { error: updateError } = await supabase
         .from('applications')
@@ -119,16 +111,13 @@ export async function updateApplicationFromEmail(
         .eq('id', applicationId)
       
       if (updateError) {
-        console.error('Error updating application:', updateError)
         throw updateError
       }
     }
 
-    console.log(`Successfully updated application ${applicationId}`)
     return applicationId
 
   } catch (error) {
-    console.error('Error updating application from email:', error)
     throw error
   }
 }
@@ -141,7 +130,6 @@ export async function storeEmailEvent(
   const supabase = createRouteHandlerClient({ cookies })
   
   try {
-    console.log(`Storing email event for user: ${userEmail}`)
 
     // Get subscriber ID
     const { data: subscriber, error: subError } = await supabase
@@ -151,7 +139,6 @@ export async function storeEmailEvent(
       .single()
     
     if (subError) {
-      console.error('Subscriber not found for email event:', subError)
       return // Don't throw, just log
     }
 
@@ -206,7 +193,6 @@ export async function findOrCreateCompany(
 ): Promise<Company> {
   if (!companyName) throw new Error('Company name is required')
   
-  console.log(`Finding or creating company: ${companyName}`)
   
   // Try to find existing company (case-insensitive)
   const { data: existingCompany, error: findError } = await supabase
@@ -216,12 +202,10 @@ export async function findOrCreateCompany(
     .single()
   
   if (!findError && existingCompany) {
-    console.log(`Found existing company: ${existingCompany.id} - ${existingCompany.company_name}`)
     return existingCompany as Company
   }
   
   // Create new company if not found
-  console.log(`Creating new company: ${companyName}`)
   const { data: newCompany, error: createError } = await supabase
     .from('companies')
     .insert({
@@ -233,7 +217,6 @@ export async function findOrCreateCompany(
   if (createError) {
     // If it's a duplicate key error, try to find the existing company again
     if (createError.code === '23505') {
-      console.log(`Company ${companyName} already exists, fetching existing record...`)
       const { data: existingCompany, error: findError } = await supabase
         .from('companies')
         .select('id, company_name')
@@ -241,7 +224,6 @@ export async function findOrCreateCompany(
         .single()
       
       if (!findError && existingCompany) {
-        console.log(`Found existing company after duplicate error: ${existingCompany.id} - ${existingCompany.company_name}`)
         return existingCompany as Company
       }
     }
@@ -250,7 +232,6 @@ export async function findOrCreateCompany(
     throw createError
   }
   
-  console.log(`Created new company: ${newCompany.id} - ${newCompany.company_name}`)
   return newCompany as Company
 }
 
@@ -312,6 +293,5 @@ export function validateParsedEmailData(data: any): data is ParsedEmailData {
     return false
   }
 
-  console.log('Validation passed for parsed email data')
   return true
 }

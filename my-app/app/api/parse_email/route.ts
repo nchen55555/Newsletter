@@ -73,8 +73,6 @@
         )
       }
 
-      console.log("Email parsing")
-
       // Use userEmail from webhook if provided, otherwise fall back to auth
       let finalUserEmail = userEmail
       
@@ -88,8 +86,6 @@
         }
         finalUserEmail = session.user.email
       }
-
-      console.log("User email ", finalUserEmail)
   
       // Initialize Gemini
       const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMENI_API_KEY!)
@@ -110,12 +106,9 @@
   
       const result = await model.generateContent(prompt)
 
-      console.log("gemini parsed result ", result)
       const response = await result.response
       const text = response.text()
-      
-      console.log("gemini response text:", text)
-      
+            
       // Continue from where your code left off...
 
       // Parse the JSON response
@@ -150,25 +143,19 @@
       
       // Add metadata
       parsedData.parsed_at = new Date().toISOString()
-      
-      console.log("Validated parsed data:", parsedData)
-      
+            
       // Verify domain matches company name
       const domainVerified = verifyCompanyDomain(parsedData.company_name, emailContent, fromEmail, toEmail)
-      console.log("Domain verification result:", domainVerified)
       
       // Adjust confidence score based on domain verification
       if (!domainVerified) {
-        console.log(`Reducing confidence from ${parsedData.confidence_score} due to domain mismatch`)
         parsedData.confidence_score = Math.min(parsedData.confidence_score, 0.3) // Cap at low confidence
       }
       
       // If confidence is high enough and domain verified, update application automatically
       if (parsedData.confidence_score >= 0.6 && parsedData.company_name && domainVerified) {
         try {
-          console.log("Updating application from email...")
           await updateApplicationFromEmail(parsedData, finalUserEmail)
-          console.log("Application updated successfully")
         } catch (updateError) {
           console.error('Failed to update application:', updateError)
           // Continue processing even if update fails
@@ -177,9 +164,7 @@
 
       // Store the email event for tracking
       try {
-        console.log("Storing email event...")
         await storeEmailEvent(parsedData, finalUserEmail, emailContent)
-        console.log("Email event stored successfully")
       } catch (storeError) {
         console.error('Failed to store email event:', storeError)
         // Continue processing even if storage fails

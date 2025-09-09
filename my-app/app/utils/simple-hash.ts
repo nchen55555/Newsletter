@@ -71,15 +71,12 @@ export function decodeSimple(hash: string): number | null {
 /**
  * Test the simple hash functions
  */
-export function testSimpleHash() {
-  console.log('Testing simple hash functions...');
-  
+export function testSimpleHash() {  
   const testIds = [1, 10, 50, 100, 123, 200];
   
   testIds.forEach(id => {
     const encoded = encodeSimple(id);
     const decoded = decodeSimple(encoded);
-    console.log(`ID: ${id} → Hash: ${encoded} → Decoded: ${decoded}`);
   });
   
   return testIds.map(id => ({

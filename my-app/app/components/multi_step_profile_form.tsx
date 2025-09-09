@@ -102,7 +102,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         
         const companies = await response.json()
         
-        console.log('Companies fetched from API:', companies.length, companies)
         setCompanies(companies)
     } catch (error) {
       console.error('Error loading companies:', error)
@@ -335,7 +334,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                   <div className="flex-shrink-0 w-6 h-6 bg-neutral-900 text-white rounded-full flex items-center justify-center text-sm font-medium">3</div>
                   <div>
                     <h4 className="text-lg font-bold text-neutral-700">wait to hear back from us</h4>
-                    <p className="text-lg text-neutral-600">with the information you provide, we will review your profile and see if there is a mutual fit for you to be a part of The Niche. <strong>we send your profile to a select cohort of startup partners and if there is a majority interest in your profile, we accept you onto the platform. </strong> the process takes 2-3 days and we will email you of your status!
+                    <p className="text-lg text-neutral-600">with the information you provide, we will review your profile and see if there is a mutual fit for you to be a part of The Niche. <strong>we send your profile to a select cohort of startup partners and if there is a majority interest in your profile, we accept you onto the platform. </strong> the process takes a week or two and we will email you of your status!
                     <br /><br />
                     if you are not accepted, you can still continue to access our newsletter and persue our partner companies! once accepted, partner startups will reach out to you if your profile fits their needs and you are also welcome to connect directly with them!</p>
                   </div>
@@ -396,7 +395,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         <div>
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-neutral-900 mb-2">index on your interests</h2>
-            <p className="text-neutral-600"><strong>bookmark</strong> a couple companies in this list that particularly interest you so that we get a better understanding of your interests</p>
+            <p className="text-neutral-600"><strong>bookmark</strong> a couple companies in this list that particularly interest (or apply and we will fast-track you to those companies once we have reviewed your application to the niche) you so that we get a better understanding of your interests</p>
           </div>
 
           <div className="space-y-4">

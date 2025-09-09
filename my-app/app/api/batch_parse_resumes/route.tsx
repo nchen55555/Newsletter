@@ -120,8 +120,6 @@ export async function POST(request: Request) {
         total: 0
       });
     }
-
-    console.log(`Found ${profiles.length} profiles to process`);
     
     let successCount = 0;
     let errorCount = 0;
@@ -129,13 +127,11 @@ export async function POST(request: Request) {
 
     // Process each profile
     for (const profile of profiles) {
-      console.log(`Processing profile ${profile.id}: ${profile.first_name} ${profile.last_name}`);
       
       const parseResult = await parseResumeWithGemini(profile.resume_url);
       
       if (parseResult.success) {
         // Update the profile with parsed data
-        console.log(`Updating profile ${profile.id} with parsed data...`);
         const { data: updateData, error: updateError } = await supabase
           .from('subscribers')
           .update({ parsed_resume_json: JSON.stringify(parseResult.data) })

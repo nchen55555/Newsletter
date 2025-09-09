@@ -50,6 +50,8 @@ export default function ApplyButton({ company }: { company: string }) {
 
   const [applied, setApplied] = useState(false);
 
+  const [isCohortMember, setIsCohortMember] = useState(false)
+
   useEffect(() => {
     const ac = new AbortController();
     
@@ -62,6 +64,8 @@ export default function ApplyButton({ company }: { company: string }) {
         });
         if (!res.ok) return;
         const profile = await res.json();
+
+        setIsCohortMember(profile.status == 'COHORT')
 
         // Check profile completeness
         const incomplete =
@@ -131,7 +135,8 @@ export default function ApplyButton({ company }: { company: string }) {
   
 
 
-  if (!isSubscribed) return null;
+  if (!isSubscribed || !isCohortMember) return null;
+
 
   async function urlToFile(url: string, filename: string, mimeType?: string): Promise<File> {
     const response = await fetch(url);

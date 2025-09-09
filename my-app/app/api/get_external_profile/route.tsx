@@ -21,12 +21,10 @@ export async function GET(request: Request){
         
         // Try decoding as a simple hash first (e.g., "1861" → 123)
         realId = decodeSimple(hashId);
-        console.log("Decoded simple hash:", hashId, "→", realId);
         
         // If decoding failed, try parsing as direct integer (fallback)
         if (!realId && !isNaN(parseInt(hashId))) {
           realId = parseInt(hashId);
-          console.log("Using direct integer:", hashId, "→", realId);
         }
         
         if (!realId) {
