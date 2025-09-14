@@ -48,6 +48,7 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
     const [generated_interest_profile, setGeneratedInterestProfile] = useState("")
     const [isLoading, setIsLoading] = useState(true)
     const [companyRecommendations, setCompanyRecommendations] = useState<number[]>([])
+    const [appliedToTheNiche, setAppliedToTheNiche] = useState(false)
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -59,11 +60,11 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                 
                 if (res.ok) {
                     const profile = await res.json();
-                    console.log("PROFILE ", profile)
                     setFirstName(profile.first_name || "")
                     setProfileImage(profile.profile_image_url || "")
                     setGeneratedInterestProfile(profile.generated_interest_profile || "")
                     setCompanyRecommendations(profile.company_recommendations || [])
+                    setAppliedToTheNiche(profile.applied)
                     
                 }
             } catch (e) {
@@ -78,12 +79,16 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
 
     // Filter featured opportunities based on company recommendations
     const filteredOpportunities = featuredOpportunities.filter(opportunity => 
-        companyRecommendations.includes(opportunity.company)
+        companyRecommendations.includes(opportunity.company) && opportunity.partner
     );
 
     // Other opportunities not in company recommendations
     const otherOpportunities = featuredOpportunities.filter(opportunity => 
-        !companyRecommendations.includes(opportunity.company)
+        !companyRecommendations.includes(opportunity.company) && opportunity.partner
+    );
+
+    const externalOpportunities = featuredOpportunities.filter(opportunity => 
+        !opportunity.partner
     );
 
     return (
@@ -150,7 +155,13 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                             </DialogContent>
                         </Dialog>
                     </div>
-                    <CompanyCards priority={filteredOpportunities} other={otherOpportunities} external={[]}/>   
+                    {appliedToTheNiche && (<CompanyCards priority={filteredOpportunities} other={otherOpportunities} external={externalOpportunities}/> )}
+                    {!appliedToTheNiche && (<Alert className="max-w-2xl mx-auto">
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Create your profile to access your opportunities 
+                </AlertDescription>
+              </Alert>)} 
                 </div>
             )}
             {isLoading && (

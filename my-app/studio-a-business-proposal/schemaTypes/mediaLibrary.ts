@@ -48,6 +48,11 @@ export const mediaLibrary = defineType({
         layout: 'tags'
       }
     }),
+    defineField({
+      name: 'partner',
+      title: 'partner',
+      type: 'boolean',
+    }),
   ],
   preview: {
     select: {

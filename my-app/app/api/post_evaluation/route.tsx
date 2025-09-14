@@ -34,8 +34,6 @@ export async function PATCH(req: NextRequest) {
       .eq('id', Number(formData.get('id')))
       .eq('email', formData.get('email'));
 
-    console.log('Profile updated successfully');
-
     if (dbError) {
       console.error('Profile update error:', dbError);
       return NextResponse.json({ 

@@ -41,7 +41,8 @@ export default async function OpportunitiesPage() {
     employees,
     founded,
     stage,
-    industry
+    industry,
+    partner
   }`;
 
 const builder = imageUrlBuilder(client)

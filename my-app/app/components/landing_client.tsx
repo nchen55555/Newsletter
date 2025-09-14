@@ -335,7 +335,7 @@ export default function LandingClient({ posts }: { posts: ArticleCardPost[] }) {
             Opportunities in our Public Beta
           </h1>
           <p className="text-base md:text-lg text-neutral-600 mb-12 leading-relaxed max-w-4xl mx-auto">
-          We have already partnered with 7 of the fastest-growing, high-talent pool startups within our network. They are working with The Niche to curate their verified and personalized network of <strong>perfect matches </strong>. Join the network to connect with them. In the future, we expect to onboard even more partners to curate an even more personalized network of opportunities for you. 
+          We have already partnered with 6 of the fastest-growing, high-talent pool startups within our network. They are working with The Niche to curate their verified and personalized network of <strong>perfect matches </strong>. Join the network to connect with them. In the future, we expect to onboard even more partners to curate an even more personalized network of opportunities for you. 
           </p>
         </motion.div>
       </div>

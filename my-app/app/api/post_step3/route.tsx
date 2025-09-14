@@ -25,8 +25,6 @@ export async function POST(req: NextRequest) {
       networkRecommendations 
     } = body;
 
-    console.log("fields ", interests, interestedCompanies, networkRecommendations)
-
 
     // 5. Prepare update data - only include fields that have values
     const updateData: Step3UpdateData = {};

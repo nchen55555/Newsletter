@@ -18,8 +18,6 @@ export async function POST(request: Request) {
         const body = await request.json()
         const { interest_companies, interest, bio, resume, email} = body
 
-        console.log(interest_companies, interest, bio, resume, email)
-
         // Validate required fields
         if (!interest_companies || !interest || !bio || !resume) {
             return NextResponse.json(
@@ -105,10 +103,8 @@ export async function POST(request: Request) {
 
         // Generate content using Gemini
         const result = await model.generateContent(prompt)
-        console.log("RESULT ", result)
         const response = await result.response
         const generatedProfile = response.text()
-        console.log(generatedProfile)
 
         // Update the user's profile in Supabase
         const { error: updateError } = await supabase

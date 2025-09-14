@@ -15,7 +15,8 @@ export async function GET() {
         alt,
         caption,
         description,
-        tags
+        tags,
+        partner
       }`;
 
     const builder = imageUrlBuilder(client)

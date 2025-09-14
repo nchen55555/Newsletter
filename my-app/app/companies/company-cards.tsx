@@ -30,7 +30,7 @@ function PrimaryCTA({ companyId }: { companyId: string }) {
   );
 }
 
-export function CompanyCard({ company, showHighMutualInterest = false }: { company: CompanyWithImageUrl; showHighMutualInterest?: boolean }) {
+export function CompanyCard({ company, showHighMutualInterest = false, external = false }: { company: CompanyWithImageUrl; showHighMutualInterest?: boolean; external?: boolean}) {
   const aboutId = useId();
   const router = useRouter();
 
@@ -135,14 +135,16 @@ export function CompanyCard({ company, showHighMutualInterest = false }: { compa
       </div>
 
       {/* Footer — All buttons on the left */}
+     
       <div className="mt-auto border-t border-neutral-100 bg-neutral-50/80 p-5">
         <div className="flex items-center gap-4 justify-start">
           <div className="shrink-0">
             <RainbowBookmark company={company.company} /> 
           </div>
+          {!external &&(
           <div className="shrink-0">
             <PrimaryCTA companyId={company.company.toString()} />
-          </div>
+          </div>)}
         </div>
       </div>
     </article>
@@ -202,7 +204,7 @@ export default function CompanyCards({ priority, other, external = [] }: Company
             ) : (
               <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-2">
                 {priority.map((company) => (
-                  <CompanyCard key={company._id} company={company} showHighMutualInterest={true} />
+                  <CompanyCard key={company._id} company={company} showHighMutualInterest={true} external={false} />
                 ))}
               </div>
             )}
@@ -212,7 +214,7 @@ export default function CompanyCards({ priority, other, external = [] }: Company
         {activeTab === 'other' && (
           <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-3 lg:grid-cols-3">
             {other.map((company) => (
-              <CompanyCard key={company._id} company={company} />
+              <CompanyCard key={company._id} company={company} external={false}/>
             ))}
           </div>
         )}
@@ -220,7 +222,7 @@ export default function CompanyCards({ priority, other, external = [] }: Company
         {activeTab === 'external' && (
           <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-3 lg:grid-cols-4">
             {external.map((company) => (
-              <CompanyCard key={company._id} company={company} />
+              <CompanyCard key={company._id} company={company} external={true}/>
             ))}
           </div>
         )}

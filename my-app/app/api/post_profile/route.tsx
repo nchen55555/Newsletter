@@ -100,11 +100,6 @@ async function handleProfileUpdate(req: NextRequest) {
     // Handle transcript file upload if provided
     if (transcript_file instanceof File) {
       // Debug logging for transcript file
-      console.log('Transcript file details:', {
-        name: transcript_file.name,
-        type: transcript_file.type,
-        size: transcript_file.size
-      });
 
       // Validate file type explicitly
       const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
@@ -172,11 +167,6 @@ async function handleProfileUpdate(req: NextRequest) {
     // Handle profile image upload if provided
     if (profile_image_file instanceof File) {
       // Debug logging for profile image file
-      console.log('Profile image file details:', {
-        name: profile_image_file.name,
-        type: profile_image_file.type,
-        size: profile_image_file.size
-      });
 
       // Validate file type explicitly
       const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];

@@ -85,7 +85,6 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
           
           // Check if this profile's actual ID is in the user's connections
           const isConnected = userConnections.includes(actualId);
-          console.log("connected? ", userConnections, actualId)
           setIsAlreadyConnected(isConnected);
         } else {
           console.error("Failed to fetch user connections");

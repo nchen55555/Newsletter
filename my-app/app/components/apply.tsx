@@ -132,10 +132,6 @@ export default function ApplyButton({ company }: { company: string }) {
         setApplied(exists);
       });     
   }, [form.id, company]);
-
-  useEffect(() => {
-    console.log('applied (rendered):', applied, typeof applied);
-  }, [applied]);
   
 
 
@@ -251,8 +247,6 @@ export default function ApplyButton({ company }: { company: string }) {
         return; // Stop here if profile update fails
     }
 
-    console.log("submitting app")
-
     // Only proceed with application if profile update succeeded
     const res2 = await fetch('/api/post_application', {
       method: 'POST',
@@ -267,8 +261,6 @@ export default function ApplyButton({ company }: { company: string }) {
         additional_info: additionalInfo
       })
     })
-
-    console.log("done submitting app")
     
     if (res2.ok) {
       setAppSuccess(true)

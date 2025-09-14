@@ -15,7 +15,6 @@ export async function GET() {
     .select('id, email, linkedin_url, personal_website, first_name, last_name, profile_image_url, bio')
     .eq('is_public_profile', 'TRUE')
 
-  console.log("profiles ", data)
 
   if (error) {
     console.log(error.message)

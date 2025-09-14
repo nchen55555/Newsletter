@@ -41,7 +41,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     <div className="relative">
       {/* Carousel Container */}
       <div className="overflow-hidden rounded-lg">
-        <CompanyCard key={currentCompany._id} company={currentCompany} />
+        <CompanyCard key={currentCompany._id} company={currentCompany} external={!currentCompany.partner}/>
       </div>
 
       {/* Navigation Controls */}
@@ -586,7 +586,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                     The Niche has partnered with 7 high-growth, high-talent density startups. Scroll through the profiles of our 7 partner companies. 
                   </p>
                   <p className="text-neutral-600 leading-relaxed">
-                    <strong>Bookmark</strong> profiles you are interested in and <strong>Connect</strong> to profiles you are strongly impressed by and would like to chat with. If there is mutual interest, we will connect you directly to the founders of the startup. In the future, we use your interests to these 7 profiles to tailor and connect you with more opportunities.
+                    <strong>Bookmark</strong> profiles you are interested in and <strong>Connect</strong> to profiles you are strongly impressed by and would like to chat with. If there is mutual interest, we will connect you directly to the founders of the startup. In the future, we use your interests to these 6 profiles to tailor and connect you with more opportunities. <strong>Some companies are not partners of ours, but feel free to bookmark if interested in them. </strong>
                   </p>
                 </div>
               </div>
@@ -752,6 +752,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
               Hi {form.first_name}! 
               <br></br><br></br>
               <strong>Congratulations and welcome to the Niche!</strong> Your opportunity recommendations will be ready in 2-3 days as we take your information and come up with the best recommendations, and we will send you an email to notify you accordingly. 
+              <br></br>
               <br></br>
               In the meantime, build up your network on the Niche by checking out the people page and start integrating your existing processes into our application tracker. Feel free to explore the platform by connecting with more companies you are interested in amd reading through your feed. 
             </DialogDescription>

@@ -23,8 +23,6 @@ export async function POST(req: NextRequest) {
 
     const { parsed_resume_json } = await req.json();
 
-    console.log("PARSED JSON: ", parsed_resume_json);
-
     const { error: dbError } = await supabase
       .from('subscribers')
       .update({

@@ -25,8 +25,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'connect_id is required' }, { status: 400 });
     }
 
-    console.log("Adding connection:", connect_id, "for user:", user.email);
-
     // 4. Get the current user's profile to retrieve existing connections
     const { data: currentProfile, error: fetchError } = await supabase
       .from('subscribers')
@@ -101,8 +99,6 @@ export async function POST(req: NextRequest) {
     }
 
     const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
-
-    console.log("sending email to ", sendProfile.email, user.email)
 
     const { data, error } = await resend.emails.send({
       from: 'Nicole <nicole@theniche.tech>',
