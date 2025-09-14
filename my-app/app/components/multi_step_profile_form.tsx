@@ -7,7 +7,7 @@ import { ProfileFormState, ProfileData } from '@/app/types'
 import { useSubscriptionContext } from './subscription_context'
 import { Alert, AlertTitle } from '@/components/ui/alert'
 import { Terminal } from 'lucide-react'
-import CompanyCards from '@/app/companies/company-cards'
+import { CompanyCard } from '@/app/companies/company-cards'
 import { CompanyWithImageUrl } from '@/app/types'
 import {
   Dialog,
@@ -16,9 +16,80 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface MultiStepProfileFormProps extends ProfileData {
   access_token: string,
+}
+
+// Company Carousel Component
+function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const totalPages = companies.length
+
+  const nextSlide = () => {
+    setCurrentIndex((prev) => (prev + 1) % totalPages)
+  }
+
+  const prevSlide = () => {
+    setCurrentIndex((prev) => (prev - 1 + totalPages) % totalPages)
+  }
+
+  const currentCompany = companies[currentIndex]
+
+  return (
+    <div className="relative">
+      {/* Carousel Container */}
+      <div className="overflow-hidden rounded-lg">
+        <CompanyCard key={currentCompany._id} company={currentCompany} />
+      </div>
+
+      {/* Navigation Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6">
+          <Button
+            variant="outline"
+            onClick={prevSlide}
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            {Array.from({ length: Math.min(totalPages, 10) }).map((_, index) => {
+              const pageIndex = totalPages > 10 ? 
+                Math.max(0, Math.min(currentIndex - 5, totalPages - 10)) + index :
+                index;
+              return (
+                <button
+                  key={pageIndex}
+                  onClick={() => setCurrentIndex(pageIndex)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    pageIndex === currentIndex ? 'bg-neutral-900' : 'bg-neutral-300'
+                  }`}
+                />
+              );
+            })}
+          </div>
+          
+          <Button
+            variant="outline"
+            onClick={nextSlide}
+            className="flex items-center gap-2"
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      
+      {/* Progress indicator */}
+      <div className="text-center mt-4 text-sm text-neutral-600">
+        Company {currentIndex + 1} of {companies.length}
+      </div>
+    </div>
+  )
 }
 
 
@@ -32,6 +103,17 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const [loadingCompanies, setLoadingCompanies] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [, setEmailSent] = useState(false)
+  
+  // Step 3 form state
+  const [step3Form, setStep3Form] = useState({
+    interests: props.interests,
+    interestedCompanies: props.interested_companies,
+    knownCohortMembers: [] as {id: string, first_name: string, last_name: string, email: string}[],
+    networkRecommendations: [
+      { name: '', email: ''},
+      { name: '', email: ''},
+    ]
+  })
 
 
   useEffect(() => {
@@ -111,7 +193,24 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   }
 
   const handleFinishSetup = async () => {
+    setLoading(true);
     try {
+      console.log(step3Form)
+      // First, post step3 form data
+      const step3Response = await fetch('/api/post_step3', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(step3Form)
+      });
+
+      if (step3Response.ok) {
+        console.log('Step 3 data saved successfully');
+      } else {
+        console.error('Failed to save step 3 data');
+      }
+
       // Send welcome email
       const response = await fetch('/api/send-welcome-email', {
         method: 'POST',
@@ -132,20 +231,78 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         console.error('Failed to send welcome email');
         setEmailSent(false);
       }
+
+      // // Parse resume first, then generate interest profile
+      // try {
+      //   const response = await fetch(`/api/gemini_format`,
+      //     {
+      //       method: 'POST',
+      //       headers: {
+      //         'Content-Type': 'application/json',
+      //       },
+      //       body: JSON.stringify({
+      //         resume_url: props.resume_url,
+      //       })
+      //     }
+      //   );
+      //   if (response.ok) {
+      //       const data = await response.json();
+      //       const parsedResumeResponse = await fetch('/api/post_parsed_resume', {
+      //         method: 'POST',
+      //         headers: {
+      //           'Content-Type': 'application/json',
+      //         },
+      //         body: JSON.stringify({
+      //           parsed_resume_json: data.data,
+      //         })
+      //       })
+
+      //       // Then generate interest profile using parsed resume
+      //       const interestProfileResponse = await fetch('/api/post_generated_interest_profile', {
+      //         method: 'POST',
+      //         headers: {
+      //           'Content-Type': 'application/json',
+      //         },
+      //         body: JSON.stringify({
+      //           interest_companies: step3Form.interestedCompanies,
+      //           interest: step3Form.interests,
+      //           bio: form.bio,
+      //           resume: data.data, // Use the parsed resume data directly
+      //           email: form.email
+      //         })
+      //       });
+
+      //       if (interestProfileResponse.ok) {
+      //         console.log('Interest profile generated successfully');
+      //       } else {
+      //         console.error('Failed to generate interest profile');
+      //       }
+
+      //   } else {
+      //       console.error('Failed to fetch parsed resume data');
+      //   }
+        
+      
+      // } catch (profileError) {
+      //   console.error('Error in resume parsing or profile generation:', profileError);
+      // }
+
     } catch (error) {
-      console.error('Error sending welcome email:', error);
+      console.error('Error in finish setup process:', error);
       setEmailSent(false);
+    } finally {
+      setLoading(false);
     }
     
-    // Show confirmation dialog
     setShowConfirmation(true);
-    
+
   };
 
   const handleConfirmationClose = () => {
     setShowConfirmation(false);
     
-    window.location.href = '/profile';
+    // Use the hash function to encode the user ID
+    window.location.href = `/profile`;
   };
 
   async function urlToFile(url: string, filename: string, mimeType?: string): Promise<File> {
@@ -296,70 +453,92 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
           >
             2
           </button>
+          <div className={`h-1 w-16 ${currentStep >= 3 ? 'bg-neutral-900' : 'bg-neutral-200'}`} />
+          <button 
+            onClick={() => {
+              updateStep(3)
+            }}
+            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors hover:opacity-80 ${
+              currentStep >= 3 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-600'
+            }`}
+          >
+            3
+          </button>
 
         </div>
       </div>
 
       {currentStep === 0 && (
-        <div>
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2 flex items-center justify-center gap-3">
-              thanks for your interest
-              <span className="inline-block px-3 py-1 text-sm font-bold text-white bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 via-indigo-500 to-purple-500 rounded-full shadow-lg animate-pulse">
-                BETA
-              </span>
-            </h2>
-            <p className="text-neutral-600">we just need some additional information to process your application to be a part of our beta launch </p>
-          </div>
+          <div className="max-w-6xl mx-auto px-8 py-16">
+            <div className="grid lg:grid-cols-2 gap-16 items-start min-h-[70vh]">
+              {/* Left side - Large headline positioned to align with middle step */}
+              <div className="flex items-center" style={{ marginTop: '120px' }}>
+                <h1 className="text-5xl lg:text-6xl font-bold text-neutral-900 leading-tight">
+                  Make Your Profile
+                </h1>
+              </div>
 
-          <div className="space-y-6 mx-12 md:mx-24 lg:mx-32">
-            <div className="bg-gradient-to-r from-yellow-50 via-pink-50 to-blue-50 border border-neutral-200 rounded-lg p-6">
-              <h3 className="text-2xl font-bold text-neutral-800 mb-4">the steps: </h3>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-6 h-6 bg-neutral-900 text-white rounded-full flex items-center justify-center text-sm font-medium">1</div>
-                  <div>
-                    <h4 className="text-lg font-bold text-neutral-700">basic profile information</h4>
-                    <p className="text-lg text-neutral-600">share some basics about yourself and introduce yourself to us </p>
+              {/* Right side - Numbered steps */}
+              <div className="space-y-12">
+                <div className="flex items-start gap-6">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center">
+                      <span className="text-2xl font-bold text-neutral-900">A</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-semibold text-neutral-900">Verification</h3>
+                    <p className="text-neutral-600 leading-relaxed">
+                      Share with us some basic information about yourself including your resume, transcript, and projects.
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-6 h-6 bg-neutral-900 text-white rounded-full flex items-center justify-center text-sm font-medium">2</div>
-                  <div>
-                    <h4 className="text-lg font-bold text-neutral-700">index on your interests</h4>
-                    <p className="text-lg text-neutral-600">browse a set of nine partner companies and bookmark ones that particularly interest you in the sense that you would actually want to interview with them. we typically send your profile for review to some of the companies you bookmarked. </p>
+
+                <div className="flex items-start gap-6">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center">
+                      <span className="text-2xl font-bold text-neutral-900">B</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-semibold text-neutral-900">Personalization: Our Network</h3>
+                    <p className="text-neutral-600 leading-relaxed">
+                      In this Beta, The Niche has partnered with 7 portfolio startups to match with exceptional talent. Browse through these companies and indicate interest to connect and apply.  
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-6 h-6 bg-neutral-900 text-white rounded-full flex items-center justify-center text-sm font-medium">3</div>
-                  <div>
-                    <h4 className="text-lg font-bold text-neutral-700">wait to hear back from us</h4>
-                    <p className="text-lg text-neutral-600">with the information you provide, we will review your profile and see if there is a mutual fit for you to be a part of The Niche. <strong>we send your profile to a select cohort of startup partners and if there is a majority interest in your profile, we accept you onto the platform. </strong> the process takes a week or two and we will email you of your status!
-                    <br /><br />
-                    if you are not accepted, you can still continue to access our newsletter and persue our partner companies! once accepted, partner startups will reach out to you if your profile fits their needs and you are also welcome to connect directly with them!</p>
+
+                <div className="flex items-start gap-6">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center">
+                      <span className="text-2xl font-bold text-neutral-900">C</span>
+                    </div>
                   </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-semibold text-neutral-900">Personalization: Index on Your Existing Network and Interests</h3>
+                    <p className="text-neutral-600 leading-relaxed">
+                      Introduce opportunities in your existing portfolio that you are interested in so that we can find similar ones to connect. 
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-6">
+                  <Button 
+                    onClick={() => updateStep(1)}
+                    className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-3 text-lg font-medium rounded-lg"
+                  >
+                    Get Started
+                  </Button>
                 </div>
               </div>
             </div>
-
-
-            <div className="flex justify-end">
-              <Button 
-                onClick={() => updateStep(1)}
-                className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2"
-              >
-                Get Started
-              </Button>
-            </div>
           </div>
-        </div>
       )}
 
       {currentStep === 1 && (
-        <div>
+        <div className="max-w-6xl mx-auto px-8 py-16">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">basic information</h2>
-            <p className="text-neutral-600">tell us about yourself to get started</p>
+            <h2 className="text-2xl font-bold text-neutral-900 mb-2">Verification: Tell Us About Yourself</h2>
           </div>
 
           <form onSubmit={handleStep1Submit} className="space-y-6">
@@ -392,32 +571,51 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       )}
 
       {currentStep === 2 && (
-        <div>
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">index on your interests</h2>
-            <p className="text-neutral-600"><strong>bookmark</strong> a couple companies in this list that particularly interest (or apply and we will fast-track you to those companies once we have reviewed your application to the niche) you so that we get a better understanding of your interests</p>
+        <div className="max-w-6xl mx-auto px-8 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl font-bold text-neutral-900 mb-2">Personalization: Index on Our Partners</h2>
           </div>
 
-          <div className="space-y-4">
-            {loadingCompanies ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900 mx-auto"></div>
-                <p className="mt-2 text-neutral-600">Loading companies...</p>
+          <div className="grid lg:grid-cols-3 gap-12">
+            {/* Left side - Instructions */}
+            <div className="lg:sticky lg:top-8 lg:self-start">
+              <div className="space-y-6 px-4">
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold text-neutral-900">In this public beta...</h3>
+                  <p className="text-neutral-600 leading-relaxed">
+                    The Niche has partnered with 7 high-growth, high-talent density startups. Scroll through the profiles of our 7 partner companies. 
+                  </p>
+                  <p className="text-neutral-600 leading-relaxed">
+                    <strong>Bookmark</strong> profiles you are interested in and <strong>Connect</strong> to profiles you are strongly impressed by and would like to chat with. If there is mutual interest, we will connect you directly to the founders of the startup. In the future, we use your interests to these 7 profiles to tailor and connect you with more opportunities.
+                  </p>
+                </div>
               </div>
-            ) : (
-              <>
-                {companies.length > 0 ? (
-                  <CompanyCards companies={companies} />
-                ) : (
+            </div>
+
+            {/* Right side - Company Cards */}
+            <div className="lg:col-span-2">
+              <div className="space-y-4">
+                {loadingCompanies ? (
                   <div className="text-center py-8">
-                    <p className="text-neutral-600">No companies available at the moment.</p>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900 mx-auto"></div>
+                    <p className="mt-2 text-neutral-600">Loading companies...</p>
                   </div>
+                ) : (
+                  <>
+                    {companies.length > 0 ? (
+                      <CompanyCarousel companies={companies} />
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-neutral-600">No companies available at the moment.</p>
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
+              </div>
+            </div>
           </div>
 
-          <div className="flex justify-between items-center mt-8">
+          <div className="flex justify-between items-center mt-12">
             <Button 
               onClick={() => updateStep(1)}
               className="bg-neutral-200 hover:bg-neutral-300 text-neutral-900 px-8 py-2"
@@ -425,10 +623,119 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
               Back
             </Button>
             <Button 
-              onClick={handleFinishSetup}
+              onClick={() => {
+                updateStep(3)
+              }}
               className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2"
             >
-              Finish Setup
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {currentStep === 3 && (
+        <div className="max-w-6xl mx-auto px-8 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl font-bold text-neutral-900 mb-2">Personalization: Index on Your Network and Existing Interests</h2>
+          </div>
+
+          <div className="flex flex-col gap-0">
+            {/* Interests Section */}
+            <div className="py-6">
+              <label htmlFor="interests" className="text-base font-medium">Keywords that describe what you are interested in *</label>
+              <textarea
+                id="interests"
+                value={step3Form.interests}
+                onChange={(e) => setStep3Form(prev => ({ ...prev, interests: e.target.value }))}
+                placeholder="Blockchain, Product Engineering, Series A-D Startups, Systems, Quant, ..."
+                className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-lg 
+                          mt-2 min-h-[120px] max-h-[50vh] resize-y 
+                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring 
+                          focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <hr />
+
+            <div className="py-6">
+              <label htmlFor="interestedCompanies" className="text-base font-medium">Companies or startups that you would apply and reach out to *</label>
+              <textarea
+                id="interestedCompanies"
+                value={step3Form.interestedCompanies}
+                onChange={(e) => setStep3Form(prev => ({ ...prev, interestedCompanies: e.target.value }))}
+                placeholder="Decagon, Vanta, Stripe, OpenAI, Headlands, Jane Street, ..."
+                className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-lg 
+                          mt-2 min-h-[120px] max-h-[50vh] resize-y 
+                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring 
+                          focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <hr />
+
+            {/* Network Recommendations Section */}
+            <div className="py-6">
+              <label className="text-base font-medium">Build Out Your Network on The Niche</label>
+              <p className="text-sm text-neutral-600 mt-1 mb-4">Bring in 2-3 people to The Niche.</p>
+              <div className="space-y-4">
+                {step3Form.networkRecommendations.map((rec, index) => (
+                  <div key={index} className="border border-input rounded-md p-6 bg-background">
+                    <h4 className="text-base font-medium text-neutral-800 mb-4">Person {index + 1}</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor={`rec-name-${index}`} className="block text-sm font-medium text-neutral-700 mb-2">
+                          Name *
+                        </label>
+                        <input
+                          id={`rec-name-${index}`}
+                          type="text"
+                          value={rec.name}
+                          onChange={(e) => {
+                            const newRecs = [...step3Form.networkRecommendations]
+                            newRecs[index] = { ...newRecs[index], name: e.target.value }
+                            setStep3Form(prev => ({ ...prev, networkRecommendations: newRecs }))
+                          }}
+                          placeholder="Full name"
+                          className="h-12 text-lg px-4 w-full rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor={`rec-email-${index}`} className="block text-sm font-medium text-neutral-700 mb-2">
+                          Email *
+                        </label>
+                        <input
+                          id={`rec-email-${index}`}
+                          type="email"
+                          value={rec.email}
+                          onChange={(e) => {
+                            const newRecs = [...step3Form.networkRecommendations]
+                            newRecs[index] = { ...newRecs[index], email: e.target.value }
+                            setStep3Form(prev => ({ ...prev, networkRecommendations: newRecs }))
+                          }}
+                          placeholder="email@example.com"
+                          className="h-12 text-lg px-4 w-full rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <hr />
+          </div>
+
+          <div className="flex justify-between items-center mt-12">
+            <Button 
+              onClick={() => updateStep(2)}
+              className="bg-neutral-200 hover:bg-neutral-300 text-neutral-900 px-8 py-2"
+            >
+              Back
+            </Button>
+            <Button 
+              onClick={handleFinishSetup}
+              disabled={loading}
+              className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2"
+            >
+              {loading ? 'Finishing Setup...' : 'Finish Setup'}
             </Button>
           </div>
         </div>
@@ -439,16 +746,19 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         <DialogContent className="sm:max-w-5xl w-full p-8 max-h-[80vh] overflow-y-auto">
           <DialogHeader className="text-center">
             <DialogTitle className="text-xl font-semibold">
-              Application Received
+              Profile Created
             </DialogTitle>
             <DialogDescription className="text-lg mt-2">
-              Hi {form.first_name}! Your application to The Niche has been submitted. If you are simply resubmitting your profile, feel free to ignore this email.
-              We will review your profile and notify you within 1-2 weeks. In the meantime, feel free to explore our partner companies and bookmark the ones you&apos;re interested in so we can expedite your interest if you are accepted as part of the cohort!
+              Hi {form.first_name}! 
+              <br></br><br></br>
+              <strong>Congratulations and welcome to the Niche!</strong> Your opportunity recommendations will be ready in 2-3 days as we take your information and come up with the best recommendations, and we will send you an email to notify you accordingly. 
+              <br></br>
+              In the meantime, build up your network on the Niche by checking out the people page and start integrating your existing processes into our application tracker. Feel free to explore the platform by connecting with more companies you are interested in amd reading through your feed. 
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 pt-4">
             <p className="text-sm text-neutral-600">
-              Click below to view the external profile we send to our partner companies based on the information you submitted!
+              Click below to view your external profile.
             </p>
             <Button 
               onClick={handleConfirmationClose}

@@ -1,48 +1,10 @@
 import * as React from "react"
 import { Navigation } from "@/app/components/header"
 import { Container } from "@/app/components/container"
-import { client } from "@/lib/sanity/client"
-import { SanityDocument } from "next-sanity"
-import { SanityImageSource } from "@sanity/image-url/lib/types/types"
-import imageUrlBuilder from "@sanity/image-url"
 import { ProtectedContent } from "../components/protected-content"
-import CompanyCards from "./company-cards"
 
-export interface CompanyData extends SanityDocument {
-  company: number
-  image?: SanityImageSource
-  publishedAt: string
-  alt?: string
-  caption?: string
-  description?: string
-  tags?: string[]
-}
 
 export default async function PortfolioPage() {
-    const COMPANIES_QUERY = `*[
-        _type == "mediaLibrary"
-      ]{
-        _id,
-        company,
-        image,
-        publishedAt,
-        alt,
-        caption,
-        description,
-        tags
-      }`;
-
-    const builder = imageUrlBuilder(client)
-    const rawCompanies = await client.fetch<CompanyData[]>(COMPANIES_QUERY, {})
-    
-    // Pre-generate image URLs for client component
-    const companies = rawCompanies.map(company => ({
-        ...company,
-        imageUrl: company.image ? builder.image(company.image).width(300).height(200).url() : null
-    }))
-
-    
-      
     return (
       <ProtectedContent>
         <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white flex flex-col">
@@ -58,12 +20,12 @@ export default async function PortfolioPage() {
                   we&apos;ve exclusively partnered with these companies to surface exciting opportunities for you to get involved in! each partner works exclusively with us to flesh out a company profile. for our cohort members who want to get connected to our partner startups, we provide an expedited application and introduction that is surfaced above all of their inbound. you will get a direct introduction to the founders for your first meeting.
                 </p>  
                 <p className="text-base md:text-lg text-neutral-600 mb-6 md:mb-10">
-                 you can bookmark a company if you are interested in learning more and potentially reading the company profile. <strong>if you are ready to get connected and want to apply to join the company, click apply and if there is mutual interest with the startup, we will make the introduction to the founder! </strong>
+                 you can bookmark a company if you are interested in learning more and potentially reading the company profile. <strong>if you are ready to get connected and want to apply to join the company, click to get connected and if there is mutual interest with the startup, we will make the introduction to the founder. </strong>
                 </p>
               </div>
 
               {/* Portfolio Cards */}
-              <CompanyCards companies={companies} />
+              {/* <CompanyCards companies={companies} /> */}
             </div>
           </Container>
         </div>

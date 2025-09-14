@@ -14,13 +14,10 @@ import {
   Building2, 
   Target, 
   CheckCircle, 
-  Mail, 
   Copy, 
   AlertCircle,
   Forward,
-  ArrowRight
 } from "lucide-react"
-import {Container} from "@/app/components/container"
 import { Navigation } from "@/app/components/header";
 import { debounce } from "@/app/utils/debounce"
 
@@ -123,53 +120,14 @@ function EmailForwardingSetup({
         </div>
 
         {/* Instructions */}
-        <div className={`bg-blue-50 p-4 rounded-lg space-y-3 ${!acknowledged ? 'opacity-50 pointer-events-none select-none' : ''}`}>
-          <h3 className="font-semibold text-blue-800">How to use:</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex items-start gap-2">
-              <span className="bg-blue-200 text-blue-800 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">1</span>
-              <span>Receive an interview-related email</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="bg-blue-200 text-blue-800 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">2</span>
-              <span>Click &quot;Forward&quot; or &quot;Bcc&quot; in your email client</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="bg-blue-200 text-blue-800 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">3</span>
-              <span>Enter <code className="bg-blue-100 px-1 rounded">{trackingEmail}</code> as the recipient</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="bg-blue-200 text-blue-800 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">4</span>
-              <span>Send — your application tracker updates automatically!</span>
-            </div>
+        <div className={`bg-blue-50 p-4 rounded-lg ${!acknowledged ? 'opacity-50 pointer-events-none select-none' : ''}`}>
+          <div className="text-center">
+            <p className="text-sm text-blue-700">
+              Forward interview emails → Auto-update tracker
+            </p>
           </div>
         </div>
 
-        {/* Visual Flow */}
-        <div className={`border-t pt-4 ${!acknowledged ? 'opacity-50 pointer-events-none select-none' : ''}`}>
-          <h3 className="font-semibold mb-3">Email Flow:</h3>
-          <div className="flex items-center justify-between text-xs text-gray-600">
-            <div className="text-center">
-              <Mail className="w-8 h-8 mx-auto mb-1 text-green-500" />
-              <div>Interview Email</div>
-            </div>
-            <ArrowRight className="w-4 h-4" />
-            <div className="text-center">
-              <Forward className="w-8 h-8 mx-auto mb-1 text-blue-500" />
-              <div>Forward</div>
-            </div>
-            <ArrowRight className="w-4 h-4" />
-            <div className="text-center">
-              <Mail className="w-8 h-8 mx-auto mb-1 text-purple-500" />
-              <div>Tracking Email</div>
-            </div>
-            <ArrowRight className="w-4 h-4" />
-            <div className="text-center">
-              <CheckCircle className="w-8 h-8 mx-auto mb-1 text-orange-500" />
-              <div>Auto-Update</div>
-            </div>
-          </div>
-        </div>
       </CardContent>
     </Card>
   )
@@ -326,18 +284,15 @@ export default function EmailForwardingATS() {
       <Navigation />
       <div className="pt-12 pb-8 px-6 relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.02),transparent)] pointer-events-none"></div>
-        <Container className="max-w-4xl mx-auto">
-          <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16">
-              
-              {/* Header */}
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-neutral-900 mb-2">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col items-center gap-8">
+              {/* Welcome Header */}
+              <div className="text-center pt-16 pb-8">
+                <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-black">
                   Application Tracking System
                 </h1>
-                <p className="text-neutral-600 mb-4">
-                  Track your job applications with AI-powered email parsing. 
-                  Forward interview emails to automatically update your progress.
+                <p className="text-lg md:text-xl text-neutral-500 leading-relaxed font-light max-w-3xl mx-auto mb-8">
+                  Track your job applications with AI-powered email parsing. Forward or cc interview emails to automatically update your progress for processes both on and off The Niche. All processes started on The Niche will be tracked via this system as part of our terms.
                 </p>
                 <Button 
                   variant="outline" 
@@ -368,7 +323,7 @@ export default function EmailForwardingATS() {
 
               {/* If not acknowledged, show a soft gate message */}
               {!acknowledged && (
-                <Card className="mb-8">
+                <Card className="mb-8 w-full max-w-4xl">
                   <CardContent className="py-6">
                     <p className="text-sm text-neutral-700">
                       Please open <strong>Email Setup</strong> and click <em>I Understand</em> to enable the tracker.
@@ -379,7 +334,7 @@ export default function EmailForwardingATS() {
 
               {/* Stats Cards */}
               {acknowledged && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 w-full max-w-6xl">
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
@@ -436,7 +391,7 @@ export default function EmailForwardingATS() {
 
               {/* Applications Table */}
               {acknowledged && (
-                <Card>
+                <Card className="w-full max-w-6xl">
                   <CardHeader>
                     <div className="flex justify-between items-center">
                       <CardTitle>Your Applications ({filteredApplications.length})</CardTitle>
@@ -606,8 +561,7 @@ export default function EmailForwardingATS() {
                 </Card>
               )}
             </div>
-          </div>
-        </Container>
+        </div>
       </div>
     </div>
   )

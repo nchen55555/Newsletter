@@ -61,6 +61,8 @@ export async function GET(request: Request){
             transcript_url: subscriber?.transcript_url,
             applied: subscriber?.applied,
             parsed_resume_json: subscriber?.parsed_resume_json,
+            interests: subscriber?.interests,
+            generated_interest_profile: subscriber?.generated_interest_profile,
         })
 
     } catch (error) {

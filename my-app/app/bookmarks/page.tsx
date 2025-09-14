@@ -72,7 +72,7 @@ export default async function Bookmarks() {
               <div className="px-8 py-10">
                 <h2 className="text-3xl font-semibold mb-8 text-center">Bookmarked Profiles</h2>
                 {companiesWithImageUrls.length > 0 ? (
-                  <CompanyCards companies={companiesWithImageUrls} />
+                  <CompanyCards priority={[]} other={companiesWithImageUrls} />
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-neutral-600">No bookmarked companies yet. Visit the companies page to bookmark some profiles!</p>

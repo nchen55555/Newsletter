@@ -76,7 +76,7 @@ export function testSimpleHash() {
   
   testIds.forEach(id => {
     const encoded = encodeSimple(id);
-    const decoded = decodeSimple(encoded);
+    decodeSimple(encoded);
   });
   
   return testIds.map(id => ({

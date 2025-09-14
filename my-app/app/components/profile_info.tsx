@@ -3,7 +3,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ProfileFormState } from '@/app/types'
 import ProfileAvatar from './profile_avatar'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 export default function ProfileInfo({
   form,
@@ -18,50 +17,27 @@ export default function ProfileInfo({
   }
 
   return (
-    <div>
-      <div className="flex flex-col items-center py-6">
-        {/* Top: avatar */}
-      <div className="flex justify-center py-6">
-      <ProfileAvatar
-          // shows saved image if present; local preview handled inside ProfileAvatar
-          name={`${form.first_name || ''} ${form.last_name || ''}`.trim() || form.email || 'User'}
-          imageUrl={form.profile_image_url || undefined}
-          size={128}
-          editable
-          onSelectFile={(file) => {
-            // Store the file in form state for later upload on save
-            setForm(f => ({ ...f, profile_image: file || null }));
-          }}
-        />
-      </div>
-      
-      {/* Status Tag */}
-      {form.status && (
-        <div className="flex justify-center mb-4">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-block px-3 py-1 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full cursor-help">
-                  {form.status}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="max-w-xs">
-                  <p className="text-sm">
-                    <strong>VIEWER</strong> status means you can peruse and access The Niche. 
-                    <br /><br />
-                    <strong>COHORT</strong> status means that you are officially part of the Niche and can connect to our partner startups! 
-                  </p>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+    <div className="grid lg:grid-cols-3 gap-12">
+      {/* Left side - Sticky Profile Picture */}
+      <div className="lg:sticky lg:top-8 lg:self-start">
+        <div className="space-y-6 px-4">
+          <div className="flex justify-center items-center min-h-screen lg:min-h-0">
+            <ProfileAvatar
+              name={`${form.first_name || ''} ${form.last_name || ''}`.trim() || form.email || 'User'}
+              imageUrl={form.profile_image_url || undefined}
+              size={250}
+              editable
+              onSelectFile={(file) => {
+                setForm(f => ({ ...f, profile_image: file || null }));
+              }}
+              className="w-80 h-80 rounded-lg"
+            />
+          </div>
         </div>
-      )}
       </div>
 
-      {/* === Rest of Form === */}
-      <div className="flex flex-col gap-0">
+      {/* Right side - Form Fields */}
+      <div className="lg:col-span-2 flex flex-col gap-0">
         <div className="py-6">
           <Label htmlFor="first_name" className="text-base font-medium">First Name *</Label>
           <Input id="first_name" name="first_name" value={form.first_name} onChange={handleChange} required className="h-12 text-lg px-4 mt-2" />
@@ -79,7 +55,8 @@ export default function ProfileInfo({
           name="bio"
           value={form.bio}
           onChange={(e) => setForm({ ...form, bio: e.target.value })}
-          placeholder="Hey guys! My name is ... "
+          placeholder="I currently lead product at OpenMind, a Series A startup building out software to help robots learn from each other and operate in the real world. Prior to that, I launched Databrick's Agent Framework and Agent Evaluation products to make agent tooling accessible to non-technical teams, and earlier built CBDC infra for central banks to settle wholesale and cross-border remittance payments. I've loved my interactions with startups and so I currently also scout for GC and support their portcos.
+"
           className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-lg 
                     mt-2 min-h-[120px] max-h-[50vh] resize-y 
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring 
@@ -207,7 +184,7 @@ export default function ProfileInfo({
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <Label htmlFor="newsletter_opt_in" className="text-base font-medium">Newsletter Notifications</Label>
-              <p className="text-sm text-gray-600 mt-1">Receive email notifications when new companies are featured</p>
+              <p className="text-sm text-gray-600 mt-1">Receive emails for new company profiles that come out on our feed</p>
             </div>
             <div className="ml-4">
               <label className="relative inline-flex items-center cursor-pointer">

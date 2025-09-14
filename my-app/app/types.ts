@@ -16,6 +16,10 @@ export type ProfileData = {
     transcript_url?: string;
     applied?: boolean;
     parsed_resume_json?: string;
+    interests?: string;
+    generated_interest_profile?: string;
+    interested_companies?: string;
+    connections?: number[];
   };
 
 export type ProfileFormState = {
@@ -124,6 +128,17 @@ export interface Application {
 export interface Subscriber {
   id: string
   email: string
+}
+
+export interface NetworkRecommendation {
+  name: string;
+  email: string;
+}
+
+export interface Step3UpdateData {
+  interests?: string;
+  interested_companies?: string;
+  network_recommendations?: NetworkRecommendation[];
 }
 
 

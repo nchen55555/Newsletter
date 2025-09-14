@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
   Dialog, DialogContent, DialogFooter,
-  DialogHeader, DialogTitle, DialogTrigger, DialogDescription
+  DialogHeader, DialogTitle, DialogTrigger
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertTitle } from '@/components/ui/alert'
@@ -67,11 +67,11 @@ export function Subscribe() {
       <div className="flex flex-col w-full max-w-sm gap-4">
       { !isSubscribed && ( 
         <>
-            <GoogleLogin buttonText="access the niche today" flowType="subscribe" />
+            <GoogleLogin buttonText="create my profile" flowType="subscribe" />
             {formSuccess && (
             <Alert>
                 <CheckCircle2Icon />
-                <AlertTitle>success! you have access</AlertTitle>
+                <AlertTitle>Success! You have made your profile</AlertTitle>
             </Alert>
             )}
         </>
@@ -83,10 +83,7 @@ export function Subscribe() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px] p-8" showCloseButton={false}>
             <DialogHeader className="mb-8">
-              <DialogTitle className="text-2xl font-semibold">Finish Your Access Application</DialogTitle>
-              <DialogDescription className="text-lg mt-2">
-                Thanks for verifying your email with Google. Now add your LinkedIn profile to complete your application. You&#39;ll need to fill out the rest of your profile later to access the community.
-              </DialogDescription>
+              <DialogTitle className="text-2xl font-semibold">Creating Your Profile</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleFormSubmit}>
               <div className="grid gap-8">
@@ -108,7 +105,7 @@ export function Subscribe() {
                 {isSubscribed && (
                   <Alert>
                   <CheckCircle2Icon />
-                  <AlertTitle>You already have access! We&#39;ve logged you in</AlertTitle>
+                  <AlertTitle>You already have a profile! We&#39;ve logged you in</AlertTitle>
               </Alert>
                 )}
                 {formError && !isSubscribed && (

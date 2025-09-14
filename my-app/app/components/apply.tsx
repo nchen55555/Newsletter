@@ -27,6 +27,7 @@ export default function ApplyButton({ company }: { company: string }) {
   const [profileSectionExpanded, setProfileSectionExpanded] = useState(false)
   const [profileIncomplete, setProfileIncomplete] = useState(false)
   const [checkingProfile, setCheckingProfile] = useState(true)
+  const [appliedToNiche, setAppliedToNiche] = useState(false)
   const [form, setForm] = useState<ProfileFormState>({
     id: 0,
     email: "",
@@ -50,7 +51,7 @@ export default function ApplyButton({ company }: { company: string }) {
 
   const [applied, setApplied] = useState(false);
 
-  const [isCohortMember, setIsCohortMember] = useState(false)
+  // const [isCohortMember, setIsCohortMember] = useState(false)
 
   useEffect(() => {
     const ac = new AbortController();
@@ -65,7 +66,7 @@ export default function ApplyButton({ company }: { company: string }) {
         if (!res.ok) return;
         const profile = await res.json();
 
-        setIsCohortMember(profile.status == 'COHORT')
+        // setIsCohortMember(profile.status == 'COHORT')
 
         // Check profile completeness
         const incomplete =
@@ -76,6 +77,9 @@ export default function ApplyButton({ company }: { company: string }) {
           !profile.bio || 
           !profile.linkedin_url ||
           !profile.profile_image_url;
+      
+
+        setAppliedToNiche(profile.applied)
 
         setProfileIncomplete(incomplete);
 
@@ -135,7 +139,7 @@ export default function ApplyButton({ company }: { company: string }) {
   
 
 
-  if (!isSubscribed || !isCohortMember) return null;
+  if (!isSubscribed) return null;
 
 
   async function urlToFile(url: string, filename: string, mimeType?: string): Promise<File> {
@@ -146,31 +150,40 @@ export default function ApplyButton({ company }: { company: string }) {
 
   async function handleApply(e: React.FormEvent) {
     e.preventDefault()
+    setLoadingApplied(true);
+    setAppError(null);
+    setAppSuccess(false);
 
     if (!form) {
       setAppError("Profile data not loaded. Please try again.");
+      setLoadingApplied(false);
       return;
     }
 
     if (!form.first_name) {
       setAppError("First name is required.");
+      setLoadingApplied(false);
       return;
     }
     if (!form.last_name) {
       setAppError("Last name is required.");
+      setLoadingApplied(false);
       return;
     }
     if (!form.phone_number) {
       setAppError("Phone number is required.");
+      setLoadingApplied(false);
       return;
     }
     if (!form.linkedin_url) {
       setAppError("LinkedIn URL is required.");
+      setLoadingApplied(false);
       return;
     }
 
     if (!form.bio) {
       setAppError("Bio is required.");
+      setLoadingApplied(false);
       return;
     }
 
@@ -238,6 +251,8 @@ export default function ApplyButton({ company }: { company: string }) {
         return; // Stop here if profile update fails
     }
 
+    console.log("submitting app")
+
     // Only proceed with application if profile update succeeded
     const res2 = await fetch('/api/post_application', {
       method: 'POST',
@@ -245,11 +260,15 @@ export default function ApplyButton({ company }: { company: string }) {
         Authorization: `Bearer ${access_token}`,
       },
       body: JSON.stringify({
+        first_name: form.first_name, 
+        email: form.email,
         candidate_id: form.id,
         company_id: company,
         additional_info: additionalInfo
       })
     })
+
+    console.log("done submitting app")
     
     if (res2.ok) {
       setAppSuccess(true)
@@ -259,6 +278,7 @@ export default function ApplyButton({ company }: { company: string }) {
       setLoadingApplied(false)
     }
   }
+  
 
 
   if (!data) return <Skeleton className="h-12 w-full" />; // or customize size;
@@ -275,12 +295,12 @@ export default function ApplyButton({ company }: { company: string }) {
           variant="default"
           className="inline-flex items-center justify-center bg-neutral-900 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-neutral-800 transition-colors text-sm w-full"
           type="button"
-          aria-label="apply"
-          disabled={applied}
+          aria-label="connect"
+          disabled={applied || !appliedToNiche}
           style={applied ? { cursor: "not-allowed" } : {}}
         >
           <Send className="w-4 h-4 mr-2" />
-          apply
+          connect
         </Button>
       </span>
     </TooltipTrigger>
@@ -299,7 +319,7 @@ export default function ApplyButton({ company }: { company: string }) {
             <DialogHeader className="mb-8">
               <DialogTitle className="text-2xl font-semibold">Application of Interest</DialogTitle>
               <DialogDescription className="text-lg mt-2">
-                In the notes section, indicate any additional information that you think would be beneficial for us and our partner companies to know and/or questions you have about the process, company, or more! 
+                In the notes section, indicate any additional information that you think would be beneficial for us and our partner companies to know and/or questions you have about the company.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleApply}>
@@ -345,7 +365,7 @@ export default function ApplyButton({ company }: { company: string }) {
             </div>
             <div className="mb-10">
             <Label htmlFor="add_info" className="text-base font-medium">Intro Blurb</Label>
-              <Input id="add_info" name="add_info" type="tel" value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} required placeholder="Write a quick sentence introduction to the founder of the company and any questions you have for them!" className="h-12 text-lg px-4 mt-2" />
+              <Input id="add_info" name="add_info" type="tel" value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} required placeholder="Write a quick one-sentence introduction to the founder of the company!" className="h-12 text-lg px-4 mt-2" />
               {appSuccess && (
                 <Alert className="mt-6">
                   <CheckCircle2Icon />
@@ -359,8 +379,12 @@ export default function ApplyButton({ company }: { company: string }) {
                 </Alert>
               )}
             <div className="flex justify-end mt-8 gap-4">
-              <Button onClick = {() => setLoadingApplied(true)} type="submit" className="h-12 px-8 text-lg">
-              {loadingApplied ? "submitting..." : "submit"}
+              <Button 
+                type="submit" 
+                className="h-12 px-8 text-lg"
+                disabled={applied || loadingApplied}
+              >
+                {applied ? "Already Submitted" : loadingApplied ? "Submitting..." : "Submit"}
               </Button>
             </div>
             </div>

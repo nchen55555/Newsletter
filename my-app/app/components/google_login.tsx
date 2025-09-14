@@ -24,7 +24,7 @@ export function GoogleLogin({
         supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo:  flowType === 'subscribe' ? `${location.origin}/access` : `${location.origin}`,
+                redirectTo:  flowType === 'subscribe' ? `${location.origin}` : `${location.origin}`,
                 queryParams: {
                     prompt: 'consent',
                 },

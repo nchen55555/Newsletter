@@ -21,9 +21,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={sans.variable}>
       <body className={`antialiased font-sans bg-[#FFFCF8] min-h-screen ${sans.className}`}>
-        <SubscriptionProvider>
-          {children}
-        </SubscriptionProvider>
+          <SubscriptionProvider>
+            {children}
+          </SubscriptionProvider>
       </body>
     </html>
   );

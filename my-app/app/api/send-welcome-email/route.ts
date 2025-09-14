@@ -17,9 +17,7 @@ export async function POST(req: NextRequest) {
 
     // Create email content using decoupled data
     const emailContent = {
-      message: `Thank you for your application to be a part of the cohort at The Niche. Your profile has been submitted, and we will let you know as soon as we have reviewed your profile and as soon as a couple of our partner companies have also reviewed your profile. \n
-      We employ a wholistic review process that includes assessing your technical background via the projects you have posted in your resume and through github, through the classes you have taken at your respective college, and through our referral network. The process takes approximately one to two weeks. In the meantime, feel free to peruse our partner companies and bookmark the ones you are interested in - we often use your bookmarks as a benchmark of which companies to send your profile to for our evaluation! \n
-      As always, if you have any questions, feel free to reach out to thenichestlist@gmail.com cc'ing nicole_chen@college.harvard.edu! All email replies to this email will be lost!`
+      message: `Thank you for your interest in The Niche and welcome to this public beta! It takes about 2-3 days for us to ingest all your information and come back with opportunities indexed to your skillsets and interests. In the meantime though, you can start exploring our platform, connecting with our partner startups (if there is a mutual fit, your first meeting will generally be with the founder), and meeting others on the platform!`
     };
     // Check if API key exists
     if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {
@@ -34,11 +32,10 @@ export async function POST(req: NextRequest) {
     const { data, error } = await resend.emails.send({
       from: 'Nicole <nicole@theniche.tech>',
       to: [email],
-      subject: '[THE NICHE] Application Received',
+      subject: '[THE NICHE] Welcome',
       html: `
         <p>Hi ${first_name},</p>
         <p>${emailContent.message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
-        <p>Excited to read your application!</p>
         <p>Best,<br>The Niche Team</p>
       `,
     });

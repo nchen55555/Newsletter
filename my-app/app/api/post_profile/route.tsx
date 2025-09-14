@@ -99,6 +99,23 @@ async function handleProfileUpdate(req: NextRequest) {
 
     // Handle transcript file upload if provided
     if (transcript_file instanceof File) {
+      // Debug logging for transcript file
+      console.log('Transcript file details:', {
+        name: transcript_file.name,
+        type: transcript_file.type,
+        size: transcript_file.size
+      });
+
+      // Validate file type explicitly
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!allowedTypes.includes(transcript_file.type)) {
+        console.error('Invalid transcript file type:', transcript_file.type);
+        return NextResponse.json({ 
+          error: 'Invalid file type. Please upload a PDF or Word document.',
+          receivedType: transcript_file.type
+        }, { status: 400 });
+      }
+
       // Delete existing transcript files
       const { data: existingTranscriptFiles } = await supabase.storage
         .from('transcript_files')
@@ -111,13 +128,24 @@ async function handleProfileUpdate(req: NextRequest) {
           .remove(transcriptFilesToDelete);
       }
 
-      // Upload transcript file
-      const transcriptExtension = transcript_file.name.split('.').pop() || 'pdf';
+      // Upload transcript file with explicit content type mapping
+      const transcriptExtension = transcript_file.name.split('.').pop()?.toLowerCase() || 'pdf';
       const transcriptFileName = `${user.id}/transcript.${transcriptExtension}`;
+      
+      // Map file extension to proper content type
+      let contentType = transcript_file.type;
+      if (transcriptExtension === 'pdf') {
+        contentType = 'application/pdf';
+      } else if (transcriptExtension === 'doc') {
+        contentType = 'application/msword';
+      } else if (transcriptExtension === 'docx') {
+        contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      }
+
       const { error: transcriptUploadError } = await supabase.storage
         .from('transcript_files')
         .upload(transcriptFileName, transcript_file, {
-          contentType: transcript_file.type,
+          contentType: contentType,
           cacheControl: '3600',
           upsert: true,
         });
@@ -143,6 +171,23 @@ async function handleProfileUpdate(req: NextRequest) {
 
     // Handle profile image upload if provided
     if (profile_image_file instanceof File) {
+      // Debug logging for profile image file
+      console.log('Profile image file details:', {
+        name: profile_image_file.name,
+        type: profile_image_file.type,
+        size: profile_image_file.size
+      });
+
+      // Validate file type explicitly
+      const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedImageTypes.includes(profile_image_file.type)) {
+        console.error('Invalid profile image file type:', profile_image_file.type);
+        return NextResponse.json({ 
+          error: 'Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.',
+          receivedType: profile_image_file.type
+        }, { status: 400 });
+      }
+
       // Delete existing profile image files
       const { data: existingProfileImages } = await supabase.storage
         .from('profile_image_files')
@@ -155,14 +200,26 @@ async function handleProfileUpdate(req: NextRequest) {
           .remove(profileImageFilesToDelete);
       }
 
-      // Generate secure file name with original extension
-      const profileImageExtension = profile_image_file.name.split('.').pop() || 'jpg';
+      // Generate secure file name with original extension and explicit content type mapping
+      const profileImageExtension = profile_image_file.name.split('.').pop()?.toLowerCase() || 'jpg';
       const profile_image_file_name = `${user.id}/profile_image.${profileImageExtension}`;
+
+      // Map file extension to proper content type
+      let contentType = profile_image_file.type;
+      if (profileImageExtension === 'jpg' || profileImageExtension === 'jpeg') {
+        contentType = 'image/jpeg';
+      } else if (profileImageExtension === 'png') {
+        contentType = 'image/png';
+      } else if (profileImageExtension === 'gif') {
+        contentType = 'image/gif';
+      } else if (profileImageExtension === 'webp') {
+        contentType = 'image/webp';
+      }
 
       const { error: profile_image_uploadError } = await supabase.storage
         .from('profile_image_files')
         .upload(profile_image_file_name, profile_image_file, {
-          contentType: profile_image_file.type,
+          contentType: contentType,
           cacheControl: '3600',
           upsert: true,
         });
