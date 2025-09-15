@@ -220,7 +220,7 @@ export default function CompanyCards({ priority, other, external = [] }: Company
         )}
 
         {activeTab === 'external' && (
-          <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-3 lg:grid-cols-3">
             {external.map((company) => (
               <CompanyCard key={company._id} company={company} external={true}/>
             ))}

@@ -50,7 +50,7 @@ async function handleProfileUpdate(req: NextRequest) {
     let resume_url: string | null = null;
     let transcript_url: string | null = null;
     let profile_image_url: string | null = null;
-    const userFolder = `${user.id}/`;
+    const userFolder = `${formData.get("id")}/`;
 
     // Handle resume file upload if provided
     if (resume_file instanceof File) {
@@ -262,12 +262,12 @@ async function handleProfileUpdate(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'No fields to update' });
     }
 
-    // Update subscriber profile with only the provided fields
+    // Update subscriber profile using authenticated user's email
+    // This ensures we update the correct user even if formData ID is missing/invalid
     const { error: dbError } = await supabase
       .from('subscribers')
       .update(updateData)
-      .eq('id', Number(formData.get('id')))
-      .eq('email', formData.get('email'));
+      .eq('email', user.email);
 
     if (dbError) {
       console.error('Profile update error:', dbError);

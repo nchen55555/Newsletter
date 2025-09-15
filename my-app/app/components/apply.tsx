@@ -138,11 +138,6 @@ export default function ApplyButton({ company }: { company: string }) {
   if (!isSubscribed) return null;
 
 
-  async function urlToFile(url: string, filename: string, mimeType?: string): Promise<File> {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new File([blob], filename, { type: mimeType || blob.type });
-  }
 
   async function handleApply(e: React.FormEvent) {
     e.preventDefault()
@@ -197,41 +192,29 @@ export default function ApplyButton({ company }: { company: string }) {
     formData.append('is_public_profile', form.is_public_profile.toString());
     formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
     
-    let resumeFile: File | null = form.resume_file ?? null;
-
-    // If no new file, but we have a resume_url, fetch and convert to File
-    if (!resumeFile && form.resume_url) {
-      const filename = form.resume_url.split('/').pop() || 'resume.pdf';
-      resumeFile = await urlToFile(form.resume_url, filename);
-    }
-    if (!resumeFile) {
+    // Handle resume: use file if provided, otherwise keep existing URL
+    if (form.resume_file) {
+      formData.append('resume_file', form.resume_file);
+    } else if (!form.resume_url) {
       setAppError('Resume is required.');
       return;
     }
 
-    formData.append('resume_file', resumeFile);
-
-    let profileImageFile: File | null = form.profile_image ?? null;
-    if (form.profile_image_url) {
-      const filename = form.profile_image_url.split('/').pop() || 'profile.jpg';
-      profileImageFile = await urlToFile(form.profile_image_url, filename);
-    }
-    if (!profileImageFile) {
+    // Handle profile image: use file if provided, otherwise keep existing URL
+    if (form.profile_image) {
+      formData.append('profile_image', form.profile_image);
+    } else if (!form.profile_image_url) {
       setAppError('Profile image is required.');
       return;
     }
-    formData.append('profile_image', profileImageFile);
 
-    let transcriptFile: File | null = form.transcript_file ?? null;
-    if (!transcriptFile && form.transcript_url) {
-      const filename = form.transcript_url.split('/').pop() || 'transcript.pdf';
-      transcriptFile = await urlToFile(form.transcript_url, filename);
-    }
-    if (!transcriptFile) {
+    // Handle transcript: use file if provided, otherwise keep existing URL
+    if (form.transcript_file) {
+      formData.append('transcript_file', form.transcript_file);
+    } else if (!form.transcript_url) {
       setAppError('Transcript is required.');
       return;
     }
-    formData.append('transcript_file', transcriptFile);
 
 
     // First, update the profile

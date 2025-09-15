@@ -305,11 +305,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     window.location.href = `/profile`;
   };
 
-  async function urlToFile(url: string, filename: string, mimeType?: string): Promise<File> {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new File([blob], filename, { type: mimeType || blob.type });
-  }
 
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -353,40 +348,29 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
     
       
-      // Handle resume file (same logic as original form)
-      let resumeFile: File | null = form.resume_file ?? null;
-      if (!resumeFile && form.resume_url) {
-        const filename = form.resume_url.split('/').pop() || 'resume.pdf';
-        resumeFile = await urlToFile(form.resume_url, filename);
-      }
-      if (!resumeFile) {
+      // Handle resume: use file if provided, otherwise keep existing URL
+      if (form.resume_file) {
+        formData.append('resume_file', form.resume_file);
+      } else if (!form.resume_url) {
         setFormError('Resume is required.');
         return;
       }
-      formData.append('resume_file', resumeFile);
 
-      // Handle profile image (same logic as original form)
-      let profileImageFile: File | null = form.profile_image ?? null;
-      if (!profileImageFile && form.profile_image_url) {
-        const filename = form.profile_image_url.split('/').pop() || 'profile.jpg';
-        profileImageFile = await urlToFile(form.profile_image_url, filename);
-      }
-      if (!profileImageFile) {
+      // Handle profile image: use file if provided, otherwise keep existing URL
+      if (form.profile_image) {
+        formData.append('profile_image', form.profile_image);
+      } else if (!form.profile_image_url) {
         setFormError('Profile image is required.');
         return;
       }
-      formData.append('profile_image', profileImageFile);
 
-      let transcriptFile: File | null = form.transcript_file ?? null;
-      if (!transcriptFile && form.transcript_url) {
-        const filename = form.transcript_url.split('/').pop() || 'transcript.pdf';
-        transcriptFile = await urlToFile(form.transcript_url, filename);
-      }
-      if (!transcriptFile) {
+      // Handle transcript: use file if provided, otherwise keep existing URL
+      if (form.transcript_file) {
+        formData.append('transcript_file', form.transcript_file);
+      } else if (!form.transcript_url) {
         setFormError('Transcript is required.');
         return;
       }
-      formData.append('transcript_file', transcriptFile);
 
       formData.append('applied', 'true');
 
@@ -422,48 +406,37 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       {/* Progress Indicator */}
       <div className="mb-8">
         <div className="flex items-center justify-center space-x-4">
-          <button 
-            onClick={() => updateStep(0)}
-            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors hover:opacity-80 ${
+          <div 
+            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
               currentStep >= 0 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-600'
             }`}
           >
             0
-          </button>
+          </div>
           <div className={`h-1 w-16 ${currentStep >= 1 ? 'bg-neutral-900' : 'bg-neutral-200'}`} />
-          <button 
-            onClick={() => updateStep(1)}
-            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors hover:opacity-80 ${
+          <div 
+            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
               currentStep >= 1 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-600'
             }`}
           >
             1
-          </button>
+          </div>
           <div className={`h-1 w-16 ${currentStep >= 2 ? 'bg-neutral-900' : 'bg-neutral-200'}`} />
-          <button 
-            onClick={() => {
-              updateStep(2)
-              if (companies.length === 0) {
-                loadCompanies()
-              }
-            }}
-            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors hover:opacity-80 ${
+          <div 
+            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
               currentStep >= 2 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-600'
             }`}
           >
             2
-          </button>
+          </div>
           <div className={`h-1 w-16 ${currentStep >= 3 ? 'bg-neutral-900' : 'bg-neutral-200'}`} />
-          <button 
-            onClick={() => {
-              updateStep(3)
-            }}
-            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors hover:opacity-80 ${
+          <div 
+            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
               currentStep >= 3 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-600'
             }`}
           >
             3
-          </button>
+          </div>
 
         </div>
       </div>
