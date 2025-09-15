@@ -68,7 +68,7 @@ async function handleProfileUpdate(req: NextRequest) {
 
       // Generate secure file name with original extension
       const resumeExtension = resume_file.name.split('.').pop() || 'pdf';
-      const fileName = `${user.id}/resume.${resumeExtension}`;
+      const fileName = `${userFolder}/resume.${resumeExtension}`;
 
       // Upload resume file
       const { error: uploadError } = await supabase.storage
@@ -125,7 +125,7 @@ async function handleProfileUpdate(req: NextRequest) {
 
       // Upload transcript file with explicit content type mapping
       const transcriptExtension = transcript_file.name.split('.').pop()?.toLowerCase() || 'pdf';
-      const transcriptFileName = `${user.id}/transcript.${transcriptExtension}`;
+      const transcriptFileName = `${userFolder}/transcript.${transcriptExtension}`;
       
       // Map file extension to proper content type
       let contentType = transcript_file.type;
@@ -192,7 +192,7 @@ async function handleProfileUpdate(req: NextRequest) {
 
       // Generate secure file name with original extension and explicit content type mapping
       const profileImageExtension = profile_image_file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const profile_image_file_name = `${user.id}/profile_image.${profileImageExtension}`;
+      const profile_image_file_name = `${userFolder}/profile_image.${profileImageExtension}`;
 
       // Map file extension to proper content type
       let contentType = profile_image_file.type;
