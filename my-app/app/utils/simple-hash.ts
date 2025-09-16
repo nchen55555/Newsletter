@@ -69,6 +69,15 @@ export function decodeSimple(hash: string): number | null {
  */
 
 /**
+ * Generate external profile URL with encoded ID
+ * @param id Database ID of the user
+ * @returns External profile URL with hashed ID
+ */
+export function getExternalProfileUrl(id: number): string {
+  return `/external_profile/${encodeSimple(id)}`;
+}
+
+/**
  * Test the simple hash functions
  */
 export function testSimpleHash() {  

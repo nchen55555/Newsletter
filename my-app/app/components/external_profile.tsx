@@ -351,7 +351,7 @@ export function ExternalProfile(props: ProfileData) {
           )}
 
           {/* Interests */}
-          {props.interests && props.interests.length > 0 && (
+          {props.generated_interest_profile && (
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-neutral-900">Analysis From The Niche</h3>
               <div className="bg-neutral-50 rounded-lg p-4">
