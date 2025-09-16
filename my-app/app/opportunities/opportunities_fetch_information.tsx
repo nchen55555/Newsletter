@@ -159,7 +159,7 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                     {!appliedToTheNiche && (<Alert className="max-w-2xl mx-auto">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Create your profile to access your opportunities 
+                  Create Your Profile and Wait for It To Get Verified To Access
                 </AlertDescription>
               </Alert>)} 
                 </div>

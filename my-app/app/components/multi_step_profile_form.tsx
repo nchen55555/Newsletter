@@ -5,8 +5,6 @@ import ProfileInfo from './profile_info'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ProfileFormState, ProfileData } from '@/app/types'
 import { useSubscriptionContext } from './subscription_context'
-import { Alert, AlertTitle } from '@/components/ui/alert'
-import { Terminal } from 'lucide-react'
 import { CompanyCard } from '@/app/companies/company-cards'
 import { CompanyWithImageUrl } from '@/app/types'
 import {
@@ -194,6 +192,17 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
 
   const handleFinishSetup = async () => {
     setLoading(true);
+    if (!step3Form.interests) {
+        setFormError("Keywords that describe what you are interested in are required.");
+        setLoading(false);
+        return;
+      }
+
+      if (!step3Form.interestedCompanies) {
+        setFormError("Companies or startups that you would apply to are required.");
+        setLoading(false);
+        return;
+      }
     try {
       console.log(step3Form)
       // First, post step3 form data
@@ -346,7 +355,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       formData.append('bio', form.bio);
       formData.append('is_public_profile', form.is_public_profile.toString());
       formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
-    
       
       // Handle resume: use file if provided, otherwise keep existing URL
       if (form.resume_file) {
@@ -372,14 +380,11 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         return;
       }
 
-      formData.append('applied', 'true');
+      // formData.append('applied', 'true');
 
       // Make request (same as original form)
       const response = await fetch('/api/post_profile', {
         method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${props.access_token}`,
-        },
         body: formData,
       });
 
@@ -388,7 +393,13 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         updateStep(2)
         await loadCompanies()
       } else {
-        setFormError('Update failed, check your fields!');
+        const errorText = await response.text();
+        try {
+          const errorData = JSON.parse(errorText);
+          setFormError(errorData.error || errorData.details || 'Update failed. Please check your fields and try again.');
+        } catch {
+          setFormError('Update failed. Please check your fields and try again.');
+        }
       }
     } catch (error) {
       console.error('Failed to update profile:', error);
@@ -518,10 +529,9 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             <ProfileInfo form={form} setForm={setForm} />
             
             {formError && (
-              <Alert className="border-red-200 bg-red-50">
-                <Terminal className="h-4 w-4 text-red-600" />
-                <AlertTitle className="text-red-800">{formError}</AlertTitle>
-              </Alert>
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800 text-sm font-medium">{formError}</p>
+              </div>
             )}
 
             <div className="flex justify-between">
@@ -613,6 +623,12 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             <h2 className="text-2xl font-bold text-neutral-900 mb-2">Personalization: Index on Your Network and Existing Interests</h2>
           </div>
 
+          {formError && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 text-sm font-medium">{formError}</p>
+            </div>
+          )}
+
           <div className="flex flex-col gap-0">
             {/* Interests Section */}
             <div className="py-6">
@@ -696,6 +712,12 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             <hr />
           </div>
 
+          {formError && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 text-sm font-medium">{formError}</p>
+            </div>
+          )}
+
           <div className="flex justify-between items-center mt-12">
             <Button 
               onClick={() => updateStep(2)}
@@ -724,10 +746,10 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             <DialogDescription className="text-lg mt-2">
               Hi {form.first_name}! 
               <br></br><br></br>
-              <strong>Congratulations and welcome to the Niche!</strong> Your opportunity recommendations will be ready in 2-3 days as we take your information and come up with the best recommendations, and we will send you an email to notify you accordingly. 
+              <strong>Congratulations for creating your profile with The Niche!</strong> It takes about 2-3 days for us to verify your identity, analyze your profile, and recommend opportunities indexed to your skillsets and interests. We will send you an email when your profile is ready for you. 
               <br></br>
               <br></br>
-              In the meantime, build up your network on the Niche by checking out the people page and start integrating your existing processes into our application tracker. Feel free to explore the platform by connecting with more companies you are interested in amd reading through your feed. 
+              In the meantime, you can start exploring our platform, using the application tracker, and connecting with others on the platform. 
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 pt-4">

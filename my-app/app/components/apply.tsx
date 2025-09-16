@@ -218,11 +218,10 @@ export default function ApplyButton({ company }: { company: string }) {
 
 
     // First, update the profile
-    const res = await fetch('/api/post_profile', { method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-      },
-        body: formData })
+    const res = await fetch('/api/post_profile', { 
+      method: 'PATCH',
+      body: formData 
+    })
     
     if (!res.ok) {
         setAppError("Profile update failed")

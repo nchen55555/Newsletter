@@ -190,7 +190,6 @@ export default function ProfileInfo({
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
-                  required
                   id="newsletter_opt_in"
                   checked={form.newsletter_opt_in}
                   onChange={(e) => setForm({ ...form, newsletter_opt_in: e.target.checked })}
