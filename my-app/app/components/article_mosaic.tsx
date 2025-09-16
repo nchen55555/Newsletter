@@ -153,12 +153,9 @@ export function ArticleNewsfeed() {
     console.log("ArticleNewsfeed useEffect starting");
     
     const fetchData = async () => {
-      console.log("fetchData function called");
       try {
         // Fetch posts
-        console.log("Fetching posts...");
         const fetchedPosts = await client.fetch<Post[]>(POSTS_QUERY);
-        console.log("Posts fetched:", fetchedPosts.length);
         setPosts(fetchedPosts);
       } catch (error) {
         console.error('Error in fetchData:', error);
