@@ -5,7 +5,6 @@ import Image from "next/image";
 import imageUrlBuilder from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { ArrowRight } from "lucide-react";
-import { useState, useEffect } from "react";
 
 // --- Types --------------------------------------------------------------
 export interface Post extends SanityDocument {
@@ -146,24 +145,8 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
 }
 
 // --- Newsfeed (one per row vibe) ----------------------------------------
-export function ArticleNewsfeed() {
-  const [posts, setPosts] = useState<Post[]>([]);
-
-  useEffect(() => {
-    console.log("ArticleNewsfeed useEffect starting");
-    
-    const fetchData = async () => {
-      try {
-        // Fetch posts
-        const fetchedPosts = await client.fetch<Post[]>(POSTS_QUERY);
-        setPosts(fetchedPosts);
-      } catch (error) {
-        console.error('Error in fetchData:', error);
-      } 
-    };
-
-    fetchData();
-  }, []);
+export async function ArticleNewsfeed() {
+  const posts = await client.fetch<Post[]>(POSTS_QUERY);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
