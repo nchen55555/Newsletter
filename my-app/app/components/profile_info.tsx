@@ -22,16 +22,23 @@ export default function ProfileInfo({
       <div className="lg:sticky lg:top-8 lg:self-start">
         <div className="space-y-6 px-4">
           <div className="flex justify-center items-center min-h-screen lg:min-h-0">
-            <ProfileAvatar
-              name={`${form.first_name || ''} ${form.last_name || ''}`.trim() || form.email || 'User'}
-              imageUrl={form.profile_image_url || undefined}
-              size={250}
-              editable
-              onSelectFile={(file) => {
-                setForm(f => ({ ...f, profile_image: file || null }));
-              }}
-              className="w-80 h-80 rounded-lg"
-            />
+            <div className="text-center">
+              <ProfileAvatar
+                name={`${form.first_name || ''} ${form.last_name || ''}`.trim() || form.email || 'User'}
+                imageUrl={form.profile_image_url || undefined}
+                size={250}
+                editable
+                onSelectFile={(file) => {
+                  if (file && file.size > 2 * 1024 * 1024) { // 2MB limit for images
+                    alert('Profile image size must be less than 2MB');
+                    return;
+                  }
+                  setForm(f => ({ ...f, profile_image: file || null }));
+                }}
+                className="w-80 h-80 rounded-lg"
+              />
+              <p className="text-sm text-gray-500 mt-2">Max 2MB</p>
+            </div>
           </div>
         </div>
       </div>
@@ -55,8 +62,7 @@ export default function ProfileInfo({
           name="bio"
           value={form.bio}
           onChange={(e) => setForm({ ...form, bio: e.target.value })}
-          placeholder="I currently lead product at OpenMind, a Series A startup building out software to help robots learn from each other and operate in the real world. Prior to that, I launched Databrick's Agent Framework and Agent Evaluation products to make agent tooling accessible to non-technical teams, and earlier built CBDC infra for central banks to settle wholesale and cross-border remittance payments. I've loved my interactions with startups and so I currently also scout for GC and support their portcos.
-"
+          placeholder="I currently lead product at OpenMind, a Series A startup building out software to help robots learn from each other and operate in the real world. Prior to that, I launched Databrick's Agent Framework..."
           className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-lg 
                     mt-2 min-h-[120px] max-h-[50vh] resize-y 
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring 
@@ -97,7 +103,7 @@ export default function ProfileInfo({
         </div>
         <hr />
         <div className="py-6 grid w-full max-w-sm items-center gap-3">
-          <Label htmlFor="resume_file" className="text-base font-medium">Resume *</Label>
+          <Label htmlFor="resume_file" className="text-base font-medium">Resume * <span className="text-sm text-gray-500 font-normal">(Max 5MB)</span></Label>
           <Input
             id="resume_file"
             name="resume_file"
@@ -105,6 +111,11 @@ export default function ProfileInfo({
             accept="application/pdf,.pdf,.doc,.docx"
             onChange={e => {
               const file = e.target.files && e.target.files[0];
+              if (file && file.size > 5 * 1024 * 1024) { // 5MB limit
+                alert('Resume file size must be less than 5MB');
+                e.target.value = '';
+                return;
+              }
               setForm(f => ({ ...f, resume_file: file || null }));
             }}
             className="block w-full text-lg mt-2"
@@ -120,7 +131,7 @@ export default function ProfileInfo({
         </div>
         <hr />
         <div className="py-6 grid w-full max-w-sm items-center gap-3">
-          <Label htmlFor="transcript_file" className="text-base font-medium">Transcript *</Label>
+          <Label htmlFor="transcript_file" className="text-base font-medium">Transcript * <span className="text-sm text-gray-500 font-normal">(Max 5MB)</span></Label>
           <Input
             id="transcript_file"
             name="transcript_file"
@@ -128,6 +139,11 @@ export default function ProfileInfo({
             accept="application/pdf,.pdf,.doc,.docx"
             onChange={e => {
               const file = e.target.files && e.target.files[0];
+              if (file && file.size > 5 * 1024 * 1024) { // 5MB limit
+                alert('Transcript file size must be less than 5MB');
+                e.target.value = '';
+                return;
+              }
               setForm(f => ({ ...f, transcript_file: file || null }));
             }}
             className="block w-full text-lg mt-2"

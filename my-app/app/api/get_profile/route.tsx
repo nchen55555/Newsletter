@@ -58,6 +58,7 @@ export async function GET(){
             interested_companies: subscriber?.interested_companies,
             company_recommendations: subscriber?.company_recommendations,
             interests: subscriber?.interests,
+            verified: subscriber?.verified,
             connections: subscriber?.connections,
         })
 

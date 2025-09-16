@@ -150,8 +150,7 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
 // --- Newsfeed (one per row vibe) ----------------------------------------
 export function ArticleNewsfeed() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [appliedToTheNiche, setAppliedToTheNiche] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [verifiedToTheNiche, setVerifiedToTheNiche] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -168,13 +167,11 @@ export function ArticleNewsfeed() {
         
         if (profileRes.ok) {
           const profile = await profileRes.json();
-          setAppliedToTheNiche(profile.applied || false);
+          setVerifiedToTheNiche(profile.verified || false);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
-      } finally {
-        setIsLoading(false);
-      }
+      } 
     };
 
     fetchData();
@@ -194,14 +191,14 @@ export function ArticleNewsfeed() {
         </p>
         </div>
       {/* Feed: one post per row */}
-      {appliedToTheNiche && (
+      {verifiedToTheNiche && (
         <div className="flex flex-col gap-6 sm:gap-7">
           {posts.map((post, index) => (
             <FeedRow key={post._id} post={post} index={index} />
           ))}
         </div>
       )}
-      {!appliedToTheNiche && (
+      {!verifiedToTheNiche && (
         <Alert className="max-w-2xl mx-auto">
           <Info className="h-4 w-4" />
           <AlertDescription>
@@ -211,14 +208,14 @@ export function ArticleNewsfeed() {
       )}
 
       {/* Empty state */}
-      {appliedToTheNiche && posts.length === 0 && (
+      {verifiedToTheNiche && posts.length === 0 && (
         <div className="mx-auto my-24 max-w-xl rounded-3xl border border-dashed p-10 text-center text-neutral-600 dark:border-neutral-800 dark:text-neutral-300">
           <p className="text-lg">No posts yet. Check back soon for fresh stories.</p>
         </div>
       )}
 
       {/* Browse all */}
-      {appliedToTheNiche && (
+      {verifiedToTheNiche && (
         <div className="mt-10 text-center">
           <Link
             href="/articles"

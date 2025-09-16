@@ -20,6 +20,7 @@ export type ProfileData = {
     generated_interest_profile?: string;
     interested_companies?: string;
     connections?: number[];
+    verified?: boolean;
   };
 
 export type ProfileFormState = {

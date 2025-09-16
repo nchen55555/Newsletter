@@ -380,7 +380,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         return;
       }
 
-      // formData.append('applied', 'true');
+      formData.append('applied', 'true');
 
       // Make request (same as original form)
       const response = await fetch('/api/post_profile', {

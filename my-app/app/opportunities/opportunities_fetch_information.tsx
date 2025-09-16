@@ -48,7 +48,7 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
     const [generated_interest_profile, setGeneratedInterestProfile] = useState("")
     const [isLoading, setIsLoading] = useState(true)
     const [companyRecommendations, setCompanyRecommendations] = useState<number[]>([])
-    const [appliedToTheNiche, setAppliedToTheNiche] = useState(false)
+    const [verifiedToTheNiche, setVerifiedToTheNiche] = useState(false)
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -64,7 +64,7 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                     setProfileImage(profile.profile_image_url || "")
                     setGeneratedInterestProfile(profile.generated_interest_profile || "")
                     setCompanyRecommendations(profile.company_recommendations || [])
-                    setAppliedToTheNiche(profile.applied)
+                    setVerifiedToTheNiche(profile.verified)
                     
                 }
             } catch (e) {
@@ -155,8 +155,8 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                             </DialogContent>
                         </Dialog>
                     </div>
-                    {appliedToTheNiche && (<CompanyCards priority={filteredOpportunities} other={otherOpportunities} external={externalOpportunities}/> )}
-                    {!appliedToTheNiche && (<Alert className="max-w-2xl mx-auto">
+                    {verifiedToTheNiche && (<CompanyCards priority={filteredOpportunities} other={otherOpportunities} external={externalOpportunities}/> )}
+                    {!verifiedToTheNiche && (<Alert className="max-w-2xl mx-auto">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
                   Create Your Profile and Wait for It To Get Verified To Access
