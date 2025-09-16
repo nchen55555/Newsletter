@@ -44,18 +44,8 @@ export function Navigation() {
         });
         if (!res.ok) return;
         const profile = await res.json();
-
-        const incomplete =
-          !profile.resume_url ||
-          !profile.first_name ||
-          !profile.last_name ||
-          !profile.phone_number ||
-          !profile.bio || 
-          !profile.linkedin_url ||
-          !profile.profile_image_url ||
-          !profile.transcript_url;
-
-        if (!didSet) setProfileAlert(incomplete);
+        
+        if (!didSet) setProfileAlert(!profile.applied);
       } catch (e) {
         console.error("Failed to fetch profile:", e);
         if (!didSet) setProfileAlert(false); // fail-closed
@@ -109,10 +99,10 @@ export function Navigation() {
               >
                 <Alert variant="destructive">
                   <AlertCircleIcon className="h-5 w-5 text-red-500 mr-2" />
-                  <AlertTitle>Please update your profile</AlertTitle>
+                  <AlertTitle>Create your profile</AlertTitle>
                   <AlertDescription>
                     <ul className="list-inside list-disc text-sm">
-                      <li>Your updated profile is necessary to interact with our partner companies</li>
+                      <li>Your profile is necessary to use this platform</li>
                     </ul>
                   </AlertDescription>
                 </Alert>

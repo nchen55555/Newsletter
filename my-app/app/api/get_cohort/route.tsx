@@ -14,6 +14,7 @@ export async function GET() {
     .from('subscribers')
     .select('id, email, linkedin_url, personal_website, first_name, last_name, profile_image_url, bio')
     .eq('is_public_profile', 'TRUE')
+    .eq('applied', 'TRUE')
 
 
   if (error) {

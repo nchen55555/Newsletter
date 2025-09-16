@@ -5,9 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import imageUrlBuilder from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
-import { ArrowRight, Info } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // --- Types --------------------------------------------------------------
 export interface Post extends SanityDocument {
@@ -150,27 +149,20 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
 // --- Newsfeed (one per row vibe) ----------------------------------------
 export function ArticleNewsfeed() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [verifiedToTheNiche, setVerifiedToTheNiche] = useState(false);
 
   useEffect(() => {
+    console.log("ArticleNewsfeed useEffect starting");
+    
     const fetchData = async () => {
+      console.log("fetchData function called");
       try {
         // Fetch posts
-        const options = { next: { revalidate: 30 } } as const;
-        const fetchedPosts = await client.fetch<Post[]>(POSTS_QUERY, {}, options);
+        console.log("Fetching posts...");
+        const fetchedPosts = await client.fetch<Post[]>(POSTS_QUERY);
+        console.log("Posts fetched:", fetchedPosts.length);
         setPosts(fetchedPosts);
-
-        // Fetch profile to check applied status
-        const profileRes = await fetch(`/api/get_profile`, {
-          credentials: 'include'
-        });
-        
-        if (profileRes.ok) {
-          const profile = await profileRes.json();
-          setVerifiedToTheNiche(profile.verified || false);
-        }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error in fetchData:', error);
       } 
     };
 
@@ -191,41 +183,29 @@ export function ArticleNewsfeed() {
         </p>
         </div>
       {/* Feed: one post per row */}
-      {verifiedToTheNiche && (
-        <div className="flex flex-col gap-6 sm:gap-7">
-          {posts.map((post, index) => (
-            <FeedRow key={post._id} post={post} index={index} />
-          ))}
-        </div>
-      )}
-      {!verifiedToTheNiche && (
-        <Alert className="max-w-2xl mx-auto">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            Create Your Profile and Wait for It To Get Verified To Access
-          </AlertDescription>
-        </Alert>
-      )}
+      <div className="flex flex-col gap-6 sm:gap-7">
+        {posts.map((post, index) => (
+          <FeedRow key={post._id} post={post} index={index} />
+        ))}
+      </div>
 
       {/* Empty state */}
-      {verifiedToTheNiche && posts.length === 0 && (
+      {posts.length === 0 && (
         <div className="mx-auto my-24 max-w-xl rounded-3xl border border-dashed p-10 text-center text-neutral-600 dark:border-neutral-800 dark:text-neutral-300">
           <p className="text-lg">No posts yet. Check back soon for fresh stories.</p>
         </div>
       )}
 
       {/* Browse all */}
-      {verifiedToTheNiche && (
-        <div className="mt-10 text-center">
-          <Link
-            href="/articles"
-            className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 bg-white px-6 py-3 text-sm font-medium text-neutral-900 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          >
-            Browse all articles
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      )}
+      <div className="mt-10 text-center">
+        <Link
+          href="/articles"
+          className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 bg-white px-6 py-3 text-sm font-medium text-neutral-900 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+        >
+          Browse all articles
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
     </div>
     </div>
   );

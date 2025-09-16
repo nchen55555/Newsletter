@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
   
       const { data, error } = await resend.emails.send({
-        from: 'Nicole <nicole@theniche.tech>',
+        from: 'Abby <abby@theniche.tech>',
         to: [email],
         subject: '[THE NICHE] Application Received',
         html: `

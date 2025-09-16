@@ -25,8 +25,6 @@ export default function ApplyButton({ company }: { company: string }) {
   const [appSuccess, setAppSuccess] = useState(false)
   const [loadingApplied, setLoadingApplied] = useState(false)
   const [profileSectionExpanded, setProfileSectionExpanded] = useState(false)
-  const [profileIncomplete, setProfileIncomplete] = useState(false)
-  const [checkingProfile, setCheckingProfile] = useState(true)
   const [appliedToNiche, setAppliedToNiche] = useState(false)
   const [form, setForm] = useState<ProfileFormState>({
     id: 0,
@@ -68,20 +66,8 @@ export default function ApplyButton({ company }: { company: string }) {
 
         // setIsCohortMember(profile.status == 'COHORT')
 
-        // Check profile completeness
-        const incomplete =
-          !profile.resume_url ||
-          !profile.first_name ||
-          !profile.last_name ||
-          !profile.phone_number ||
-          !profile.bio || 
-          !profile.linkedin_url ||
-          !profile.profile_image_url;
-      
 
         setAppliedToNiche(profile.applied)
-
-        setProfileIncomplete(incomplete);
 
         // Destructure the fields you need
         setAccessToken(profile.access_token);
@@ -112,10 +98,7 @@ export default function ApplyButton({ company }: { company: string }) {
         setData(profile);
       } catch (e) {
         console.error("Failed to fetch profile:", e);
-        setProfileIncomplete(false); // fail-closed
-      } finally {
-        setCheckingProfile(false);
-      }
+      } 
     })();
 
     return () => ac.abort();
@@ -306,18 +289,6 @@ export default function ApplyButton({ company }: { company: string }) {
                 >
                   <div className="flex items-center gap-3">
                     <div>
-                      <h3 className="text-lg font-medium text-neutral-800">Profile Information{' '}
-                      {profileIncomplete && !checkingProfile && (
-                      <span className="inline-block px-2 py-1 text-xs font-semibold text-white bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 rounded-full">
-                        Incomplete
-                      </span>
-                    )}
-                    {!profileIncomplete && !checkingProfile && (
-                      <span className="inline-block px-2 py-1 text-xs font-semibold text-white bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 rounded-full">
-                        Complete
-                      </span>
-                    )}
-                      </h3>
                       <p className="text-sm text-neutral-600">Review and update your profile details</p>
                     </div>
                   </div>
@@ -339,7 +310,7 @@ export default function ApplyButton({ company }: { company: string }) {
             </div>
             <div className="mb-10">
             <Label htmlFor="add_info" className="text-base font-medium">Intro Blurb</Label>
-              <Input id="add_info" name="add_info" type="tel" value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} required placeholder="Write a quick one-sentence introduction to the founder of the company!" className="h-12 text-lg px-4 mt-2" />
+              <Input id="add_info" name="add_info" type="tel" value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} required placeholder="Write your introduction to the founder for when we connect you two." className="h-12 text-lg px-4 mt-2" />
               {appSuccess && (
                 <Alert className="mt-6">
                   <CheckCircle2Icon />
