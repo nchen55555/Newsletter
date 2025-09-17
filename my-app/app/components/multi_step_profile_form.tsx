@@ -216,29 +216,36 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
 
       if (step3Response.ok) {
         console.log('Step 3 data saved successfully');
+        
+        // Only send welcome email if step 3 data was saved successfully
+        const emailResponse = await fetch('/api/send-welcome-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: form.email, 
+            first_name: form.first_name, 
+            last_name: form.last_name
+          })
+        });
+
+        if (emailResponse.ok) {
+          console.log('Welcome email sent successfully');
+          setEmailSent(true);
+        } else {
+          console.error('Failed to send welcome email');
+          const emailError = await emailResponse.text();
+          console.error('Email error details:', emailError);
+          setEmailSent(false);
+        }
       } else {
         console.error('Failed to save step 3 data');
-      }
-
-      // Send welcome email
-      const response = await fetch('/api/send-welcome-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: form.email, 
-          first_name: form.first_name, 
-          last_name: form.last_name
-        })
-      });
-
-      if (response.ok) {
-        console.log('Welcome email sent successfully');
-        setEmailSent(true);
-      } else {
-        console.error('Failed to send welcome email');
-        setEmailSent(false);
+        const step3Error = await step3Response.text();
+        console.error('Step 3 error details:', step3Error);
+        setFormError("Failed to save profile data. Please try again.");
+        setLoading(false);
+        return;
       }
 
       // // Parse resume first, then generate interest profile

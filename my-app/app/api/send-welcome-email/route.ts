@@ -8,10 +8,22 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email, first_name, last_name } = body;
 
+    console.log('Welcome email request received for:', { email, first_name, last_name });
+
     // Validate required fields from request body
     if (!email || !first_name || !last_name) {
+      console.error('Missing required fields:', { email: !!email, first_name: !!first_name, last_name: !!last_name });
       return NextResponse.json({ 
         error: 'Missing required fields: email, first_name, last_name' 
+      }, { status: 400 });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.error('Invalid email format:', email);
+      return NextResponse.json({ 
+        error: 'Invalid email format' 
       }, { status: 400 });
     }
 
@@ -29,8 +41,10 @@ export async function POST(req: NextRequest) {
 
     const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
 
+    console.log('Attempting to send welcome email to:', email);
+
     const { data, error } = await resend.emails.send({
-      from: 'Abby <abbyniche.tech>',
+      from: 'Nicole <nicole@theniche.tech>',
       to: [email],
       subject: '[THE NICHE] Welcome',
       html: `
@@ -47,6 +61,8 @@ export async function POST(req: NextRequest) {
         details: error.message 
       }, { status: 500 });
     }
+
+    console.log('Welcome email sent successfully:', { email, emailId: data?.id });
 
     return NextResponse.json({ 
       success: true, 
