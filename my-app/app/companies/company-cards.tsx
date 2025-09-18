@@ -1,11 +1,12 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Info } from "lucide-react";
 import { CompanyData } from "@/app/types";
 import ApplyButton from "@/app/components/apply";
+import EarlyInterestButton from "@/app/components/early_interest";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -17,6 +18,7 @@ interface CompanyCardsProps {
   priority: CompanyWithImageUrl[];
   other: CompanyWithImageUrl[];
   external?: CompanyWithImageUrl[];
+  pendingPartner?: CompanyWithImageUrl[];
 }
 
 
@@ -30,9 +32,37 @@ function PrimaryCTA({ companyId }: { companyId: string }) {
   );
 }
 
-export function CompanyCard({ company, showHighMutualInterest = false, external = false }: { company: CompanyWithImageUrl; showHighMutualInterest?: boolean; external?: boolean}) {
+function EarlyInterestCTA({ companyId }: { companyId: string }) {
+  return (
+    <div className="relative">
+      <div className="relative">
+        <EarlyInterestButton company={companyId} />
+      </div>
+    </div>
+  );
+}
+
+export function CompanyCard({ company, showHighMutualInterest = false, potential = false, external = false }: { company: CompanyWithImageUrl; showHighMutualInterest?: boolean; potential?: boolean, external?: boolean}) {
   const aboutId = useId();
   const router = useRouter();
+  const [appliedToNiche, setAppliedToNiche] = useState(false);
+
+  // Check if user has applied to The Niche
+  useEffect(() => {
+    const checkAppliedStatus = async () => {
+      try {
+        const res = await fetch('/api/get_profile', { credentials: 'include' });
+        if (res.ok) {
+          const profile = await res.json();
+          setAppliedToNiche(profile.applied || false);
+        }
+      } catch (error) {
+        console.error('Error checking applied status:', error);
+      }
+    };
+
+    checkAppliedStatus();
+  }, []);
 
   const facts = useMemo(() => {
     const arr: Array<{ label: string; value: string | number | undefined }> = [];
@@ -117,8 +147,43 @@ export function CompanyCard({ company, showHighMutualInterest = false, external 
             >
               {company.description}
             </p>
+            
+            {/* Hiring tags */}
+            {company.hiring_tags && company.hiring_tags.length > 0 && (
+              <div className="mt-3 mb-2 text-left">
+                <div className="flex flex-wrap gap-2">
+                  {company.hiring_tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 border border-green-200"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pending partnership tag for potential companies */}
+            {potential && (
+              <div className="mt-3 mb-2 text-left">
+                <span className="inline-flex items-center rounded-full bg-yellow-50 px-2.5 py-1 text-xs font-medium text-yellow-700 border border-yellow-200">
+                  Pending Partnership
+                </span>
+              </div>
+            )}
+
+            {/* Warning tag for external companies */}
+            {external && (
+              <div className="mt-3 mb-2 text-left">
+                <span className="inline-flex items-center rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700 border border-orange-200">
+                  Not Partnered with The Niche
+                </span>
+              </div>
+            )}
+            
            <div className ="mt-4 text-left">
-          {company.tags?.length ? (
+          {company.tags?.length && appliedToNiche ? (
             <button
             type="button"
             onClick={() => router.push(`/${company.tags?.[0]}`)}
@@ -141,9 +206,13 @@ export function CompanyCard({ company, showHighMutualInterest = false, external 
           <div className="shrink-0">
             <RainbowBookmark company={company.company} /> 
           </div>
-          {!external &&(
+          {!external && !potential && (
           <div className="shrink-0">
             <PrimaryCTA companyId={company.company.toString()} />
+          </div>)}
+          {potential && (
+          <div className="shrink-0">
+            <EarlyInterestCTA companyId={company.company.toString()} />
           </div>)}
         </div>
       </div>
@@ -151,7 +220,7 @@ export function CompanyCard({ company, showHighMutualInterest = false, external 
   );
 }
 
-export default function CompanyCards({ priority, other, external = [] }: CompanyCardsProps) {
+export default function CompanyCards({ priority, other, external = [], pendingPartner = [] }: CompanyCardsProps) {
   const [activeTab, setActiveTab] = useState<'priority' | 'other' | 'external'>('priority');
 
   return (
@@ -212,11 +281,24 @@ export default function CompanyCards({ priority, other, external = [] }: Company
         )}
 
         {activeTab === 'other' && (
-          <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-3 lg:grid-cols-3">
-            {other.map((company) => (
-              <CompanyCard key={company._id} company={company} external={false}/>
-            ))}
-          </div>
+          <>
+            <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-3 lg:grid-cols-3">
+              {other.map((company) => (
+                <CompanyCard key={company._id} company={company} external={false}/>
+              ))}
+            </div>
+            
+            <div className="mt-8">
+              <div className="text-center mb-6">
+                <p className="text-lg font-medium text-neutral-600"><strong>Pending partnerships coming soon... </strong></p>
+              </div>
+              <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-3 lg:grid-cols-3">
+                {pendingPartner.map((company) => (
+                  <CompanyCard key={company._id} company={company} potential={true} external={false}/>
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
         {activeTab === 'external' && (

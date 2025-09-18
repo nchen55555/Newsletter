@@ -75,7 +75,7 @@ function EmailForwardingSetup({
         <Alert className="border-blue-200 bg-blue-50">
           <AlertCircle className="h-4 w-4 text-blue-600" />
           <AlertDescription>
-            <strong>Simple setup:</strong> Forward or bcc interview emails to the address below and your tracker updates automatically.
+            <strong>Simple setup:</strong> Forward or bcc interview emails to the address below and this tracker will automatically update, allowing you to keep track of all of your processes seamlessly!
           </AlertDescription>
         </Alert>
 
@@ -141,6 +141,7 @@ export default function EmailForwardingATS() {
   const [isEmailSetupDialogOpen, setIsEmailSetupDialogOpen] = useState(false)
   const [trackingEmail, setTrackingEmail] = useState<string>('')
   const [acknowledged, setAcknowledged] = useState(false)
+  const [profileLoaded, setProfileLoaded] = useState(false)
   
   const [newApplication, setNewApplication] = useState({
     company: '',
@@ -240,6 +241,26 @@ export default function EmailForwardingATS() {
     return acc
   }, {} as Record<string, number>)
 
+  // Check if user has already confirmed application tracker setup
+  useEffect(() => {
+    const checkProfileConfirmation = async () => {
+      try {
+        const res = await fetch('/api/get_profile', { credentials: 'include' });
+        if (res.ok) {
+          const profile = await res.json();
+          const isConfirmed = profile.application_tracker_confirmed || false;
+          setAcknowledged(isConfirmed);
+          setProfileLoaded(true);
+        }
+      } catch (error) {
+        console.error('Error checking profile confirmation:', error);
+        setProfileLoaded(true); // Allow the component to continue functioning
+      }
+    };
+
+    checkProfileConfirmation();
+  }, []);
+
   useEffect(() => {
   fetch("/api/get_all_applications", { credentials: "include" })
     .then(res => res.json())
@@ -274,10 +295,10 @@ export default function EmailForwardingATS() {
 
   // Open the Email Setup dialog on initial load once we have the trackingEmail
   useEffect(() => {
-    if (trackingEmail && !acknowledged) {
+    if (trackingEmail && !acknowledged && profileLoaded) {
       setIsEmailSetupDialogOpen(true)
     }
-  }, [trackingEmail, acknowledged])
+  }, [trackingEmail, acknowledged, profileLoaded])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
@@ -313,9 +334,22 @@ export default function EmailForwardingATS() {
                   <EmailForwardingSetup 
                     trackingEmail={trackingEmail} 
                     acknowledged={acknowledged} 
-                    onAcknowledge={() => {
-                      setAcknowledged(true)
-                      setIsEmailSetupDialogOpen(false)
+                    onAcknowledge={async () => {
+                      try {
+                        const res = await fetch('/api/post_ats_track', {
+                          method: 'POST',
+                          credentials: 'include'
+                        });
+                        
+                        if (res.ok) {
+                          setAcknowledged(true);
+                          setIsEmailSetupDialogOpen(false);
+                        } else {
+                          console.error('Failed to update application tracker confirmation');
+                        }
+                      } catch (error) {
+                        console.error('Error updating application tracker confirmation:', error);
+                      }
                     }} 
                   />
                 </DialogContent>

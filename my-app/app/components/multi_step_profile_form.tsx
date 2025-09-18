@@ -494,7 +494,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                   <div className="space-y-2">
                     <h3 className="text-xl font-semibold text-neutral-900">Personalization: Our Network</h3>
                     <p className="text-neutral-600 leading-relaxed">
-                      In this Beta, The Niche has partnered with 7 portfolio startups to match with exceptional talent. Browse through these companies and indicate interest to connect and apply.  
+                      In this Beta, The Niche has partnered with 6 portfolio startups to match with exceptional talent. Browse through these companies and indicate interest to connect and apply.  
                     </p>
                   </div>
                 </div>
@@ -576,7 +576,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                     The Niche has partnered with 7 high-growth, high-talent density startups. Scroll through the profiles of our 7 partner companies. 
                   </p>
                   <p className="text-neutral-600 leading-relaxed">
-                    <strong>Bookmark</strong> profiles you are interested in and <strong>Connect</strong> to profiles you are strongly impressed by and would like to chat with. If there is mutual interest, we will connect you directly to the founders of the startup. In the future, we use your interests to these 6 profiles to tailor and connect you with more opportunities. <strong>Some companies are not partners of ours, but feel free to bookmark if interested in them. </strong>
+                    <strong>Bookmark</strong> profiles you are interested in and <strong>Connect</strong> to profiles you are strongly impressed by and would like to chat with. This helps us understand your interests to tailor and connect you with more opportunities. If you connect with a company on our platform and there is mutual interest, we will forward your profile directly to the founders! 
                   </p>
                 </div>
               </div>

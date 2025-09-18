@@ -49,9 +49,23 @@ export const mediaLibrary = defineType({
       }
     }),
     defineField({
+      name: 'pending_partner',
+      title: 'Pending Partner',
+      type: 'boolean',
+    }),
+    defineField({
       name: 'partner',
       title: 'partner',
       type: 'boolean',
+    }),
+    defineField({
+      name: 'hiring_tags',
+      title: 'Hiring Tags',
+      type: 'array',
+      of: [{type: 'string'}],
+      options: {
+        layout: 'tags'
+      }
     }),
   ],
   preview: {

@@ -3,17 +3,7 @@ import { useState, useEffect } from "react"
 import { SanityDocument } from "next-sanity"
 import { SanityImageSource } from "@sanity/image-url/lib/types/types"
 import { Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import ProfileAvatar from "../components/profile_avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import CompanyCards from "../companies/company-cards";
 
 
@@ -25,11 +15,14 @@ export interface CompanyData extends SanityDocument {
   caption?: string
   description?: string
   tags?: string[]
+  hiring_tags?: string[]
   location?: string
   employees?: string
   founded?: string
   stage?: string
   industry?: string
+  partner?: boolean
+  pending_partner?: boolean
 }
   
 
@@ -82,9 +75,14 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
         companyRecommendations.includes(opportunity.company) && opportunity.partner
     );
 
-    // Other opportunities not in company recommendations
+    // Other opportunities not in company recommendations (regular partners only)
     const otherOpportunities = featuredOpportunities.filter(opportunity => 
-        !companyRecommendations.includes(opportunity.company) && opportunity.partner
+        !companyRecommendations.includes(opportunity.company) && opportunity.partner && !opportunity.pending_partner
+    );
+
+    // Potential partner opportunities (coming soon)
+    const pendingPartnerOpportunities = featuredOpportunities.filter(opportunity => 
+        opportunity.pending_partner
     );
 
     const externalOpportunities = featuredOpportunities.filter(opportunity => 
@@ -105,57 +103,8 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                         <p className="text-lg md:text-xl text-neutral-600 leading-relaxed font-light max-w-5xl mx-auto mb-8">
                             As you use this platform more and more, we will be able to surface better and better opportunities aligned to your interests. We partner with a select cohort of startups to surface top-level talent such that you can directly meet with the founders for a conversation if there is mutual interest. 
                         </p>
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button>
-                                    Insights About Your Profile
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto p-8">
-                                <DialogHeader className="mb-6">
-                                    <DialogTitle className="text-xl mb-3">Insights About Your Profile</DialogTitle>
-                                    <DialogDescription className="text-base leading-relaxed">
-                                        Based on your interests, your experiences and core competencies, here are our consolidated conclusions about your strengths and what you might be interested in.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="bg-neutral-50 rounded-lg p-6">
-                                    <div className="flex gap-6 items-start mb-6">
-                                        {/* Profile Image */}
-                                        <div className="flex-shrink-0">
-                                            <ProfileAvatar
-                                                name={first_name || 'User'}
-                                                imageUrl={profile_image_url || undefined}
-                                                size={64}
-                                                editable={false}
-                                                className="w-16 h-16 rounded-full shadow-lg border-2 border-white"
-                                            />
-                                        </div>
-                                        
-                                        {/* About Section */}
-                                        <div className="flex-1">
-                                            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
-                                                About {first_name}
-                                            </h3>
-                                            {/* <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
-                                                On The Niche
-                                            </span> */}
-                                        </div>
-                                    </div>
-                                    
-                                    {generated_interest_profile && (<div className="text-base leading-relaxed text-neutral-700 whitespace-pre-line">
-                                        {generated_interest_profile.replace(/•\s+/g, '• ')}
-                                    </div>)}
-                                    {!generated_interest_profile && (<Alert className="max-w-2xl mx-auto">
-                                    <Info className="h-4 w-4" />
-                                    <AlertDescription>
-                                    Your recommendations may still be generating - check back 2-3 days after you submitted your profile.
-                                    </AlertDescription>
-                                </Alert>)}
-                                </div>
-                            </DialogContent>
-                        </Dialog>
                     </div>
-                    {verifiedToTheNiche && (<CompanyCards priority={filteredOpportunities} other={otherOpportunities} external={externalOpportunities}/> )}
+                    {verifiedToTheNiche && (<CompanyCards priority={filteredOpportunities} other={otherOpportunities} external={externalOpportunities} pendingPartner={pendingPartnerOpportunities}/> )}
                     {!verifiedToTheNiche && (<Alert className="max-w-2xl mx-auto">
                 <Info className="h-4 w-4" />
                 <AlertDescription>

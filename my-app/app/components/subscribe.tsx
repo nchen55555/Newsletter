@@ -30,8 +30,8 @@ export function Subscribe() {
   } = useSubscriptionContext();
 
   const validateLinkedInUrl = (url: string): boolean => {
-    const linkedinRegex = /^https:\/\/(?:www\.)?linkedin\.com\/in\/[\w-]+\/?$/
-    return linkedinRegex.test(url)
+    const linkedinRegex = /^(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[a-zA-Z0-9\-_]+\/?$/
+    return linkedinRegex.test(url.trim())
   }
 
   const handleFormSubmit = async (e: React.FormEvent) => {

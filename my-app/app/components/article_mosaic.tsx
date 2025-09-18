@@ -14,13 +14,8 @@ export interface Post extends SanityDocument {
   image?: SanityImageSource;
   excerpt?: string;
   author?: string;
-  // NOTE: allow multiple shapes since Sanity "tags" can be strings or objects
-  tags?: Array<
-    | string
-    | { title?: string; name?: string }
-    | { tag?: string }
-    | { _type?: string; _ref?: string; title?: string; name?: string }
-  >;
+  // NOTE: tags are simple strings in Sanity schema
+  tags?: string[];
 }
 
 // --- Utils --------------------------------------------------------------
@@ -31,45 +26,41 @@ function urlForImage(source: SanityImageSource) {
 
 // Normalize tags → role labels (title case)
 function getRoleLabels(tags?: Post["tags"]) {
-  if (!tags || !Array.isArray(tags)) return [];
-  const raw = tags
-    .map((t) => {
-      if (typeof t === "string") return t;
-      if (t && typeof t === "object") {
-        // common shapes
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const anyT = t as any;
-        return anyT.title ?? anyT.name ?? anyT.tag ?? "";
-      }
-      return "";
-    })
-    .filter(Boolean) as string[];
-
-  // de-dup and title-case
+  if (!tags || !Array.isArray(tags)) {
+    return [];
+  }
+  
+  // de-dup and properly title-case the string tags
   const seen = new Set<string>();
-  return raw
-    .map((s) =>
-      s
-        .toString()
+  return tags
+    .filter((tag): tag is string => typeof tag === "string" && tag.trim().length > 0)
+    .map((tag) => {
+      // Clean up the tag but preserve original capitalization where appropriate
+      const cleaned = tag
         .trim()
         .replace(/[_-]/g, " ")
-        .replace(/\s+/g, " ")
-        .toLowerCase()
-    )
-    .filter((s) => {
-      if (seen.has(s)) return false;
-      seen.add(s);
-      return true;
+        .replace(/\s+/g, " ");
+      
+      // Convert to proper title case, preserving abbreviations
+      return cleaned.replace(/\w\S*/g, (word) => {
+        // If word is already all uppercase (likely an abbreviation), keep it
+        if (word.length > 1 && word === word.toUpperCase()) {
+          return word;
+        }
+        // Otherwise, standard title case
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      });
     })
-    .map((s) =>
-      s.replace(/\b\w/g, (c) => c.toUpperCase()) // Title Case
-    );
+    .filter((tag) => {
+      const normalized = tag.toLowerCase();
+      if (seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    });
 }
 
 // --- Query --------------------------------------------------------------
-// If your schema uses a different field than "tags", adjust accordingly.
-// If tags are references, you can project their titles like:
-// tags[]-> { title }
+// Tags are simple strings in the Sanity schema
 const POSTS_QUERY = `*[
   _type == "post" && defined(slug.current) && !(slug.current match "*-beta*")
 ]|order(publishedAt desc){
@@ -109,13 +100,13 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
           </div>
 
           {/* Content (right on md+) */}
-          <div className="flex w-full flex-col p-5 sm:p-6 md:w-[62%]">
-            <h2 className="line-clamp-2 text-xl font-semibold leading-snug tracking-tight text-neutral-900 transition-colors duration-200 group-hover:text-neutral-700 dark:text-neutral-50 dark:group-hover:text-neutral-200 text-left">
+          <div className="flex w-full flex-col p-6 sm:p-8 md:w-[62%]">
+            <h2 className="line-clamp-2 text-2xl md:text-3xl font-semibold leading-snug tracking-tight text-neutral-900 transition-colors duration-200 group-hover:text-neutral-700 dark:text-neutral-50 dark:group-hover:text-neutral-200 text-left">
               {post.title}
             </h2>
 
             {post.excerpt && (
-              <p className="mt-2 line-clamp-3 text-[15px] leading-relaxed text-neutral-600 dark:text-neutral-300">
+              <p className="mt-3 line-clamp-3 text-base md:text-lg leading-relaxed text-neutral-600 dark:text-neutral-300">
                 {post.excerpt}
               </p>
             )}
@@ -126,7 +117,7 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
                 {roles.map((role) => (
                   <span
                     key={role}
-                    className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
+                    className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
                   >
                     {role}
                   </span>
@@ -134,8 +125,8 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
               </div>
             )}
 
-            <div className="mt-5 inline-flex items-center gap-1 self-start text-sm font-medium text-neutral-700 transition-colors duration-200 group-hover:text-neutral-900 dark:text-neutral-200 dark:group-hover:text-white">
-              Read more <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            <div className="mt-6 inline-flex items-center gap-2 self-start text-base md:text-lg font-medium text-neutral-700 transition-colors duration-200 group-hover:text-neutral-900 dark:text-neutral-200 dark:group-hover:text-white">
+              Read more <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
             </div>
           </div>
         </div>
@@ -151,8 +142,8 @@ export async function ArticleNewsfeed() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="flex flex-col items-center gap-8">
-                    {/* Welcome Header */}
+      <div className="flex flex-col gap-8">
+        {/* Welcome Header - Centered */}
         <div className="text-center pt-16 pb-8">
             <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-black">
                 The Latest Feed
@@ -161,11 +152,13 @@ export async function ArticleNewsfeed() {
             Every week, The Niche publishes two to three company profiles on opportunities within our partner circle for you to stay tuned. We interview the founders directly and dive deep into how each sector operates, what teams are looking for, what the market looks right now in each industry, etc. 
         </p>
         </div>
-      {/* Feed: one post per row */}
-      <div className="flex flex-col gap-6 sm:gap-7">
-        {posts.map((post, index) => (
-          <FeedRow key={post._id} post={post} index={index} />
-        ))}
+        
+        {/* Feed: one post per row - Full width */}
+        <div className="flex flex-col gap-6 sm:gap-7 w-full">
+          {posts.map((post, index) => (
+            <FeedRow key={post._id} post={post} index={index} />
+          ))}
+        </div>
       </div>
 
       {/* Empty state */}
@@ -185,7 +178,6 @@ export async function ArticleNewsfeed() {
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
-    </div>
     </div>
   );
 }

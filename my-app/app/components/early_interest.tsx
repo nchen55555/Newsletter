@@ -11,11 +11,11 @@ import ProfileInfo from "./profile_info";
 import { ProfileFormState } from "@/app/types";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2Icon, Terminal, Send } from "lucide-react";
+import { CheckCircle2Icon, Terminal, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
-export default function ApplyButton({ company }: { company: string }) {
+export default function EarlyInterestButton({ company }: { company: string }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { isSubscribed } = useSubscriptionContext();
   const [data, setData] = useState<ProfileData | null>(null);
@@ -48,8 +48,6 @@ export default function ApplyButton({ company }: { company: string }) {
 
   const [applied, setApplied] = useState(false);
 
-  // const [isCohortMember, setIsCohortMember] = useState(false)
-
   useEffect(() => {
     const ac = new AbortController();
     
@@ -62,9 +60,6 @@ export default function ApplyButton({ company }: { company: string }) {
         });
         if (!res.ok) return;
         const profile = await res.json();
-
-        // setIsCohortMember(profile.status == 'COHORT')
-
 
         setAppliedToNiche(profile.applied)
 
@@ -105,7 +100,7 @@ export default function ApplyButton({ company }: { company: string }) {
 
   useEffect(() => {
     if (!form.id || !company) return; // wait until both are loaded
-    fetch(`/api/get_application?candidate_id=${form.id}&company_id=${company}`, { credentials: "include" })
+    fetch(`/api/get_early_interest?candidate_id=${form.id}&company_id=${company}`, { credentials: "include" })
       .then(res => res.json())
       .then(app => {
         const exists = typeof app.existing === 'string'
@@ -116,12 +111,9 @@ export default function ApplyButton({ company }: { company: string }) {
   }, [form.id, company]);
   
 
-
   if (!isSubscribed) return null;
 
-
-
-  async function handleApply(e: React.FormEvent) {
+  async function handleEarlyInterest(e: React.FormEvent) {
     e.preventDefault()
     setLoadingApplied(true);
     setAppError(null);
@@ -198,7 +190,6 @@ export default function ApplyButton({ company }: { company: string }) {
       return;
     }
 
-
     // First, update the profile
     const res = await fetch('/api/post_profile', { 
       method: 'PATCH',
@@ -211,8 +202,8 @@ export default function ApplyButton({ company }: { company: string }) {
         return; // Stop here if profile update fails
     }
 
-    // Only proceed with application if profile update succeeded
-    const res2 = await fetch('/api/post_application', {
+    // Only proceed with early interest submission if profile update succeeded
+    const res2 = await fetch('/api/post_early_interest', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${access_token}`,
@@ -230,15 +221,13 @@ export default function ApplyButton({ company }: { company: string }) {
       setAppSuccess(true)
       setLoadingApplied(false)
     } else {
-      setAppError("Application submission failed")
+      setAppError("Early interest submission failed")
       setLoadingApplied(false)
     }
   }
   
 
-
   if (!data) return <Skeleton className="h-12 w-full" />; // or customize size;
-
 
   return (
     <div className="flex justify-center lg:justify-start mb-2">
@@ -251,18 +240,18 @@ export default function ApplyButton({ company }: { company: string }) {
           variant="default"
           className="inline-flex items-center justify-center bg-neutral-900 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-neutral-800 transition-colors text-sm w-full"
           type="button"
-          aria-label="connect"
+          aria-label="express early interest"
           disabled={applied || !appliedToNiche}
           style={applied ? { cursor: "not-allowed" } : {}}
         >
-          <Send className="w-4 h-4 mr-2" />
-          connect
+          <AlertTriangle className="w-4 h-4 mr-2" />
+          express early interest
         </Button>
       </span>
     </TooltipTrigger>
     {applied && (
       <TooltipContent>
-        You have already applied to this company.
+        You have already expressed early interest in this company.
       </TooltipContent>
     )}
   </Tooltip>
@@ -273,12 +262,12 @@ export default function ApplyButton({ company }: { company: string }) {
           </DialogTrigger>
           <DialogContent className="sm:max-w-5xl w-full p-8 max-h-[80vh] overflow-y-auto" showCloseButton={false}>
             <DialogHeader className="mb-8">
-              <DialogTitle className="text-2xl font-semibold">Application of Interest</DialogTitle>
+              <DialogTitle className="text-2xl font-semibold">Express Early Interest</DialogTitle>
               <DialogDescription className="text-lg mt-2">
-                In the notes section, indicate any additional information that you think would be beneficial for us and our partner companies to know and/or questions you have about the company.
+                We are currently processing our partnership with these companies! Pending partnership, we will directly connect you to the founder or head of talent for an initial discussion! <br></br><br></br><strong>If you are especially interested in this company, please explain why and let us know in your application. Regardless of whether the partnership goes through, we will still try to make a connect for you.</strong> 
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleApply}>
+            <form onSubmit={handleEarlyInterest}>
             <div className="mb-10">
               <div className="border border-neutral-200 rounded-lg">
                 <button
@@ -308,7 +297,7 @@ export default function ApplyButton({ company }: { company: string }) {
               </div>
             </div>
             <div className="mb-10">
-            <Label htmlFor="add_info" className="text-base font-medium">Intro Blurb</Label>
+            <Label htmlFor="add_info" className="text-base font-medium">Why are you interested?</Label>
               <textarea 
                 id="add_info" 
                 name="add_info" 
@@ -321,22 +310,22 @@ export default function ApplyButton({ company }: { company: string }) {
               {appSuccess && (
                 <Alert className="mt-6">
                   <CheckCircle2Icon />
-                  <AlertTitle>Application submitted successfully!</AlertTitle>
+                  <AlertTitle>Early interest submitted successfully! We&apos;ll notify you when this company becomes a partner.</AlertTitle>
                 </Alert>
               )}
               {appError && (
                 <Alert variant="destructive" className="mt-6">
                   <Terminal className="h-4 w-4" />
-                  <AlertTitle>{appError}</AlertTitle>s
+                  <AlertTitle>{appError}</AlertTitle>
                 </Alert>
               )}
             <div className="flex justify-end mt-8 gap-4">
               <Button 
                 type="submit" 
-                className="h-12 px-8 text-lg"
+                className="h-12 px-8 text-lg text-white"
                 disabled={applied || loadingApplied}
               >
-                {applied ? "Already Submitted" : loadingApplied ? "Submitting..." : "Submit"}
+                {applied ? "Already Submitted" : loadingApplied ? "Submitting..." : "Submit Early Interest"}
               </Button>
             </div>
             </div>

@@ -81,15 +81,33 @@ function getRoleLabels(rawTags: unknown): string[] {
     })
     .filter(Boolean) as string[];
 
+  // de-dup and properly title-case the string tags
   const seen = new Set<string>();
   return names
-    .map(s => s.toString().trim().replace(/[_-]/g, " ").replace(/\s+/g, " ").toLowerCase())
-    .filter(s => {
-      if (seen.has(s)) return false;
-      seen.add(s);
-      return true;
+    .filter((tag): tag is string => typeof tag === "string" && tag.trim().length > 0)
+    .map((tag) => {
+      // Clean up the tag but preserve original capitalization where appropriate
+      const cleaned = tag
+        .trim()
+        .replace(/[_-]/g, " ")
+        .replace(/\s+/g, " ");
+      
+      // Convert to proper title case, preserving abbreviations
+      return cleaned.replace(/\w\S*/g, (word) => {
+        // If word is already all uppercase (likely an abbreviation), keep it
+        if (word.length > 1 && word === word.toUpperCase()) {
+          return word;
+        }
+        // Otherwise, standard title case
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      });
     })
-    .map(s => s.replace(/\b\w/g, c => c.toUpperCase()));
+    .filter((tag) => {
+      const normalized = tag.toLowerCase();
+      if (seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    });
 }
 
 export default async function PostPage({
@@ -106,8 +124,7 @@ export default async function PostPage({
       <Navigation />
       <Container>
         <div className="pt-10 pb-16">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6">
-            <div className="flex flex-col lg:flex-row gap-8">
+          <div className="flex flex-col lg:flex-row gap-8">
               {/* Sidebar (clean + sticky) */}
               <aside className="lg:w-64 flex-shrink-0 order-2 lg:order-1">
                 <div className="sticky top-6 space-y-4">
@@ -122,14 +139,14 @@ export default async function PostPage({
                 {/* Title + Hero */}
                 <header className="mb-8">
                   {post.image && (
-                    <div className="relative w-full mb-6">
+                    <div className="relative max-w-2xl mb-6">
                       <Image
                         src={urlFor(post.image)?.url() || ''}
                         alt={post.title || 'Post image'}
                         width={post.image.asset?.metadata?.dimensions?.width || 1200}
                         height={post.image.asset?.metadata?.dimensions?.height || 700}
                         className="rounded-lg object-contain w-full h-auto"
-                        sizes="(max-width: 1024px) 100vw, 700px"
+                        sizes="(max-width: 768px) 100vw, 672px"
                         priority
                       />
                     </div>
@@ -169,7 +186,6 @@ export default async function PostPage({
                 )}
               </main>
             </div>
-          </div>
         </div>
       </Container>
     </div>

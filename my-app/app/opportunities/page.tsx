@@ -15,6 +15,7 @@ export interface CompanyData extends SanityDocument {
     caption?: string
     description?: string
     tags?: string[]
+    hiring_tags?: string[]
     location?: string
     employees?: string
     founded?: string
@@ -37,12 +38,14 @@ export default async function OpportunitiesPage() {
     caption,
     description,
     tags,
+    hiring_tags,
     location,
     employees,
     founded,
     stage,
     industry,
-    partner
+    partner, 
+    pending_partner
   }`;
 
 const builder = imageUrlBuilder(client)
