@@ -101,7 +101,9 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                             Welcome, {first_name}
                         </h1>
                         <p className="text-lg md:text-xl text-neutral-600 leading-relaxed font-light max-w-5xl mx-auto mb-8">
-                            As you use this platform more and more, we will be able to surface better and better opportunities aligned to your interests. We partner with a select cohort of startups to surface top-level talent such that you can directly meet with the founders for a conversation if there is mutual interest. 
+                            As you use this platform more and more, we will be able to surface better and better opportunities aligned to your interests. We partner with a select cohort of high-talent-bar startups to surface top-level talent such that you can directly meet with the founders for a conversation if there is mutual interest. 
+                            <br></br> <br></br>
+                            <strong>Every single one of these opportunities are places our team would have considered joining.</strong>
                         </p>
                     </div>
                     {verifiedToTheNiche && (<CompanyCards priority={filteredOpportunities} other={otherOpportunities} external={externalOpportunities} pendingPartner={pendingPartnerOpportunities}/> )}

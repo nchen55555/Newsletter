@@ -402,8 +402,8 @@ export default function LandingClient({ posts }: { posts: ArticleCardPost[] }) {
             </motion.div>
           </div>
 
-          {/* Bottom - Floating Company Gallery */}
-          <div className="w-full relative flex items-center justify-center min-h-[400px] perspective-1000">
+          {/* Bottom - Responsive Company Gallery */}
+          <div className="w-full relative flex items-center justify-center min-h-[300px] md:min-h-[400px] perspective-1000">
             <motion.div
               className="relative w-full h-full"
               initial={{ opacity: 0 }}
@@ -411,106 +411,140 @@ export default function LandingClient({ posts }: { posts: ArticleCardPost[] }) {
               transition={{ duration: 1, delay: 0.6, ease: "easeOut" }}
             >
               {loadingCompanies ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto animate-pulse">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 max-w-4xl mx-auto animate-pulse px-4">
                   {Array.from({ length: 8 }).map((_, index) => (
                     <div key={`loading-${index}`} className="aspect-[3/2] bg-neutral-200 rounded-2xl shadow-lg" />
                   ))}
                 </div>
               ) : (
-                <div className="relative max-w-6xl mx-auto">
-                  {/* Floating logos in 3D space */}
-                  <div className="relative h-[400px] w-full">
-                    {companies.slice(0, 8).map((company, index) => {
-                      const positions = [
-                        { x: '15%', y: '20%', delay: 0, rotate: -5, scale: 0.9 },
-                        { x: '75%', y: '10%', delay: 0.2, rotate: 8, scale: 1.1 },
-                        { x: '45%', y: '35%', delay: 0.4, rotate: -3, scale: 1.0 },
-                        { x: '20%', y: '65%', delay: 0.6, rotate: 12, scale: 0.8 },
-                        { x: '80%', y: '55%', delay: 0.8, rotate: -8, scale: 1.0 },
-                        { x: '55%', y: '75%', delay: 1.0, rotate: 5, scale: 0.9 },
-                        { x: '10%', y: '45%', delay: 1.2, rotate: -10, scale: 1.1 },
-                        { x: '70%', y: '85%', delay: 1.4, rotate: 15, scale: 0.8 }
-                      ];
-                      const pos = positions[index] || positions[0];
-                      
-                      return (
+                <>
+                  {/* Mobile: Simple Grid Layout */}
+                  <div className="block md:hidden px-4">
+                    <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
+                      {companies.slice(0, 6).map((company, index) => (
                         <motion.div
-                          key={company._id}
-                          className="absolute bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 p-6 cursor-pointer group"
-                          style={{ 
-                            left: pos.x, 
-                            top: pos.y,
-                            transform: 'translate(-50%, -50%)'
-                          }}
-                          initial={{ 
-                            opacity: 0, 
-                            scale: 0, 
-                            rotateZ: pos.rotate - 20,
-                            y: 50
-                          }}
-                          animate={opportunitiesInView ? { 
-                            opacity: 1, 
-                            scale: pos.scale, 
-                            rotateZ: pos.rotate,
-                            y: 0
-                          } : { 
-                            opacity: 0, 
-                            scale: 0, 
-                            rotateZ: pos.rotate - 20,
-                            y: 50
-                          }}
-                          transition={{ 
-                            duration: 0.8, 
-                            delay: pos.delay,
-                            ease: "easeOut"
-                          }}
-                          whileHover={{ 
-                            scale: pos.scale * 1.1, 
-                            rotateZ: 0,
-                            zIndex: 50,
-                            transition: { duration: 0.3 }
-                          }}
+                          key={`mobile-${company._id}`}
+                          className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-4 cursor-pointer group"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={opportunitiesInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                          transition={{ duration: 0.6, delay: index * 0.1 }}
+                          whileHover={{ scale: 1.05 }}
                         >
-                          <div className="w-32 h-20 flex items-center justify-center">
+                          <div className="w-24 h-16 mx-auto flex items-center justify-center">
                             {company.imageUrl ? (
                               <Image
                                 src={company.imageUrl}
                                 alt={company.company?.toString() || "Company logo"}
-                                width={120}
-                                height={75}
+                                width={96}
+                                height={64}
                                 className="max-w-full max-h-full object-contain transition-all duration-300 group-hover:scale-110"
                               />
                             ) : (
-                              <div className="h-full w-full flex items-center justify-center text-neutral-400 font-bold text-xl bg-neutral-100 rounded-lg">
+                              <div className="h-full w-full flex items-center justify-center text-neutral-400 font-bold text-lg bg-neutral-100 rounded-lg">
                                 {company.company?.toString().charAt(0) || '?'}
                               </div>
                             )}
                           </div>
-                          
-                          {/* Floating animation */}
-                          <motion.div
-                            className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                            animate={{
-                              y: [0, -2, 0],
-                            }}
-                            transition={{
-                              duration: 3,
-                              repeat: Infinity,
-                              ease: "easeInOut"
-                            }}
-                          />
                         </motion.div>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
-                  
-                  {/* Background decoration */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-10 left-10 w-2 h-2 bg-blue-400 rounded-full opacity-60 animate-ping"></div>
-                    <div className="absolute bottom-20 right-20 w-3 h-3 bg-purple-400 rounded-full opacity-40 animate-pulse"></div>
-                    <div className="absolute top-1/2 left-1/4 w-1 h-1 bg-indigo-400 rounded-full opacity-80 animate-bounce"></div>
+
+                  {/* Desktop: Floating 3D Layout */}
+                  <div className="hidden md:block relative max-w-6xl mx-auto">
+                    <div className="relative h-[400px] w-full">
+                      {companies.slice(0, 8).map((company, index) => {
+                        const positions = [
+                          { x: '15%', y: '20%', delay: 0, rotate: -5, scale: 0.9 },
+                          { x: '75%', y: '10%', delay: 0.2, rotate: 8, scale: 1.1 },
+                          { x: '45%', y: '35%', delay: 0.4, rotate: -3, scale: 1.0 },
+                          { x: '20%', y: '65%', delay: 0.6, rotate: 12, scale: 0.8 },
+                          { x: '80%', y: '55%', delay: 0.8, rotate: -8, scale: 1.0 },
+                          { x: '55%', y: '75%', delay: 1.0, rotate: 5, scale: 0.9 },
+                          { x: '10%', y: '45%', delay: 1.2, rotate: -10, scale: 1.1 },
+                          { x: '70%', y: '85%', delay: 1.4, rotate: 15, scale: 0.8 }
+                        ];
+                        const pos = positions[index] || positions[0];
+                        
+                        return (
+                          <motion.div
+                            key={company._id}
+                            className="absolute bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 p-4 lg:p-6 cursor-pointer group"
+                            style={{ 
+                              left: pos.x, 
+                              top: pos.y,
+                              transform: 'translate(-50%, -50%)'
+                            }}
+                            initial={{ 
+                              opacity: 0, 
+                              scale: 0, 
+                              rotateZ: pos.rotate - 20,
+                              y: 50
+                            }}
+                            animate={opportunitiesInView ? { 
+                              opacity: 1, 
+                              scale: pos.scale, 
+                              rotateZ: pos.rotate,
+                              y: 0
+                            } : { 
+                              opacity: 0, 
+                              scale: 0, 
+                              rotateZ: pos.rotate - 20,
+                              y: 50
+                            }}
+                            transition={{ 
+                              duration: 0.8, 
+                              delay: pos.delay,
+                              ease: "easeOut"
+                            }}
+                            whileHover={{ 
+                              scale: pos.scale * 1.1, 
+                              rotateZ: 0,
+                              zIndex: 50,
+                              transition: { duration: 0.3 }
+                            }}
+                          >
+                            <div className="w-24 h-16 md:w-32 md:h-20 flex items-center justify-center">
+                              {company.imageUrl ? (
+                                <Image
+                                  src={company.imageUrl}
+                                  alt={company.company?.toString() || "Company logo"}
+                                  width={120}
+                                  height={75}
+                                  className="max-w-full max-h-full object-contain transition-all duration-300 group-hover:scale-110"
+                                />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center text-neutral-400 font-bold text-lg md:text-xl bg-neutral-100 rounded-lg">
+                                  {company.company?.toString().charAt(0) || '?'}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Floating animation */}
+                            <motion.div
+                              className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                              animate={{
+                                y: [0, -2, 0],
+                              }}
+                              transition={{
+                                duration: 3,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                              }}
+                            />
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Background decoration - Desktop only */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute top-10 left-10 w-2 h-2 bg-blue-400 rounded-full opacity-60 animate-ping"></div>
+                      <div className="absolute bottom-20 right-20 w-3 h-3 bg-purple-400 rounded-full opacity-40 animate-pulse"></div>
+                      <div className="absolute top-1/2 left-1/4 w-1 h-1 bg-indigo-400 rounded-full opacity-80 animate-bounce"></div>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </motion.div>
           </div>
