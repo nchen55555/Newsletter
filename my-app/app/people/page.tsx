@@ -219,7 +219,9 @@ export default function PeoplePage() {
                             The Niche Network
                         </h1>
                         <p className="text-lg md:text-xl text-neutral-600 leading-relaxed font-light max-w-5xl mx-auto mb-8">
-                            Curate a personalized and verified network on The Niche with others who have adopted this public beta. Search for people in The Niche network and verify your connection with an email and/or phone # verification. Verified networks allow us to better match you with opportunities, indexing on what your personalized network has also been interested in. 
+                            Curate a personalized and verified network on The Niche. Verified networks allow us to better match you with opportunities, indexing on what your personalized network has also been interested in. 
+                            <br></br><br></br>
+                            <strong>We only enable access via referral to create a curated network within this public beta. </strong>
                         </p>
                         
                         {/* Show content based on application status */}

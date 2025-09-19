@@ -351,7 +351,7 @@ export function ExternalProfile(props: ProfileData) {
           )}
 
           {/* Interests */}
-          {props.generated_interest_profile && (
+          {/* {props.generated_interest_profile && (
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-neutral-900">Analysis From The Niche</h3>
               <div className="bg-neutral-50 rounded-lg p-4">
@@ -360,7 +360,7 @@ export function ExternalProfile(props: ProfileData) {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Links and Documents */}
           {(props.linkedin_url || props.personal_website || props.transcript_url || props.resume_url) && (

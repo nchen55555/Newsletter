@@ -177,7 +177,7 @@ export default function ProfileInfo({
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <Label htmlFor="is_public_profile" className="text-base font-medium">Make Profile Public</Label>
-              <p className="text-sm text-gray-600 mt-1">Allow your profile to be visible to partner companies that want to reach out to you and other students on The Niche</p>
+              <p className="text-sm text-gray-600 mt-1">Allow your profile to be visible to partner companies that want to reach out to you and parts of your profile (LinkedIn, Bio, and Interests) to be seem by other students on The Niche</p>
             </div>
             <div className="ml-4">
               <label className="relative inline-flex items-center cursor-pointer">

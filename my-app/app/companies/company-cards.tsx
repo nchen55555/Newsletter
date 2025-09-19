@@ -42,7 +42,7 @@ function EarlyInterestCTA({ companyId }: { companyId: string }) {
   );
 }
 
-export function CompanyCard({ company, showHighMutualInterest = false, potential = false, external = false }: { company: CompanyWithImageUrl; showHighMutualInterest?: boolean; potential?: boolean, external?: boolean}) {
+export function CompanyCard({ disableProfile=false, company, showHighMutualInterest = false, potential = false, external = false }: { disableProfile?: boolean, company: CompanyWithImageUrl; showHighMutualInterest?: boolean; potential?: boolean, external?: boolean}) {
   const aboutId = useId();
   const router = useRouter();
   const [appliedToNiche, setAppliedToNiche] = useState(false);
@@ -183,7 +183,7 @@ export function CompanyCard({ company, showHighMutualInterest = false, potential
             )}
             
            <div className ="mt-4 text-left">
-          {company.tags?.length && appliedToNiche ? (
+          {company.tags?.length && appliedToNiche && !disableProfile && (
             <button
             type="button"
             onClick={() => router.push(`/${company.tags?.[0]}`)}
@@ -193,7 +193,7 @@ export function CompanyCard({ company, showHighMutualInterest = false, potential
             Our Company Profile <ArrowRight className="h-4 w-4 transition-transform hover:translate-x-0.5" />
           </button>
             
-          ) : null}
+          )}
           </div>
           </div>
         )}

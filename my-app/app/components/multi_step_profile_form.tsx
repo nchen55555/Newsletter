@@ -39,7 +39,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     <div className="relative">
       {/* Carousel Container */}
       <div className="overflow-hidden rounded-lg">
-        <CompanyCard key={currentCompany._id} company={currentCompany} external={!currentCompany.partner}/>
+        <CompanyCard disableProfile={true} key={currentCompany._id} company={currentCompany} potential={currentCompany.pending_partner} external={!currentCompany.partner}/>
       </div>
 
       {/* Navigation Controls */}
@@ -576,7 +576,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                     The Niche has partnered with 7 high-growth, high-talent density startups. Scroll through the profiles of our 7 partner companies. 
                   </p>
                   <p className="text-neutral-600 leading-relaxed">
-                    <strong>Bookmark</strong> profiles you are interested in and <strong>Connect</strong> to profiles you are strongly impressed by and would like to chat with. This helps us understand your interests to tailor and connect you with more opportunities. If you connect with a company on our platform and there is mutual interest, we will forward your profile directly to the founders! 
+                    <strong>Bookmark</strong> profiles you are interested in and <strong>Connect/Express Early Interest</strong> to profiles you are strongly impressed by and would like to chat with. This helps us understand your interests to tailor and connect you with more opportunities. If you connect with a company on our platform and there is mutual interest, we will forward your profile directly to the founders. 
                   </p>
                 </div>
               </div>

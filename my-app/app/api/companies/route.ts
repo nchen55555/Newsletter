@@ -16,7 +16,9 @@ export async function GET() {
         caption,
         description,
         tags,
-        partner
+        hiring_tags,
+        partner, 
+        pending_partner
       }`;
 
     const builder = imageUrlBuilder(client)
