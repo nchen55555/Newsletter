@@ -86,7 +86,7 @@ export default function LandingClient({ posts }: { posts: ArticleCardPost[] }) {
   return (
     <div>
       {/* First section - Hero with full height */}
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-[100dvh] flex flex-col">
         <div className="flex flex-1 flex-col lg:flex-row w-full max-w-[1400px] px-2 sm:px-4 lg:px-6 mx-auto py-8 sm:py-12 lg:py-16 gap-8 lg:gap-16 items-center overflow-hidden">
         
           {/* Right side - Text content (shows first on mobile) */}
@@ -247,10 +247,13 @@ export default function LandingClient({ posts }: { posts: ArticleCardPost[] }) {
         <div className="w-full flex justify-center gap-4 sm:gap-6 pb-8 lg:pb-16 px-4 mt-auto">
           <button 
             onClick={() => {
-              aboutSectionRef.current?.scrollIntoView({ 
-                behavior: 'smooth',
-                block: 'start'
-              });
+              if (aboutSectionRef.current) {
+                const elementTop = aboutSectionRef.current.offsetTop;
+                window.scrollTo({
+                  top: elementTop,
+                  behavior: 'smooth'
+                });
+              }
             }}
             className="inline-flex items-center px-4 sm:px-6 lg:px-8 py-3 lg:py-4 border border-neutral-300 text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 rounded-full transition-all duration-200 font-medium text-sm sm:text-base lg:text-lg shadow-sm hover:shadow-md"
           >
@@ -394,69 +397,118 @@ export default function LandingClient({ posts }: { posts: ArticleCardPost[] }) {
                 Opportunities in our Public Beta
               </h1>
               <p className="text-sm sm:text-base md:text-lg text-neutral-600 mb-8 lg:mb-12 leading-relaxed max-w-4xl mx-auto">
-              We have already partnered with 6 of the fastest-growing, high-talent pool startups within our network. They are working with The Niche to curate their verified and personalized network of <strong>perfect matches </strong>. Join the network to connect with them. In the future, we expect to onboard even more partners to curate an even more personalized network of opportunities for you. 
+              We have already partnered with 8 of the fastest-growing, high-talent pool startups within our network. They are working with The Niche to curate their verified and personalized network of <strong>perfect matches </strong>. Join the network to connect with them. In the future, we expect to onboard even more partners to curate an even more personalized network of opportunities for you. 
               </p>
             </motion.div>
           </div>
 
-          {/* Bottom - Marquee Company Logos */}
-          <div className="w-full relative flex items-center justify-center">
+          {/* Bottom - Floating Company Gallery */}
+          <div className="w-full relative flex items-center justify-center min-h-[400px] perspective-1000">
             <motion.div
-              className="w-full overflow-hidden"  
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={opportunitiesInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
+              className="relative w-full h-full"
+              initial={{ opacity: 0 }}
+              animate={opportunitiesInView ? { opacity: 1 } : { opacity: 0 }}
               transition={{ duration: 1, delay: 0.6, ease: "easeOut" }}
             >
               {loadingCompanies ? (
-                <div className="flex space-x-8 animate-pulse">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto animate-pulse">
                   {Array.from({ length: 8 }).map((_, index) => (
-                    <div key={`loading-${index}`} className="flex-shrink-0 w-48 sm:w-56 lg:w-72 h-24 sm:h-28 lg:h-36 bg-neutral-200 rounded-lg" />
+                    <div key={`loading-${index}`} className="aspect-[3/2] bg-neutral-200 rounded-2xl shadow-lg" />
                   ))}
                 </div>
               ) : (
-                <div className="relative">
-                  {/* Marquee container */}
-                  <div className="flex animate-marquee hover:pause-marquee">
-                    {companies.map((company) => (
-                      <div
-                        key={`first-${company._id}`}
-                        className="flex-shrink-0 mx-6 sm:mx-8 lg:mx-12 flex items-center justify-center w-48 sm:w-56 lg:w-72 h-24 sm:h-28 lg:h-36"
-                      >
-                        {company.imageUrl ? (
-                          <Image
-                            src={company.imageUrl}
-                            alt={company.company?.toString() || "Company logo"}
-                            width={280}
-                            height={140}
-                            className="max-w-full max-h-full object-contain transition-all duration-300 opacity-80 hover:opacity-100"
-                          />
-                        ) : (
-                          <div className="h-full flex items-center justify-center text-neutral-400 font-bold text-2xl">
-                            {company.company?.toString().charAt(0) || '?'}
+                <div className="relative max-w-6xl mx-auto">
+                  {/* Floating logos in 3D space */}
+                  <div className="relative h-[400px] w-full">
+                    {companies.slice(0, 8).map((company, index) => {
+                      const positions = [
+                        { x: '15%', y: '20%', delay: 0, rotate: -5, scale: 0.9 },
+                        { x: '75%', y: '10%', delay: 0.2, rotate: 8, scale: 1.1 },
+                        { x: '45%', y: '35%', delay: 0.4, rotate: -3, scale: 1.0 },
+                        { x: '20%', y: '65%', delay: 0.6, rotate: 12, scale: 0.8 },
+                        { x: '80%', y: '55%', delay: 0.8, rotate: -8, scale: 1.0 },
+                        { x: '55%', y: '75%', delay: 1.0, rotate: 5, scale: 0.9 },
+                        { x: '10%', y: '45%', delay: 1.2, rotate: -10, scale: 1.1 },
+                        { x: '70%', y: '85%', delay: 1.4, rotate: 15, scale: 0.8 }
+                      ];
+                      const pos = positions[index] || positions[0];
+                      
+                      return (
+                        <motion.div
+                          key={company._id}
+                          className="absolute bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 p-6 cursor-pointer group"
+                          style={{ 
+                            left: pos.x, 
+                            top: pos.y,
+                            transform: 'translate(-50%, -50%)'
+                          }}
+                          initial={{ 
+                            opacity: 0, 
+                            scale: 0, 
+                            rotateZ: pos.rotate - 20,
+                            y: 50
+                          }}
+                          animate={opportunitiesInView ? { 
+                            opacity: 1, 
+                            scale: pos.scale, 
+                            rotateZ: pos.rotate,
+                            y: 0
+                          } : { 
+                            opacity: 0, 
+                            scale: 0, 
+                            rotateZ: pos.rotate - 20,
+                            y: 50
+                          }}
+                          transition={{ 
+                            duration: 0.8, 
+                            delay: pos.delay,
+                            ease: "easeOut"
+                          }}
+                          whileHover={{ 
+                            scale: pos.scale * 1.1, 
+                            rotateZ: 0,
+                            zIndex: 50,
+                            transition: { duration: 0.3 }
+                          }}
+                        >
+                          <div className="w-32 h-20 flex items-center justify-center">
+                            {company.imageUrl ? (
+                              <Image
+                                src={company.imageUrl}
+                                alt={company.company?.toString() || "Company logo"}
+                                width={120}
+                                height={75}
+                                className="max-w-full max-h-full object-contain transition-all duration-300 group-hover:scale-110"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-neutral-400 font-bold text-xl bg-neutral-100 rounded-lg">
+                                {company.company?.toString().charAt(0) || '?'}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    ))}
-                    {companies.map((company) => (
-                      <div
-                        key={`second-${company._id}`}
-                        className="flex-shrink-0 mx-6 sm:mx-8 lg:mx-12 flex items-center justify-center w-48 sm:w-56 lg:w-72 h-24 sm:h-28 lg:h-36"
-                      >
-                        {company.imageUrl ? (
-                          <Image
-                            src={company.imageUrl}
-                            alt={company.company?.toString() || "Company logo"}
-                            width={280}
-                            height={140}
-                            className="max-w-full max-h-full object-contain transition-all duration-300 opacity-80 hover:opacity-100"
+                          
+                          {/* Floating animation */}
+                          <motion.div
+                            className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                            animate={{
+                              y: [0, -2, 0],
+                            }}
+                            transition={{
+                              duration: 3,
+                              repeat: Infinity,
+                              ease: "easeInOut"
+                            }}
                           />
-                        ) : (
-                          <div className="h-full flex items-center justify-center text-neutral-400 font-bold text-2xl">
-                            {company.company?.toString().charAt(0) || '?'}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Background decoration */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-10 left-10 w-2 h-2 bg-blue-400 rounded-full opacity-60 animate-ping"></div>
+                    <div className="absolute bottom-20 right-20 w-3 h-3 bg-purple-400 rounded-full opacity-40 animate-pulse"></div>
+                    <div className="absolute top-1/2 left-1/4 w-1 h-1 bg-indigo-400 rounded-full opacity-80 animate-bounce"></div>
                   </div>
                 </div>
               )}

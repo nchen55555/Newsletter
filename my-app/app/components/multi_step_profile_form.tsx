@@ -108,8 +108,8 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     interestedCompanies: props.interested_companies,
     knownCohortMembers: [] as {id: string, first_name: string, last_name: string, email: string}[],
     networkRecommendations: [
-      { name: '', email: ''},
-      { name: '', email: ''},
+      { name: '', email: '', connection: ''},
+      { name: '', email: '', connection: ''},
     ]
   })
 
@@ -182,7 +182,10 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         
         const companies = await response.json()
         
-        setCompanies(companies)
+        // Filter to show only partners and pending partners, randomly select 5
+        const filteredCompanies = companies.filter((company: CompanyWithImageUrl) => company.partner || company.pending_partner)
+        const shuffled = filteredCompanies.sort(() => Math.random() - 0.5)
+        setCompanies(shuffled.slice(0, 5))
     } catch (error) {
       console.error('Error loading companies:', error)
     } finally {
@@ -494,7 +497,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                   <div className="space-y-2">
                     <h3 className="text-xl font-semibold text-neutral-900">Personalization: Our Network</h3>
                     <p className="text-neutral-600 leading-relaxed">
-                      In this Beta, The Niche has partnered with 6 portfolio startups to match with exceptional talent. Browse through these companies and indicate interest to connect and apply.  
+                      In this Beta, The Niche has partnered with 8 portfolio startups to match with exceptional talent. Browse through a preview of some of these partners and indicate interest to connect and apply.  
                     </p>
                   </div>
                 </div>
@@ -573,7 +576,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                 <div className="space-y-4">
                   <h3 className="text-xl font-semibold text-neutral-900">In this public beta...</h3>
                   <p className="text-neutral-600 leading-relaxed">
-                    The Niche has partnered with 7 high-growth, high-talent density startups. Scroll through the profiles of our 7 partner companies. 
+                    The Niche has partnered with 8 high-growth, high-talent density startups. Scroll through the profiles of our 8 partner companies. 
                   </p>
                   <p className="text-neutral-600 leading-relaxed">
                     <strong>Bookmark</strong> profiles you are interested in and <strong>Connect/Express Early Interest</strong> to profiles you are strongly impressed by and would like to chat with. This helps us understand your interests to tailor and connect you with more opportunities. If you connect with a company on our platform and there is mutual interest, we will forward your profile directly to the founders. 
@@ -708,6 +711,23 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                             setStep3Form(prev => ({ ...prev, networkRecommendations: newRecs }))
                           }}
                           placeholder="email@example.com"
+                          className="h-12 text-lg px-4 w-full rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor={`rec-email-${index}`} className="block text-sm font-medium text-neutral-700 mb-2">
+                          How Do You Know This Person? *
+                        </label>
+                        <input
+                          id={`rec-connection-${index}`}
+                          type="connection"
+                          value={rec.connection}
+                          onChange={(e) => {
+                            const newRecs = [...step3Form.networkRecommendations]
+                            newRecs[index] = { ...newRecs[index], connection: e.target.value }
+                            setStep3Form(prev => ({ ...prev, networkRecommendations: newRecs }))
+                          }}
+                          placeholder="Interned together at xAI..."
                           className="h-12 text-lg px-4 w-full rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         />
                       </div>

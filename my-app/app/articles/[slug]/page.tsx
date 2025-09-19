@@ -139,14 +139,14 @@ export default async function PostPage({
                 {/* Title + Hero */}
                 <header className="mb-8">
                   {post.image && (
-                    <div className="relative max-w-2xl mb-6">
+                    <div className="relative w-full mb-6">
                       <Image
                         src={urlFor(post.image)?.url() || ''}
                         alt={post.title || 'Post image'}
                         width={post.image.asset?.metadata?.dimensions?.width || 1200}
                         height={post.image.asset?.metadata?.dimensions?.height || 700}
-                        className="rounded-lg object-contain w-full h-auto"
-                        sizes="(max-width: 768px) 100vw, 672px"
+                        className="rounded-lg object-cover w-full h-auto"
+                        sizes="(max-width: 768px) 100vw, 100vw"
                         priority
                       />
                     </div>

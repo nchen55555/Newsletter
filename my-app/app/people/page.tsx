@@ -221,7 +221,7 @@ export default function PeoplePage() {
                         <p className="text-lg md:text-xl text-neutral-600 leading-relaxed font-light max-w-5xl mx-auto mb-8">
                             Curate a personalized and verified network on The Niche. Verified networks allow us to better match you with opportunities, indexing on what your personalized network has also been interested in. 
                             <br></br><br></br>
-                            <strong>We only enable access via referral to create a curated network within this public beta. </strong>
+                            <strong>Access to The Niche strictly permitted only through personal referral to create a curated network within this public beta. </strong>
                         </p>
                         
                         {/* Show content based on application status */}
