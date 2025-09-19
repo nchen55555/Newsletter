@@ -55,7 +55,7 @@ export async function GET(){
             applied: subscriber?.applied,
             parsed_resume_json: subscriber?.parsed_resume_json,
             generated_interest_profile: subscriber?.generated_interest_profile,
-            interested_companies: subscriber?.interested_companies,
+            opportunities_looking_for: subscriber?.opportunities_looking_for,
             company_recommendations: subscriber?.company_recommendations,
             interests: subscriber?.interests,
             verified: subscriber?.verified,

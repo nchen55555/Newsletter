@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { 
       interests, 
-      interestedCompanies, 
+      opportunities_looking_for, 
       networkRecommendations 
     } = body;
 
@@ -33,8 +33,8 @@ export async function POST(req: NextRequest) {
       updateData.interests = interests.trim();
     }
     
-    if (interestedCompanies && interestedCompanies.trim()) {
-      updateData.interested_companies = interestedCompanies.trim();
+    if (opportunities_looking_for && opportunities_looking_for.trim()) {
+      updateData.opportunities_looking_for = opportunities_looking_for.trim();
     }
   
     

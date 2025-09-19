@@ -105,7 +105,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   // Step 3 form state
   const [step3Form, setStep3Form] = useState({
     interests: props.interests,
-    interestedCompanies: props.interested_companies,
+    opportunities_looking_for: props.opportunities_looking_for,
     knownCohortMembers: [] as {id: string, first_name: string, last_name: string, email: string}[],
     networkRecommendations: [
       { name: '', email: '', connection: ''},
@@ -201,11 +201,20 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         return;
       }
 
-      if (!step3Form.interestedCompanies) {
-        setFormError("Companies or startups that you would apply to are required.");
-        setLoading(false);
-        return;
-      }
+    if (!step3Form.opportunities_looking_for) {
+      setFormError("What kinds of opportunities you are interested/looking for is required");
+      setLoading(false);
+      return;
+    }
+    // Check if networkRecommendations have actual content
+    const hasValidNetworkRecommendations = step3Form.networkRecommendations.some(rec => 
+      rec.name.trim() !== '' && rec.email.trim() !== '' && rec.connection.trim() !== ''
+    );
+    if (!hasValidNetworkRecommendations) {
+      setFormError("At least one complete network recommendation (name, email, and connection) is required.");
+      setLoading(false);
+      return; 
+    }
     try {
       console.log(step3Form)
       // First, post step3 form data
@@ -633,11 +642,11 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             <h2 className="text-2xl font-bold text-neutral-900 mb-2">Personalization: Index on Your Network and Existing Interests</h2>
           </div>
 
-          {formError && (
+          {/* {formError && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-800 text-sm font-medium">{formError}</p>
             </div>
-          )}
+          )} */}
 
           <div className="flex flex-col gap-0">
             {/* Interests Section */}
@@ -657,12 +666,12 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             <hr />
 
             <div className="py-6">
-              <label htmlFor="interestedCompanies" className="text-base font-medium">Companies or startups that you would apply and reach out to *</label>
+              <label htmlFor="opportunities_looking_for" className="text-base font-medium">What exactly are you looking for? What kinds of opportunities (roles, programs, fellowships) interest you? *</label>
               <textarea
-                id="interestedCompanies"
-                value={step3Form.interestedCompanies}
-                onChange={(e) => setStep3Form(prev => ({ ...prev, interestedCompanies: e.target.value }))}
-                placeholder="Decagon, Vanta, Stripe, OpenAI, Headlands, Jane Street, ..."
+                id="opportunities_looking_for"
+                value={step3Form.opportunities_looking_for}
+                onChange={(e) => setStep3Form(prev => ({ ...prev, opportunities_looking_for: e.target.value }))}
+                placeholder="I'm extremely interested in startups ranging from Seed to Series B that are operating within the FinTech environment. I'm interested in VC and would love to be a part of a VC fellowship to get more exposure into tech investing and due dilligence. "
                 className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-lg 
                           mt-2 min-h-[120px] max-h-[50vh] resize-y 
                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring 

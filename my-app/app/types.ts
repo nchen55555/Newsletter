@@ -18,7 +18,7 @@ export type ProfileData = {
     parsed_resume_json?: string;
     interests?: string;
     generated_interest_profile?: string;
-    interested_companies?: string;
+    opportunities_looking_for?: string;
     connections?: number[];
     verified?: boolean;
     application_tracker_confirmed?: boolean,
@@ -147,7 +147,7 @@ export interface NetworkRecommendation {
 
 export interface Step3UpdateData {
   interests?: string;
-  interested_companies?: string;
+  opportunities_looking_for?: string;
   network_recommendations?: NetworkRecommendation[];
 }
 
