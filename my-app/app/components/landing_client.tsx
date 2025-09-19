@@ -6,6 +6,7 @@ import { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { client } from "@/lib/sanity/client";
 import { motion, useInView } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import type { ArticleCardPost } from "./article_issues";
 import type { CompanyWithImageUrl } from "@/app/types";
 import NeuralRainbowNetwork from "@/app/components/rainbow_graph";
@@ -13,6 +14,7 @@ import {Subscribe} from "@/app/components/subscribe";
 
 export default function LandingClient({ posts }: { posts: ArticleCardPost[] }) {
   const builder = imageUrlBuilder(client);
+  const pathname = usePathname();
   const [typedText, setTypedText] = useState('');
   const [typingDone, setTypingDone] = useState(false);
   const [companies, setCompanies] = useState<CompanyWithImageUrl[]>([]);
@@ -135,9 +137,11 @@ export default function LandingClient({ posts }: { posts: ArticleCardPost[] }) {
                   </span>
                 )}
               </p>
-              <div className="flex justify-center lg:justify-start">
-                <Subscribe/>
-              </div>
+              {pathname === '/access' && (
+                <div className="flex justify-center lg:justify-start">
+                  <Subscribe/>
+                </div>
+              )}
             </motion.div>
           </div>
 
