@@ -30,7 +30,7 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'error' | 'invalid'>('idle');
   const [statusMessage, setStatusMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [isAlreadyConnected, setIsAlreadyConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'none' | 'connected' | 'pending_sent' | 'pending_received'>('none');
 
   useEffect(() => {
     const getParams = async () => {
@@ -68,7 +68,7 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
     getParams();
   }, [params]);
 
-  // Check if user is already connected to this profile
+  // Check connection status (connected, pending sent, pending received, or none)
   useEffect(() => {
     const checkConnectionStatus = async () => {
       if (!profileId) return;
@@ -77,27 +77,47 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
         const actualId = decodeSimple(profileId);
         if (!actualId) return;
         
-        // Fetch user's connections from get_profile API
+        // Fetch user's connections and pending connections from get_profile API
         const response = await fetch("/api/get_profile", { credentials: "include" });
         if (response.ok) {
           const userData = await response.json();
           const userConnections = userData.connections || [];
+          const userPendingConnections = userData.pending_connections || [];
+          const currentUserId = userData.id;
           
-          // Check if this profile's actual ID is in the user's connections
-          const isConnected = userConnections.includes(actualId);
-          setIsAlreadyConnected(isConnected);
+          // Check if this profile's actual ID is in the user's connections (mutual connection)
+          if (userConnections.includes(actualId)) {
+            setConnectionStatus('connected');
+            return;
+          }
+          
+          // Check if user has sent a pending request to this profile
+          if (userPendingConnections.includes(actualId)) {
+            setConnectionStatus('pending_sent');
+            return;
+          }
+          
+          // Check if this profile has sent a pending request to the user
+          // We need to fetch this profile's pending connections
+          if (data?.pending_connections?.includes(currentUserId)) {
+            setConnectionStatus('pending_received');
+            return;
+          }
+          
+          // No connection or pending requests
+          setConnectionStatus('none');
         } else {
           console.error("Failed to fetch user connections");
-          setIsAlreadyConnected(false);
+          setConnectionStatus('none');
         }
       } catch (error) {
         console.error("Error checking connection status:", error);
-        setIsAlreadyConnected(false);
+        setConnectionStatus('none');
       }
     };
     
     checkConnectionStatus();
-  }, [profileId]);
+  }, [profileId, data]);
 
 
 
@@ -133,10 +153,19 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
         });
         
         if (response.ok) {
-          setVerificationStatus('success');
-          setStatusMessage(`You have now added ${data?.first_name}! They've received a notification that you've connected with them.`);
+          const result = await response.json();
+          if (result.type === 'mutual') {
+            setVerificationStatus('success');
+            setStatusMessage(`You are now connected with ${data?.first_name}! The connection was mutual.`);
+            setConnectionStatus('connected');
+          } else {
+            setVerificationStatus('success');
+            setStatusMessage(`Connection request sent to ${data?.first_name}! They've received a notification.`);
+            setConnectionStatus('pending_sent');
+          }
           setVerificationEmail("");
           setVerificationPhone("");
+          setDialogOpen(false);
         } else {
           setVerificationStatus('error');
           setStatusMessage("Failed to send verification request. Please try again.");
@@ -213,24 +242,44 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                       {data.first_name} {data.last_name}
                     </h1>
                     
-                    {isAlreadyConnected ? (
+                    {connectionStatus === 'connected' ? (
                       <Button disabled className="inline-flex items-center gap-2 bg-green-100 text-green-800 border-green-300">
                         <UserPlus className="w-4 h-4" />
-                        Already Connected
+                        Connected
+                      </Button>
+                    ) : connectionStatus === 'pending_sent' ? (
+                      <Button disabled className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 border-yellow-300">
+                        <UserPlus className="w-4 h-4" />
+                        Request Sent
                       </Button>
                     ) : (
                       <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
                         <DialogTrigger asChild>
-                          <Button className="inline-flex items-center gap-2">
-                            <UserPlus className="w-4 h-4" />
-                            Add To Network
-                          </Button>
+                          {connectionStatus === 'pending_received' ? (
+                            <Button className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200">
+                              <UserPlus className="w-4 h-4" />
+                              Accept Request
+                            </Button>
+                          ) : (
+                            <Button className="inline-flex items-center gap-2">
+                              <UserPlus className="w-4 h-4" />
+                              Add To Network
+                            </Button>
+                          )}
                         </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
+                        <DialogContent className="sm:max-w-md">
                         <DialogHeader>
-                          <DialogTitle>Verify Connection with {data.first_name}</DialogTitle>
+                          <DialogTitle>
+                            {connectionStatus === 'pending_received' 
+                              ? `Accept Connection Request from ${data.first_name}`
+                              : `Verify Connection with ${data.first_name}`
+                            }
+                          </DialogTitle>
                           <DialogDescription>
-                            To add {data.first_name} to your verified network, please provide their email and/or phone number. We&apos;ll confirm your connection to maintain network quality.
+                            {connectionStatus === 'pending_received'
+                              ? `${data.first_name} has sent you a connection request. Please verify their email and/or phone number to accept and add them to your network.`
+                              : `To add ${data.first_name} to your verified network, please provide their email and/or phone number. We'll confirm your connection to maintain network quality.`
+                            }
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-6 mt-6">
@@ -251,7 +300,7 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                             <Input
                               id="phone"
                               type="tel"
-                              placeholder="(555) 123-4567"
+                              placeholder="5551234567"
                               value={verificationPhone}
                               onChange={(e) => setVerificationPhone(e.target.value)}
                               disabled={isSubmitting}
@@ -281,12 +330,17 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                               onClick={handleNetworkVerification}
                               disabled={isSubmitting || (!verificationEmail && !verificationPhone)}
                             >
-                              {isSubmitting ? "Verifying..." : "Send Verification"}
+                              {isSubmitting 
+                                ? "Verifying..." 
+                                : connectionStatus === 'pending_received' 
+                                  ? "Accept Request" 
+                                  : "Send Verification"
+                              }
                             </Button>
                           </div>
                         </div>
-                      </DialogContent>
-                    </Dialog>
+                        </DialogContent>
+                      </Dialog>
                     )}
                   </div>
                 </div>

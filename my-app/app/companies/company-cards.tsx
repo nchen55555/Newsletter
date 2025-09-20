@@ -233,7 +233,7 @@ export function CompanyCard({ disableProfile=false, company, showHighMutualInter
                           <HelpCircle className="h-3 w-3 text-neutral-400 hover:text-neutral-600 cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-xs">
-                          <p className="text-xs">We are not partnered with this company but we want to highlight contacts that you can reach out to if interested (only for companies in your For</p>
+                          <p className="text-xs">We are not partnered with this company but we want to highlight contacts that you can reach out to if interested (only for companies in your For You)</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>

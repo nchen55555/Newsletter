@@ -372,7 +372,7 @@ export default function LandingClient({ posts }: { posts: ArticleCardPost[] }) {
                 Build Your Human Capital Network
               </h1>
               <p className="text-sm sm:text-base md:text-lg text-neutral-600 mb-8 lg:mb-12 leading-relaxed text-center lg:text-left">
-                Connect and build a verified, personalized, professional community on The Niche so that the opportunities that come your way are custom-tailored to the network you have already built. Likewise, customize outbound about professional events and opportunities to a network of your choice and a verifiable audience that you customize. 
+                Connect and build a verified, personalized, professional community on The Niche so that the opportunities that come your way are custom-tailored to the network you have already built. Likewise, customize outbound about professional events and opportunities to a network verified and tailored. 
               </p>
               
               <div className="space-y-8">
@@ -381,7 +381,7 @@ export default function LandingClient({ posts }: { posts: ArticleCardPost[] }) {
                   <div className="flex items-start gap-3">
                     <div>
                       <h3 className="font-medium text-neutral-800 text-sm sm:text-base">Verified and Curated Professional Network</h3>
-                      <p className="text-xs sm:text-sm text-neutral-600">Connect with people on the network that are representative of your verified professional network. Who you choose to verify as part of your professional network on The Niche helps us surface opportunities to you that your network is also interested in. </p>
+                      <p className="text-xs sm:text-sm text-neutral-600">Connect with people on the network that are representative of your verified professional network. Who you choose to verify on your professional network helps us surface opportunities to you that your network is also interested in. </p>
                     </div>
                   </div>
                   
