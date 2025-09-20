@@ -67,6 +67,33 @@ export const mediaLibrary = defineType({
         layout: 'tags'
       }
     }),
+    defineField({
+      name: 'external_media',
+      title: 'External Media',
+      type: 'string',
+    }),
+    {
+    name: 'people',
+    type: 'array',
+    title: 'Team Members',
+    of: [
+      {
+        type: 'object',
+        fields: [
+          {
+            name: 'name',
+            type: 'string',
+            title: 'Full Name'
+          },
+          {
+            name: 'media_url',
+            type: 'url',
+            title: 'Personal Website Media URL'
+          }
+        ]
+      }
+    ]
+  }
   ],
   preview: {
     select: {

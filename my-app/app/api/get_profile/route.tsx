@@ -61,6 +61,7 @@ export async function GET(){
             verified: subscriber?.verified,
             connections: subscriber?.connections,
             application_tracker_confirmed: subscriber?.application_tracker_confirmed,
+            pending_connections: subscriber?.pending_connections,
         })
 
     } catch (error) {

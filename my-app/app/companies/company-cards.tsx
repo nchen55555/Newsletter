@@ -3,12 +3,13 @@
 import { useId, useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Info } from "lucide-react";
+import { ArrowRight, Info, ExternalLink, HelpCircle } from "lucide-react";
 import { CompanyData } from "@/app/types";
 import ApplyButton from "@/app/components/apply";
 import EarlyInterestButton from "@/app/components/early_interest";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 type CompanyWithImageUrl = CompanyData & {
   imageUrl: string | null;
@@ -16,6 +17,7 @@ type CompanyWithImageUrl = CompanyData & {
 
 interface CompanyCardsProps {
   priority: CompanyWithImageUrl[];
+  bookmarks:CompanyWithImageUrl[];
   other: CompanyWithImageUrl[];
   external?: CompanyWithImageUrl[];
   pendingPartner?: CompanyWithImageUrl[];
@@ -42,10 +44,17 @@ function EarlyInterestCTA({ companyId }: { companyId: string }) {
   );
 }
 
-export function CompanyCard({ disableProfile=false, company, showHighMutualInterest = false, potential = false, external = false }: { disableProfile?: boolean, company: CompanyWithImageUrl; showHighMutualInterest?: boolean; potential?: boolean, external?: boolean}) {
+export function CompanyCard({ disableProfile=false, company, showHighMutualInterest = false, potential = false, isPriority = false }: { disableProfile?: boolean, company: CompanyWithImageUrl; showHighMutualInterest?: boolean; potential?: boolean, external?: boolean, isPriority?: boolean}) {
   const aboutId = useId();
   const router = useRouter();
   const [appliedToNiche, setAppliedToNiche] = useState(false);
+
+  // Debug logging
+  console.log('Company data:', {
+    name: company.company,
+    external_media: company.external_media,
+    people: company.people
+  });
 
   // Check if user has applied to The Niche
   useEffect(() => {
@@ -81,7 +90,7 @@ export function CompanyCard({ disableProfile=false, company, showHighMutualInter
       {/* Overlay gradient removed */}
       
       {/* Badge */}
-      {showHighMutualInterest && (
+      {showHighMutualInterest && company.partner && (
         <button
           className="absolute right-3 top-3 inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200 transition-all cursor-pointer z-10"
         >
@@ -168,19 +177,19 @@ export function CompanyCard({ disableProfile=false, company, showHighMutualInter
             {potential && (
               <div className="mt-3 mb-2 text-left">
                 <span className="inline-flex items-center rounded-full bg-yellow-50 px-2.5 py-1 text-xs font-medium text-yellow-700 border border-yellow-200">
-                  Pending Partnership
+                  Partnership Coming Soon
                 </span>
               </div>
             )}
 
             {/* Warning tag for external companies */}
-            {external && (
+            {/* {external && (
               <div className="mt-3 mb-2 text-left">
                 <span className="inline-flex items-center rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700 border border-orange-200">
                   Not Partnered with The Niche
                 </span>
               </div>
-            )}
+            )} */}
             
            <div className ="mt-4 text-left">
           {company.tags?.length && appliedToNiche && !disableProfile && (
@@ -195,6 +204,62 @@ export function CompanyCard({ disableProfile=false, company, showHighMutualInter
             
           )}
           </div>
+
+          {/* Website and Employee Links Section */}
+          {(company.external_media || (company.people && company.people.length > 0)) && (
+            <div className="mt-4 text-left">
+              <div className="flex flex-col gap-2">
+                {/* Website Link */}
+                {company.external_media && (
+                  <a
+                    href={company.external_media}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-neutral-700 transition-colors duration-200 hover:text-neutral-900"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Company Website
+                  </a>
+                )}
+                
+                {/* Employee Links - only show for priority non-partner companies */}
+                {company.people && company.people.length > 0 && isPriority && !company.partner && (
+                  <div className="mt-1">
+                    {/* Heading with tooltip */}
+                    <div className="flex items-center gap-1 mb-2">
+                      <span className="text-xs font-medium text-neutral-700">People The Niche is Connected to</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3 w-3 text-neutral-400 hover:text-neutral-600 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs">
+                          <p className="text-xs">We are not partnered with this company but we want to highlight contacts that you can reach out to if interested (only for companies in your For</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                    {company.people.slice(0, 3).map((employee, index) => (
+                      <a
+                        key={index}
+                        href={employee.media_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-neutral-600 transition-colors duration-200 hover:text-neutral-800 bg-neutral-100 hover:bg-neutral-200 px-2 py-1 rounded-full"
+                      >
+                        {employee.name}
+                      </a>
+                    ))}
+                    {company.people.length > 3 && (
+                      <span className="text-xs text-neutral-500 px-2 py-1">
+                        +{company.people.length - 3} more
+                      </span>
+                    )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           </div>
         )}
       </div>
@@ -206,7 +271,7 @@ export function CompanyCard({ disableProfile=false, company, showHighMutualInter
           <div className="shrink-0">
             <RainbowBookmark company={company.company} /> 
           </div>
-          {!external && !potential && (
+          {company.partner && !potential && (
           <div className="shrink-0">
             <PrimaryCTA companyId={company.company.toString()} />
           </div>)}
@@ -220,7 +285,7 @@ export function CompanyCard({ disableProfile=false, company, showHighMutualInter
   );
 }
 
-export default function CompanyCards({ priority, other, external = [], pendingPartner = [] }: CompanyCardsProps) {
+export default function CompanyCards({ priority, bookmarks, other, external = [], pendingPartner = [] }: CompanyCardsProps) {
   const [activeTab, setActiveTab] = useState<'priority' | 'other' | 'external'>('priority');
 
   return (
@@ -263,7 +328,7 @@ export default function CompanyCards({ priority, other, external = [], pendingPa
       <div className="min-h-[600px]">
         {activeTab === 'priority' && (
           <>
-            {priority.length === 0 ? (
+            {priority.length === 0 || bookmarks.length === 0 ? (
               <Alert className="max-w-2xl mx-auto">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
@@ -273,7 +338,10 @@ export default function CompanyCards({ priority, other, external = [], pendingPa
             ) : (
               <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-2">
                 {priority.map((company) => (
-                  <CompanyCard key={company._id} company={company} showHighMutualInterest={true} external={false} />
+                  <CompanyCard key={company._id} company={company} showHighMutualInterest={true} external={false} isPriority={true} />
+                ))}
+                {bookmarks.map((company) => (
+                  <CompanyCard key={company._id} company={company} showHighMutualInterest={false} external={false} isPriority={true} />
                 ))}
               </div>
             )}
@@ -282,7 +350,7 @@ export default function CompanyCards({ priority, other, external = [], pendingPa
 
         {activeTab === 'other' && (
           <>
-            <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-3 lg:grid-cols-3">
+            <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-2">
               {other.map((company) => (
                 <CompanyCard key={company._id} company={company} external={false}/>
               ))}
@@ -292,7 +360,7 @@ export default function CompanyCards({ priority, other, external = [], pendingPa
               <div className="text-center mb-6">
                 <p className="text-lg font-medium text-neutral-600"><strong>Pending partnerships coming soon... </strong></p>
               </div>
-              <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-3 lg:grid-cols-3">
+              <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-2">
                 {pendingPartner.map((company) => (
                   <CompanyCard key={company._id} company={company} potential={true} external={false}/>
                 ))}
@@ -302,7 +370,7 @@ export default function CompanyCards({ priority, other, external = [], pendingPa
         )}
 
         {activeTab === 'external' && (
-          <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-3 lg:grid-cols-3">
+          <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-2">
             {external.map((company) => (
               <CompanyCard key={company._id} company={company} external={true}/>
             ))}

@@ -18,7 +18,9 @@ export async function GET() {
         tags,
         hiring_tags,
         partner, 
-        pending_partner
+        pending_partner,
+        external_media,
+        people
       }`;
 
     const builder = imageUrlBuilder(client)

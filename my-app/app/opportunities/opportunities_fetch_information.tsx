@@ -41,6 +41,7 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
     const [generated_interest_profile, setGeneratedInterestProfile] = useState("")
     const [isLoading, setIsLoading] = useState(true)
     const [companyRecommendations, setCompanyRecommendations] = useState<number[]>([])
+    const [bookmarkedCompanies, setBookmarkedCompanies] = useState<number[]>([])
     const [verifiedToTheNiche, setVerifiedToTheNiche] = useState(false)
 
     useEffect(() => {
@@ -62,22 +63,48 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                 }
             } catch (e) {
                 console.error("Failed to fetch profile:", e);
-            } finally {
-                setIsLoading(false)
             }
         }
 
-        fetchProfile()
+        const fetchBookmarks = async () => {
+            try {
+                const res = await fetch(`/api/get_bookmarks`, {
+                    credentials: "include",
+                    cache: "no-store",
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    setBookmarkedCompanies(data.bookmarks || [])
+                }
+            } catch (e) {
+                console.error("Failed to fetch bookmarks:", e);
+            }
+        }
+
+        const fetchData = async () => {
+            await Promise.all([fetchProfile(), fetchBookmarks()]);
+            setIsLoading(false);
+        }
+
+        fetchData()
     }, [first_name, generated_interest_profile, profile_image_url])
 
-    // Filter featured opportunities based on company recommendations
+    // Filter featured opportunities based on company recommendations AND bookmarked companies
     const filteredOpportunities = featuredOpportunities.filter(opportunity => 
-        companyRecommendations.includes(opportunity.company) && opportunity.partner
+        companyRecommendations.includes(opportunity.company)
     );
 
-    // Other opportunities not in company recommendations (regular partners only)
+    const filteredBookmarkedOpportunities = featuredOpportunities.filter(opportunity => 
+        bookmarkedCompanies.includes(opportunity.company)
+    );
+
+    // Other opportunities not in company recommendations or bookmarks (regular partners only)
     const otherOpportunities = featuredOpportunities.filter(opportunity => 
-        !companyRecommendations.includes(opportunity.company) && opportunity.partner && !opportunity.pending_partner
+        !companyRecommendations.includes(opportunity.company) && 
+        !bookmarkedCompanies.includes(opportunity.company) && 
+        opportunity.partner && 
+        !opportunity.pending_partner
     );
 
     // Potential partner opportunities (coming soon)
@@ -101,12 +128,10 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                             Welcome, {first_name}
                         </h1>
                         <p className="text-lg md:text-xl text-neutral-600 leading-relaxed font-light max-w-5xl mx-auto mb-8">
-                            As you use this platform more and more, we will be able to surface better and better opportunities aligned to your interests. We partner with a select cohort of high-talent-bar startups to surface top-level talent such that you can directly meet with the founders for a conversation if there is mutual interest. 
-                            <br></br> <br></br>
-                            <strong>Every single one of these opportunities are places our team would have considered joining.</strong>
+                            <strong>Bookmark</strong> companies that strongly interest you to follow their progress and so we can surface similar opportunities for you in the future. <strong>Connect</strong> to companies that are directly partnered with The Niche to apply and get immediately fast-tracked to the founder&apos;s inbox pending mutual interest. 
                         </p>
                     </div>
-                    {verifiedToTheNiche && (<CompanyCards priority={filteredOpportunities} other={otherOpportunities} external={externalOpportunities} pendingPartner={pendingPartnerOpportunities}/> )}
+                    {verifiedToTheNiche && (<CompanyCards priority={filteredOpportunities} bookmarks={filteredBookmarkedOpportunities} other={otherOpportunities} external={externalOpportunities} pendingPartner={pendingPartnerOpportunities}/> )}
                     {!verifiedToTheNiche && (<Alert className="max-w-2xl mx-auto">
                 <Info className="h-4 w-4" />
                 <AlertDescription>

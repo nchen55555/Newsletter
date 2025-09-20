@@ -114,14 +114,14 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
             {/* Roles from tags */}
             {roles.length > 0 && (
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                {roles.map((role) => (
+                {/* {roles.map((role) => (
                   <span
                     key={role}
                     className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
                   >
                     {role}
                   </span>
-                ))}
+                ))} */}
               </div>
             )}
 

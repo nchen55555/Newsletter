@@ -245,6 +245,7 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                               disabled={isSubmitting}
                             />
                           </div>
+                          <p>or...</p>
                           <div className="space-y-2">
                             <Label htmlFor="phone">Phone Number</Label>
                             <Input

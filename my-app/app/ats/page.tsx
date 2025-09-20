@@ -310,10 +310,10 @@ export default function EmailForwardingATS() {
               {/* Welcome Header */}
               <div className="text-center pt-16 pb-8">
                 <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-black">
-                  Application Tracking System
+                  Personalized Tracking System
                 </h1>
                 <p className="text-lg md:text-xl text-neutral-500 leading-relaxed font-light max-w-3xl mx-auto mb-8">
-                  Track your job applications with AI-powered email parsing. Forward or cc interview emails to automatically update your progress for processes both on and off The Niche. All processes started on The Niche will be tracked via this system as part of our terms.
+                  Track any processes with AI-powered email parsing. Forward, BCC, or CC interview emails to automatically update your progress for processes both on and off The Niche.
                 </p>
                 <Button 
                   variant="outline" 
@@ -368,7 +368,7 @@ export default function EmailForwardingATS() {
 
               {/* Stats Cards */}
               {acknowledged && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 w-full max-w-6xl">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 w-full max-w-6xl mx-auto">
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
@@ -402,20 +402,6 @@ export default function EmailForwardingATS() {
                         <div>
                           <p className="text-sm text-neutral-600">Offers</p>
                           <p className="text-2xl font-bold">{stats['Offer Received'] || 0}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <Forward className="w-8 h-8 text-purple-600" />
-                        <div>
-                          <p className="text-sm text-neutral-600">Email Updates</p>
-                          <p className="text-2xl font-bold">
-                            {applications.filter(app => app.lastEmailUpdate).length}
-                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -497,6 +483,19 @@ export default function EmailForwardingATS() {
                       </div>
                     ) : (
                       <div className="space-y-4">
+                        {/* Table Header */}
+                        <div className="flex items-center justify-between p-4 bg-neutral-50 border-b-2 border-neutral-200 font-semibold text-sm text-neutral-700">
+                          <div className="flex-grow grid gap-4" style={{gridTemplateColumns: '1fr 1fr 2.5fr 0.8fr'}}>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-transparent flex-shrink-0" />
+                              <span>Company</span>
+                            </div>
+                            <div>Stage</div>
+                            <div>Action Required</div>
+                            <div>Date Added</div>
+                          </div>
+                          <div className="w-10 ml-4"></div> {/* Space for delete button */}
+                        </div>
                         {filteredApplications.map((app) => (
                           <div key={app.id} className="flex items-center justify-between p-4 border rounded-lg">
                             <div className="flex-grow grid gap-4" style={{gridTemplateColumns: '1fr 1fr 2.5fr 0.8fr'}}>

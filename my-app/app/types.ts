@@ -20,6 +20,7 @@ export type ProfileData = {
     generated_interest_profile?: string;
     opportunities_looking_for?: string;
     connections?: number[];
+    pending_connections?: number[];
     verified?: boolean;
     application_tracker_confirmed?: boolean,
   };
@@ -66,6 +67,8 @@ export interface CompanyData extends SanityDocument {
   industry?: string;
   partner?: boolean;
   potential_partner?: boolean;
+  external_media?: string;
+  people?: { name: string; media_url: string }[];
 }
 
 export type CompanyWithImageUrl = CompanyData & {

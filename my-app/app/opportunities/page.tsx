@@ -2,26 +2,10 @@ import * as React from "react"
 import { Navigation } from "@/app/components/header"
 import { ProtectedContent } from "../components/protected-content"
 import { LandingOpportunitiesClient}  from "./opportunities_page"
-import { SanityDocument } from "next-sanity"
-import { SanityImageSource } from "@sanity/image-url/lib/types/types"
+import { CompanyData } from "@/app/types"
 import imageUrlBuilder from "@sanity/image-url"
 import { client } from "@/lib/sanity/client"
 
-export interface CompanyData extends SanityDocument {
-    company: number
-    image?: SanityImageSource
-    publishedAt: string
-    alt?: string
-    caption?: string
-    description?: string
-    tags?: string[]
-    hiring_tags?: string[]
-    location?: string
-    employees?: string
-    founded?: string
-    stage?: string
-    industry?: string
-  }
 
 
 
@@ -45,7 +29,9 @@ export default async function OpportunitiesPage() {
     stage,
     industry,
     partner, 
-    pending_partner
+    pending_partner,
+    external_media, 
+    people
   }`;
 
 const builder = imageUrlBuilder(client)

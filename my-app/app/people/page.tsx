@@ -13,34 +13,64 @@ import ProfileAvatar from "@/app/components/profile_avatar";
 import { encodeSimple } from "@/app/utils/simple-hash";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-function ProfileCard({ profile, onClick, isConnected = false }: { profile: ProfileData; onClick: () => void; isConnected?: boolean }) {
+function ProfileCard({ profile, onClick, connectionStatus = 'none' }: { profile: ProfileData; onClick: () => void; connectionStatus?: 'connected' | 'pending_sent' | 'pending_received' | 'none' }) {
+
+  const getConnectionBadge = () => {
+    switch (connectionStatus) {
+      case 'connected':
+        return (
+          <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+            Connected
+          </div>
+        );
+      case 'pending_sent':
+        return (
+          <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+            Request Sent
+          </div>
+        );
+      case 'pending_received':
+        return (
+          <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+            Request Received
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="group cursor-pointer" onClick={onClick}>
-      <div className="bg-white border border-neutral-200 rounded-2xl hover:shadow-lg transition-all duration-300 p-8 h-full relative">
-        {/* Connected Tag */}
-        
+      <div className="bg-white border border-neutral-200 rounded-2xl hover:shadow-lg transition-all duration-300 p-6 relative flex items-center gap-6 min-h-[120px]">
         {/* Profile Image */}
-        <div className="flex justify-center items-center mb-6">
+        <div className="flex-shrink-0">
           <ProfileAvatar
             name={`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email || 'User'}
             imageUrl={profile.profile_image_url || undefined}
-            size={128}
+            size={80}
             editable={false}
-            className="w-32 h-32 rounded-full transition-all duration-300"
+            className="w-20 h-20 rounded-full transition-all duration-300"
           />
         </div>
         
-        {/* Name */}
-        <h3 className="text-xl font-semibold text-neutral-900 mb-2 text-center">
-          {profile.first_name} {profile.last_name}
-        </h3>
-        {isConnected && (
-          <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium inline-block mt-2">
-            Connected
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {/* Name and Connection Badge */}
+          <div className="flex items-center gap-3 mb-2">
+            <h3 className="text-xl font-semibold text-neutral-900">
+              {profile.first_name} {profile.last_name}
+            </h3>
+            {getConnectionBadge()}
           </div>
-        )}
-  
+          
+          {/* Bio */}
+          {profile.bio && (
+            <p className="text-neutral-600 text-sm leading-relaxed line-clamp-3 text-left">
+              {profile.bio}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -88,7 +118,7 @@ function LoadingSkeleton() {
             <Skeleton className="h-4 md:h-6 w-3/4" />
           </div>
 
-          {/* Profiles Grid Skeleton */}
+          {/* Profiles List Skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
             {Array.from({ length: 6 }).map((_, i) => (
               <ProfileCardSkeleton key={i} />
@@ -126,7 +156,9 @@ export default function PeoplePage() {
   const [viewProfileGrid, setViewProfileGrid] = useState(false);
   const [gridSearchQuery, setGridSearchQuery] = useState("");
   const [verifiedConnections, setVerifiedConnections] = useState<number[]>([]);
+  const [pendingConnections, setPendingConnections] = useState<number[]>([]);
   const [userApplied, setUserApplied] = useState<boolean | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
 
   const router = useRouter();
@@ -143,17 +175,47 @@ export default function PeoplePage() {
       .then(res => res.json())
       .then(data => {
         setVerifiedConnections(data.connections || []);
+        setPendingConnections(data.pending_connections || []);
         setUserApplied(data.applied || false);
+        setCurrentUserId(data.id);
       })
       .catch(error => {
         console.error("Failed to fetch user profile:", error);
         setVerifiedConnections([]);
+        setPendingConnections([]);
         setUserApplied(false);
       });
   }, []);
 
   const handleProfileClick = (profile: ProfileData) => {
     router.push(`/people/${encodeSimple(profile.id)}`);
+  };
+
+  // Get connection status between current user and another profile
+  const getConnectionStatus = (profile: ProfileData) => {
+    if (!currentUserId) return 'none';
+    
+    // Check if they are in user's verified connections (mutual connection exists)
+    if (verifiedConnections.includes(profile.id)) {
+      return 'connected';
+    }
+    
+    // Check if user has sent a pending request to them
+    if (pendingConnections.includes(profile.id)) {
+      return 'pending_sent';
+    }
+    
+    // Check if they have sent a pending request to user
+    if (profile.pending_connections?.includes(currentUserId)) {
+      return 'pending_received';
+    }
+    
+    return 'none';
+  };
+
+  // Helper function for backward compatibility with isConnected prop
+  const isMutuallyConnected = (profile: ProfileData) => {
+    return getConnectionStatus(profile) === 'connected';
   };
 
   // Filter profiles for search dropdown
@@ -191,14 +253,34 @@ export default function PeoplePage() {
     return fullName.includes(query);
   }) || [];
 
-  // Filter verified connections
+  // Filter verified connections (must be mutual)
   const verifiedConnectionProfiles = allProfiles?.filter(profile => {
     const hasNames = profile.first_name && 
                     profile.last_name && 
                     profile.first_name.trim() !== '' && 
                     profile.last_name.trim() !== '';
     
-    return hasNames && verifiedConnections.includes(profile.id);
+    return hasNames && isMutuallyConnected(profile);
+  }) || [];
+
+  // Filter pending connections (requests sent by current user)
+  const pendingSentProfiles = allProfiles?.filter(profile => {
+    const hasNames = profile.first_name && 
+                    profile.last_name && 
+                    profile.first_name.trim() !== '' && 
+                    profile.last_name.trim() !== '';
+    
+    return hasNames && getConnectionStatus(profile) === 'pending_sent';
+  }) || [];
+
+  // Filter pending connections (requests received by current user)
+  const pendingReceivedProfiles = allProfiles?.filter(profile => {
+    const hasNames = profile.first_name && 
+                    profile.last_name && 
+                    profile.first_name.trim() !== '' && 
+                    profile.last_name.trim() !== '';
+    
+    return hasNames && getConnectionStatus(profile) === 'pending_received';
   }) || [];
 
   if (isLoading) {
@@ -216,12 +298,12 @@ export default function PeoplePage() {
                     {/* Welcome Header */}
                     <div className="text-center pt-16 pb-8">
                         <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-black">
-                            The Niche Network
+                            Your Niche Network
                         </h1>
                         <p className="text-lg md:text-xl text-neutral-600 leading-relaxed font-light max-w-5xl mx-auto mb-8">
-                            Curate a personalized and verified network on The Niche. Verified networks allow us to better match you with opportunities, indexing on what your personalized network has also been interested in. 
+                            Curate a personalized and verified professional network on The Niche by connecting and verifying your connection with email and/or phone number. We utilize your network to allow us to better match you with opportunities custom-tailored to not only your interests but the interests of those in your verified, professional network. 
                             <br></br><br></br>
-                            <strong>Access to The Niche is strictly through personal referral to create a curated network within this public beta. </strong>
+                            <strong>Access to The Niche is strictly through referral to create a curated network within this public beta. </strong>
                         </p>
                         
                         {/* Show content based on application status */}
@@ -293,13 +375,51 @@ export default function PeoplePage() {
                             <h2 className="text-2xl font-semibold mb-6 text-center text-neutral-900">
                               Your Verified Connections
                             </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="space-y-4">
                               {verifiedConnectionProfiles.map((profile) => (
                                 <ProfileCard 
                                   key={profile.id} 
                                   profile={profile} 
                                   onClick={() => handleProfileClick(profile)}
-                                  isConnected={true}
+                                  connectionStatus="connected"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Pending Connections Sent Section */}
+                        {pendingSentProfiles.length > 0 && (
+                          <div className="w-full max-w-6xl mx-auto mt-12">
+                            <h2 className="text-2xl font-semibold mb-6 text-center text-neutral-900">
+                              Pending Requests Sent
+                            </h2>
+                            <div className="space-y-4">
+                              {pendingSentProfiles.map((profile) => (
+                                <ProfileCard 
+                                  key={profile.id} 
+                                  profile={profile} 
+                                  onClick={() => handleProfileClick(profile)}
+                                  connectionStatus="pending_sent"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Pending Connections Received Section */}
+                        {pendingReceivedProfiles.length > 0 && (
+                          <div className="w-full max-w-6xl mx-auto mt-12">
+                            <h2 className="text-2xl font-semibold mb-6 text-center text-neutral-900">
+                              Pending Requests Received
+                            </h2>
+                            <div className="space-y-4">
+                              {pendingReceivedProfiles.map((profile) => (
+                                <ProfileCard 
+                                  key={profile.id} 
+                                  profile={profile} 
+                                  onClick={() => handleProfileClick(profile)}
+                                  connectionStatus="pending_received"
                                 />
                               ))}
                             </div>
@@ -317,11 +437,8 @@ export default function PeoplePage() {
                 <div className="mb-10">
                 <div className="text-center pt-16 pb-8">
                         <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-black">
-                            The Niche Network
+                            Your Niche Network
                         </h1>
-                        <p className="text-lg md:text-xl text-neutral-600 leading-relaxed font-light max-w-5xl mx-auto mb-8">
-                            Curate a personalized and verified network on The Niche with others who have adopted this public beta. Search for people in The Niche network and verify your connection with an email and/or phone # verification. Verified networks allow us to better match you with opportunities, indexing on what your personalized network has also been interested in. 
-                        </p>
                         </div>
                   
                   {/* Grid Search Bar */}
@@ -337,14 +454,14 @@ export default function PeoplePage() {
                   </div>
                 </div>
 
-                {/* Profiles Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+                {/* Profiles List */}
+                <div className="space-y-4">
                   {filteredGridProfiles.map((profile) => (
                     <ProfileCard 
                       key={profile.id} 
                       profile={profile} 
                       onClick={() => handleProfileClick(profile)}
-                      isConnected={verifiedConnections.includes(profile.id)}
+                      connectionStatus={getConnectionStatus(profile)}
                     />
                   ))}
                 </div>
