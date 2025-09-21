@@ -108,17 +108,7 @@ function CompanyCarousel({ items }: { items: MediaLibraryItem[] }) {
                 📍 {currentItem.location}
               </p>
             )}
-            
-            {/* Tags */}
-            {currentItem.tags && currentItem.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-3 transform translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                {currentItem.tags.slice(0, 3).map((tag, index) => (
-                  <span key={index} className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs text-white">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
+          
           </div>
         </div>
       </motion.div>
@@ -156,13 +146,8 @@ export default function LandingClient({ posts, mediaLibrary = [] }: { posts: Art
   
   // Refs for scroll detection
   const aboutSectionRef = useRef<HTMLDivElement>(null);
-  const secondSectionRef = useRef<HTMLDivElement>(null);
   const opportunitiesRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(aboutSectionRef, { 
-    once: true, 
-    margin: "-50%"
-  });
-  const secondSectionInView = useInView(secondSectionRef, { 
     once: true, 
     margin: "-50%"
   });
@@ -468,14 +453,14 @@ export default function LandingClient({ posts, mediaLibrary = [] }: { posts: Art
         <div className="w-full flex justify-center items-center pb-8 lg:pb-16 px-4 mt-auto">
           <button 
             onClick={() => {
-              secondSectionRef.current?.scrollIntoView({ 
+              opportunitiesRef.current?.scrollIntoView({ 
                 behavior: 'smooth',
                 block: 'start'
               });
             }}
             className="inline-flex items-center px-4 sm:px-6 lg:px-8 py-3 lg:py-4 bg-neutral-900 text-white hover:bg-neutral-800 rounded-full transition-all duration-200 font-medium text-sm sm:text-base lg:text-lg shadow-lg hover:shadow-xl"
           >
-            Connect and Send Outbound to Specific Verified Networks
+            Opportunities in this Public Beta
             <svg 
               className="ml-2 h-5 w-5 transform transition-transform hover:translate-y-1" 
               fill="none" 
@@ -488,104 +473,6 @@ export default function LandingClient({ posts, mediaLibrary = [] }: { posts: Art
         </div>
       </motion.div>
 
-      {/* Second Section - Full height with button at bottom */}
-      <motion.div 
-        ref={secondSectionRef}
-        initial={{ opacity: 0, y: 150 }}
-        animate={secondSectionInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 150 }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
-        className="min-h-screen bg-gradient-to-b from-neutral-100 via-white to-neutral-50 flex flex-col shadow-2xl border-t border-neutral-200"
-      >
-        <div className="flex flex-1 flex-col lg:flex-row w-full max-w-[1400px] px-2 sm:px-4 lg:px-6 mx-auto py-8 sm:py-12 gap-8 lg:gap-16 items-center">
-          {/* Right side - Text content */}
-          <div className="flex-[3] flex flex-col justify-center px-4 sm:px-8 order-2 lg:order-2">
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={secondSectionInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
-              transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
-            >
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-6 lg:mb-8 text-neutral-800 leading-relaxed text-center lg:text-left">
-                Build Your Human Capital Network
-              </h1>
-              <p className="text-sm sm:text-base md:text-lg text-neutral-600 mb-8 lg:mb-12 leading-relaxed text-center lg:text-left">
-                Connect and build a verified, personalized, professional community on The Niche so that the opportunities that come your way are custom-tailored to the network you have already built. Likewise, customize outbound about professional events and opportunities to a network verified and tailored. 
-              </p>
-              
-              <div className="space-y-8">
-                <h2 className="text-base sm:text-lg md:text-xl font-semibold text-neutral-800 mb-4 lg:mb-6 text-center lg:text-left">Why does this matter?</h2>
-                <div className="space-y-6">
-                  <div className="flex items-start gap-3">
-                    <div>
-                      <h3 className="font-medium text-neutral-800 text-sm sm:text-base">Verified and Curated Professional Network</h3>
-                      <p className="text-xs sm:text-sm text-neutral-600">Connect with people on the network that are representative of your verified professional network. Who you choose to verify on your professional network helps us surface opportunities to you that your network is also interested in. </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div>
-                      <h3 className="font-medium text-neutral-800 text-sm sm:text-base">Tailor Your Outbound</h3>
-                      <p className="text-xs sm:text-sm text-neutral-600">Utilize your verified, professional network on The Niche to send personalized outbound on professional opportunities, events, updates, etc. to select network audiences. </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-          
-          {/* Left side - Large Rainbow Network */}
-          <div className="hidden sm:flex flex-[3] relative w-full items-center justify-center perspective-[1000px] order-1 lg:order-1">
-            <motion.div
-              className="w-full h-[300px] sm:h-[400px] lg:h-[600px]"
-              initial={{ opacity: 0, scale: 0.8, rotateY: 30 }}
-              animate={secondSectionInView ? {
-                opacity: 1,
-                scale: 1,
-                rotateY: [0, -15, 15, 0],
-                rotateX: [0, -10, 10, 0],
-              } : {
-                opacity: 0,
-                scale: 0.8,
-                rotateY: 30
-              }}
-              transition={{
-                opacity: { duration: 1.2, delay: 0.6 },
-                scale: { duration: 1.2, delay: 0.6 },
-                rotateY: { duration: 10, ease: "easeInOut", repeat: Infinity, repeatType: "reverse", delay: 1 },
-                rotateX: { duration: 10, ease: "easeInOut", repeat: Infinity, repeatType: "reverse", delay: 1 }
-              }}
-              style={{
-                transformStyle: "preserve-3d"
-              }}
-            >
-              <NeuralRainbowNetwork className="absolute inset-0" nodeCount={30} avgDegree={8} seedEveryMs={2500} pulseSpeed={280}/>
-              <NeuralRainbowNetwork className="absolute inset-0" nodeCount={15} avgDegree={6} seedEveryMs={1800} pulseSpeed={350}/>
-            </motion.div>
-          </div>
-        </div>
-        
-        {/* Opportunities button at bottom of second section */}
-        <div className="w-full flex justify-center items-center pb-8 lg:pb-16 px-4 mt-auto">
-          <button 
-            onClick={() => {
-              opportunitiesRef.current?.scrollIntoView({ 
-                behavior: 'smooth',
-                block: 'start'
-              });
-            }}
-            className="inline-flex items-center px-4 sm:px-6 lg:px-8 py-3 lg:py-4 bg-neutral-900 text-white hover:bg-neutral-800 rounded-full transition-all duration-200 font-medium text-sm sm:text-base lg:text-lg shadow-lg hover:shadow-xl"
-          >
-            Opportunities in our Public Beta
-            <svg 
-              className="ml-2 h-5 w-5 transform transition-transform hover:translate-y-1" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
-          </button>
-        </div>
-      </motion.div>
 
       {/* Opportunities Section - Partner Companies Gallery */}
       <motion.div 
