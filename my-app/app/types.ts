@@ -173,6 +173,7 @@ export interface Step3UpdateData {
   opportunities_looking_for?: string;
   network_recommendations?: NetworkRecommendation[];
   applied?: boolean;
+  verified?: boolean;
 }
 
 

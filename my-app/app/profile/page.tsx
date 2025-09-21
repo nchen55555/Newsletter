@@ -26,8 +26,8 @@ export default function Profile() {
         <div className="pt-12 pb-8 px-6 relative">
           <div className="absolute inset-0 pointer-events-none"></div>
           <Container className="max-w-4xl mx-auto">
-            {!data.applied && <MultiStepProfileForm {...data} />}
-            {data.applied && <ExternalProfile {...data} />}
+            {!data.verified && <MultiStepProfileForm {...data} />}
+            {data.verified && <ExternalProfile {...data} />}
           </Container>
         </div>
       </div>

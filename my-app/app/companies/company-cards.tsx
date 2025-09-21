@@ -174,15 +174,6 @@ export function CompanyCard({ disableProfile=false, company, showHighMutualInter
                 </span>
               </div>
             )}
-
-            {/* Warning tag for external companies */}
-            {/* {external && (
-              <div className="mt-3 mb-2 text-left">
-                <span className="inline-flex items-center rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700 border border-orange-200">
-                  Not Partnered with The Niche
-                </span>
-              </div>
-            )} */}
             
            <div className ="mt-4 text-left">
           {company.tags?.length && appliedToNiche && !disableProfile && (

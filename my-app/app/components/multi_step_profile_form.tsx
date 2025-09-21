@@ -559,6 +559,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       formData.append('bio', form.bio);
       formData.append('is_public_profile', form.is_public_profile.toString());
       formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
+      formData.append('applied', 'true');
       
       // Handle resume: use file if provided, otherwise keep existing URL
       if (form.resume_file) {
@@ -870,8 +871,8 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
           <div className="max-w-4xl mx-auto space-y-4 mb-8">
             {searchResults.length > 0 ? (
               searchResults.map((profile) => (
-                <div key={profile.id} className="bg-white border border-neutral-200 rounded-2xl p-6 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
+                <div key={profile.id} className="bg-white border border-neutral-200 rounded-2xl p-6 flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
                     <ProfileAvatar
                       name={`${profile.first_name} ${profile.last_name}`}
                       imageUrl={profile.profile_image_url || undefined}
@@ -879,50 +880,51 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                       editable={false}
                       className="w-16 h-16 rounded-full flex-shrink-0"
                     />
-                    <div className="flex-1 text-left">
+                    <div className="flex-1 text-left min-w-0">
                       <h3 className="text-lg font-semibold text-neutral-900">
                         {profile.first_name} {profile.last_name}
                       </h3>
                       {profile.bio && (
-                        <p className="text-sm text-neutral-600 line-clamp-2 mt-1">
+                        <p className="text-sm text-neutral-600 line-clamp-2 mt-1 pr-2">
                           {profile.bio}
                         </p>
                       )}
                     </div>
                   </div>
                   
-                  {(() => {
-                    const status = getConnectionStatus(profile);
-                    if (status === 'connected') {
-                      return (
-                        <Button disabled className="inline-flex items-center gap-2 bg-green-100 text-green-800 border-green-300">
-                          <UserPlus className="w-4 h-4" />
-                          Connected
-                        </Button>
-                      );
-                    } else if (status === 'pending_sent') {
-                      return (
-                        <Button disabled className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 border-yellow-300">
-                          <UserPlus className="w-4 h-4" />
-                          Request Sent
-                        </Button>
-                      );
-                    } else {
-                      return (
-                        <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-                          <DialogTrigger asChild>
-                            {status === 'pending_received' ? (
-                              <Button className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200" onClick={() => handleConnectClick(profile)}>
-                                <UserPlus className="w-4 h-4" />
-                                Accept Request
-                              </Button>
-                            ) : (
-                              <Button className="inline-flex items-center gap-2" onClick={() => handleConnectClick(profile)}>
-                                <UserPlus className="w-4 h-4" />
-                                Add To Network
-                              </Button>
-                            )}
-                          </DialogTrigger>
+                  <div className="flex-shrink-0 ml-4">
+                    {(() => {
+                      const status = getConnectionStatus(profile);
+                      if (status === 'connected') {
+                        return (
+                          <Button disabled className="inline-flex items-center gap-2 bg-green-100 text-green-800 border-green-300 whitespace-nowrap">
+                            <UserPlus className="w-4 h-4" />
+                            Connected
+                          </Button>
+                        );
+                      } else if (status === 'pending_sent') {
+                        return (
+                          <Button disabled className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 border-yellow-300 whitespace-nowrap">
+                            <UserPlus className="w-4 h-4" />
+                            Request Sent
+                          </Button>
+                        );
+                      } else {
+                        return (
+                          <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+                            <DialogTrigger asChild>
+                              {status === 'pending_received' ? (
+                                <Button className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200 whitespace-nowrap" onClick={() => handleConnectClick(profile)}>
+                                  <UserPlus className="w-4 h-4" />
+                                  Accept Request
+                                </Button>
+                              ) : (
+                                <Button className="inline-flex items-center gap-2 whitespace-nowrap" onClick={() => handleConnectClick(profile)}>
+                                  <UserPlus className="w-4 h-4" />
+                                  Add To Network
+                                </Button>
+                              )}
+                            </DialogTrigger>
                         <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                           <DialogTitle>
@@ -1000,11 +1002,12 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                       );
                     }
                   })()}
+                  </div>
                 </div>
               ))
             ) : (
               <div className="text-center py-8 text-neutral-600">
-                No people found matching 
+                No people found matching {searchQuery}
               </div>
             )}
           </div>
@@ -1137,7 +1140,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
 
             {/* Network Recommendations Section */}
             <div className="py-6">
-              <label className="text-base font-medium">Build Out Your Network on The Niche</label>
+              <label className="text-base font-medium">Bring Your Network to The Niche</label>
               <p className="text-sm text-neutral-600 mt-1 mb-4">Bring in 2-3 people to The Niche.</p>
               <div className="space-y-4">
                 {step4Form.networkRecommendations.map((rec, index) => (
