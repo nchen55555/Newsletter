@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { Resend } from 'resend';
+import { encodeSimple } from '../../utils/simple-hash';
 
 export async function POST(req: NextRequest) {
   // Await cookies() before using
@@ -258,7 +259,7 @@ export async function POST(req: NextRequest) {
       html: `
         <p>Hi ${sendProfile.first_name},</p>
         <p>${emailContent.message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
-        <p><a href="https://theniche.tech/people" style="color: #0066cc; text-decoration: none;">Visit your network on The Niche</a></p>
+        <p><a href="https://theniche.tech/people/${encodeSimple(currentUserId)}" style="color: #0066cc; text-decoration: none;">Visit your network on The Niche</a></p>
         <p>Best,<br>The Niche Team</p>
       `,
     });

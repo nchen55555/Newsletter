@@ -143,7 +143,16 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
     setVerificationStatus('idle');
     
     try {
-      const isVerified = verificationEmail === data?.email || verificationPhone === data?.phone_number;
+      // Normalize phone numbers by removing common formatting characters
+      const normalizePhoneNumber = (phone: string) => {
+        return phone.replace(/[\s\-\(\)\+]/g, '');
+      };
+      
+      const isEmailVerified = verificationEmail === data?.email;
+      const isPhoneVerified = verificationPhone && data?.phone_number && 
+        normalizePhoneNumber(verificationPhone) === normalizePhoneNumber(data.phone_number);
+      
+      const isVerified = isEmailVerified || isPhoneVerified;
       
       if (isVerified) {
         const response = await fetch('/api/post_connect', {

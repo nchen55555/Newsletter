@@ -305,8 +305,19 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   // Handle network verification
   const handleNetworkVerification = async () => {
     if (!selectedProfile) return
+
+    const normalizePhoneNumber = (phone: string) => {
+        return phone.replace(/[\s\-\(\)\+]/g, '');
+      };
+  
+      const isEmailVerified = verificationEmail === selectedProfile?.email;
+      const isPhoneVerified = verificationPhone && selectedProfile?.phone_number && 
+        normalizePhoneNumber(verificationPhone) === normalizePhoneNumber(selectedProfile.phone_number);
+      
+    const isVerified = isEmailVerified || isPhoneVerified;
+      
     
-    if (!verificationEmail && !verificationPhone) {
+    if (!isVerified) {
       setVerificationStatus('invalid')
       setStatusMessage('Please provide either an email or phone number to verify your connection.')
       return
@@ -316,7 +327,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     setVerificationStatus('idle')
     
     try {
-      const isVerified = verificationEmail === selectedProfile.email || verificationPhone === selectedProfile.phone_number
       
       if (isVerified) {
         const response = await fetch('/api/post_connect', {
