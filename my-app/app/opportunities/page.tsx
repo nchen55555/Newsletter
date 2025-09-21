@@ -31,7 +31,8 @@ export default async function OpportunitiesPage() {
     partner, 
     pending_partner,
     external_media, 
-    people
+    people, 
+    location
   }`;
 
 const builder = imageUrlBuilder(client)

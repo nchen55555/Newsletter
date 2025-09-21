@@ -13,11 +13,22 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, UserPlus } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import ProfileAvatar from './profile_avatar'
 
 interface MultiStepProfileFormProps extends ProfileData {
   access_token: string,
+}
+
+interface Step4FormState {
+  interests: string | undefined;
+  opportunities_looking_for: string | undefined;
+  knownCohortMembers: {id: string, first_name: string, last_name: string, email: string}[];
+  networkRecommendations: { name: string; email: string; connection: string }[];
 }
 
 // Company Carousel Component
@@ -101,12 +112,27 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const [loadingCompanies, setLoadingCompanies] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [, setEmailSent] = useState(false)
+
   
-  // Step 3 form state
-  const [step3Form, setStep3Form] = useState({
+  // Step 3 form state (people connections)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [allProfiles, setAllProfiles] = useState<ProfileData[]>([])
+  const [currentUserData, setCurrentUserData] = useState<ProfileData | null>(null)
+  
+  // Verification dialog state
+  const [selectedProfile, setSelectedProfile] = useState<ProfileData | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [verificationEmail, setVerificationEmail] = useState('')
+  const [verificationPhone, setVerificationPhone] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'error' | 'invalid'>('idle')
+  const [statusMessage, setStatusMessage] = useState('')
+  
+  // Step 4 form state (interests and network)
+  const [step4Form, setStep4Form] = useState<Step4FormState>({
     interests: props.interests,
     opportunities_looking_for: props.opportunities_looking_for,
-    knownCohortMembers: [] as {id: string, first_name: string, last_name: string, email: string}[],
+    knownCohortMembers: [],
     networkRecommendations: [
       { name: '', email: '', connection: ''},
       { name: '', email: '', connection: ''},
@@ -125,15 +151,19 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     const stepParam = searchParams.get('step');
     if (stepParam !== null) {
       const step = parseInt(stepParam, 10);
-      if (step >= 0 && step <= 3) {
+      if (step >= 0 && step <= 4) {
         setCurrentStep(step);
         // Load companies if navigating directly to step 2
         if (step === 2 && companies.length === 0) {
           loadCompanies();
         }
+        // Load profiles if navigating directly to step 3
+        if (step === 3 && allProfiles.length === 0) {
+          loadAllProfiles();
+        }
       }
     }
-  }, [searchParams, companies.length]);
+  }, [searchParams, companies.length, allProfiles.length]);
 
   // Update URL when step changes
   const updateStep = (step: number) => {
@@ -161,7 +191,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     status: props.status || "",
     transcript_file: null,
     transcript_url: props.transcript_url || "",
-    applied: props.applied || false,
     parsed_resume_json: "",
   });
 
@@ -193,21 +222,177 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     }
   }
 
+  // Load all profiles and current user data (same as /people/ page)
+  const loadAllProfiles = async () => {
+    try {
+      const [profilesResponse, userResponse] = await Promise.all([
+        fetch('/api/get_cohort', { credentials: 'include' }),
+        fetch('/api/get_profile', { credentials: 'include' })
+      ])
+      
+      if (profilesResponse.ok) {
+        const data = await profilesResponse.json()
+        setAllProfiles(data.profiles || [])
+      } else {
+        console.error('Failed to load profiles')
+        setAllProfiles([])
+      }
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        setCurrentUserData(userData)
+      } else {
+        console.error('Failed to load user data')
+        setCurrentUserData(null)
+      }
+    } catch (error) {
+      console.error('Error loading data:', error)
+      setAllProfiles([])
+      setCurrentUserData(null)
+    } 
+  }
+
+  // Get connection status between current user and another profile (same logic as /people/ page)
+  const getConnectionStatus = (profile: ProfileData) => {
+    if (!currentUserData) return 'none'
+    
+    // Check if they are in user's verified connections (mutual connection exists)
+    if (currentUserData.connections?.includes(profile.id)) {
+      return 'connected'
+    }
+    
+    // Check if user has sent a pending request to them
+    if (currentUserData.pending_connections?.includes(profile.id)) {
+      return 'pending_sent'
+    }
+    
+    // Check if they have sent a pending request to user
+    if (profile.pending_connections?.includes(currentUserData.id)) {
+      return 'pending_received'
+    }
+    
+    return 'none'
+  }
+
+  // Filter profiles based on search query (same logic as /people/ page)
+  const searchResults = allProfiles.filter(profile => {
+    const hasNames = profile.first_name && 
+                    profile.last_name && 
+                    profile.first_name.trim() !== '' && 
+                    profile.last_name.trim() !== '';
+    
+    if (!hasNames || !searchQuery.trim()) return false; // Only show results when searching
+    
+    const fullName = `${profile.first_name} ${profile.last_name}`.toLowerCase();
+    const query = searchQuery.toLowerCase();
+    return fullName.includes(query);
+  }).slice(0, 8) // Limit to 8 results like the people page
+
+
+  // Handle dialog change
+  const handleDialogChange = (open: boolean) => {
+    setDialogOpen(open)
+    if (!open) {
+      // Reset form and status when dialog closes
+      setVerificationEmail('')
+      setVerificationPhone('')
+      setVerificationStatus('idle')
+      setStatusMessage('')
+      setSelectedProfile(null)
+    }
+  }
+
+  // Handle network verification
+  const handleNetworkVerification = async () => {
+    if (!selectedProfile) return
+    
+    if (!verificationEmail && !verificationPhone) {
+      setVerificationStatus('invalid')
+      setStatusMessage('Please provide either an email or phone number to verify your connection.')
+      return
+    }
+
+    setIsSubmitting(true)
+    setVerificationStatus('idle')
+    
+    try {
+      const isVerified = verificationEmail === selectedProfile.email || verificationPhone === selectedProfile.phone_number
+      
+      if (isVerified) {
+        const response = await fetch('/api/post_connect', {
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({connect_id: selectedProfile.id})
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          if (result.type === 'mutual') {
+            setVerificationStatus('success')
+            setStatusMessage(`You are now connected with ${selectedProfile.first_name}! The connection was mutual.`)
+          } else {
+            setVerificationStatus('success')
+            setStatusMessage(`Connection request sent to ${selectedProfile.first_name}! They've received a notification.`)
+          }
+          // Update current user data to reflect new connection
+          if (result.type === 'mutual') {
+            // Mutual connection - update connections
+            setCurrentUserData((prev: ProfileData | null) => 
+              prev ? {
+                ...prev,
+                connections: [...(prev.connections || []), selectedProfile.id]
+              } : null
+            )
+          } else {
+            // Pending connection - update pending_connections
+            setCurrentUserData((prev: ProfileData | null) => 
+              prev ? {
+                ...prev,
+                pending_connections: [...(prev.pending_connections || []), selectedProfile.id]
+              } : null
+            )
+          }
+          setVerificationEmail('')
+          setVerificationPhone('')
+          setDialogOpen(false)
+        } else {
+          setVerificationStatus('error')
+          setStatusMessage('Failed to send verification request. Please try again.')
+        }
+      } else {
+        setVerificationStatus('invalid')
+        setStatusMessage('Request not verified. Wrong email or phone number.')
+      }
+    } catch (error) {
+      console.error('Network verification failed:', error)
+      setVerificationStatus('error')
+      setStatusMessage('Failed to send verification request. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Handle opening connect dialog
+  const handleConnectClick = (profile: ProfileData) => {
+    setSelectedProfile(profile)
+    setDialogOpen(true)
+  }
+
   const handleFinishSetup = async () => {
     setLoading(true);
-    if (!step3Form.interests) {
+    if (!step4Form.interests) {
         setFormError("Keywords that describe what you are interested in are required.");
         setLoading(false);
         return;
       }
 
-    if (!step3Form.opportunities_looking_for) {
+    if (!step4Form.opportunities_looking_for) {
       setFormError("What kinds of opportunities you are interested/looking for is required");
       setLoading(false);
       return;
     }
     // Check if networkRecommendations have actual content
-    const hasValidNetworkRecommendations = step3Form.networkRecommendations.some(rec => 
+    const hasValidNetworkRecommendations = step4Form.networkRecommendations.some((rec: { name: string; email: string; connection: string }) => 
       rec.name.trim() !== '' && rec.email.trim() !== '' && rec.connection.trim() !== ''
     );
     if (!hasValidNetworkRecommendations) {
@@ -216,18 +401,18 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       return; 
     }
     try {
-      console.log(step3Form)
-      // First, post step3 form data
-      const step3Response = await fetch('/api/post_step3', {
+      console.log(step4Form)
+      // First, post step4 form data
+      const step4Response = await fetch('/api/post_step3', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(step3Form)
+        body: JSON.stringify(step4Form)
       });
 
-      if (step3Response.ok) {
-        console.log('Step 3 data saved successfully');
+      if (step4Response.ok) {
+        console.log('Step 4 data saved successfully');
         
         // Only send welcome email if step 3 data was saved successfully
         const emailResponse = await fetch('/api/send-welcome-email', {
@@ -252,9 +437,9 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
           setEmailSent(false);
         }
       } else {
-        console.error('Failed to save step 3 data');
-        const step3Error = await step3Response.text();
-        console.error('Step 3 error details:', step3Error);
+        console.error('Failed to save step 4 data');
+        const step4Error = await step4Response.text();
+        console.error('Step 4 error details:', step4Error);
         setFormError("Failed to save profile data. Please try again.");
         setLoading(false);
         return;
@@ -293,7 +478,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       //         },
       //         body: JSON.stringify({
       //           interest_companies: step3Form.interestedCompanies,
-      //           interest: step3Form.interests,
+      //           interest: step4Form.interests,
       //           bio: form.bio,
       //           resume: data.data, // Use the parsed resume data directly
       //           email: form.email
@@ -399,8 +584,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         return;
       }
 
-      formData.append('applied', 'true');
-
       // Make request (same as original form)
       const response = await fetch('/api/post_profile', {
         method: 'PATCH',
@@ -467,6 +650,14 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
           >
             3
           </div>
+          <div className={`h-1 w-16 ${currentStep >= 4 ? 'bg-neutral-900' : 'bg-neutral-200'}`} />
+          <div 
+            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+              currentStep >= 4 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-600'
+            }`}
+          >
+            4
+          </div>
 
         </div>
       </div>
@@ -515,6 +706,20 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                   <div className="flex-shrink-0">
                     <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center">
                       <span className="text-2xl font-bold text-neutral-900">C</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-semibold text-neutral-900">Connect with People</h3>
+                    <p className="text-neutral-600 leading-relaxed">
+                      Search for and connect with 1-2 people on The Niche to start building your verified network.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-6">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center">
+                      <span className="text-2xl font-bold text-neutral-900">D</span>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -585,7 +790,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                 <div className="space-y-4">
                   <h3 className="text-xl font-semibold text-neutral-900">In this public beta...</h3>
                   <p className="text-neutral-600 leading-relaxed">
-                    The Niche has partnered with 8 high-growth, high-talent density startups. Scroll through the profiles of our 8 partner companies. 
+                    The Niche has partnered with 8 high-growth, high-talent density startups. Scroll through some of these profiles. 
                   </p>
                   <p className="text-neutral-600 leading-relaxed">
                     <strong>Bookmark</strong> profiles you are interested in and <strong>Connect/Express Early Interest</strong> to profiles you are strongly impressed by and would like to chat with. This helps us understand your interests to tailor and connect you with more opportunities. If you connect with a company on our platform and there is mutual interest, we will forward your profile directly to the founders. 
@@ -627,6 +832,9 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             <Button 
               onClick={() => {
                 updateStep(3)
+                if (allProfiles.length === 0) {
+                  loadAllProfiles()
+                }
               }}
               className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2"
             >
@@ -637,6 +845,253 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       )}
 
       {currentStep === 3 && (
+        <div className="max-w-6xl mx-auto px-8 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl font-bold text-neutral-900 mb-2">Connect with People on The Niche</h2>
+            <p className="text-neutral-600 mt-4">Search for and connect with 1-2 people to start building your verified professional network.</p>
+          </div>
+
+        {/* Search Bar */}
+        <div className="max-w-md mx-auto relative mb-8">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4 z-10" />
+          <Input
+            type="text"
+            placeholder="Search by name..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+            }}
+            className="pl-10 pr-4 py-2 w-full rounded-full border-neutral-200 focus:border-black focus:ring-black"
+          />
+        </div>
+
+        {/* Search Results - Profile Rows */}
+        {searchQuery.trim() && (
+          <div className="max-w-4xl mx-auto space-y-4 mb-8">
+            {searchResults.length > 0 ? (
+              searchResults.map((profile) => (
+                <div key={profile.id} className="bg-white border border-neutral-200 rounded-2xl p-6 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <ProfileAvatar
+                      name={`${profile.first_name} ${profile.last_name}`}
+                      imageUrl={profile.profile_image_url || undefined}
+                      size={64}
+                      editable={false}
+                      className="w-16 h-16 rounded-full flex-shrink-0"
+                    />
+                    <div className="flex-1 text-left">
+                      <h3 className="text-lg font-semibold text-neutral-900">
+                        {profile.first_name} {profile.last_name}
+                      </h3>
+                      {profile.bio && (
+                        <p className="text-sm text-neutral-600 line-clamp-2 mt-1">
+                          {profile.bio}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {(() => {
+                    const status = getConnectionStatus(profile);
+                    if (status === 'connected') {
+                      return (
+                        <Button disabled className="inline-flex items-center gap-2 bg-green-100 text-green-800 border-green-300">
+                          <UserPlus className="w-4 h-4" />
+                          Connected
+                        </Button>
+                      );
+                    } else if (status === 'pending_sent') {
+                      return (
+                        <Button disabled className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 border-yellow-300">
+                          <UserPlus className="w-4 h-4" />
+                          Request Sent
+                        </Button>
+                      );
+                    } else {
+                      return (
+                        <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+                          <DialogTrigger asChild>
+                            {status === 'pending_received' ? (
+                              <Button className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200" onClick={() => handleConnectClick(profile)}>
+                                <UserPlus className="w-4 h-4" />
+                                Accept Request
+                              </Button>
+                            ) : (
+                              <Button className="inline-flex items-center gap-2" onClick={() => handleConnectClick(profile)}>
+                                <UserPlus className="w-4 h-4" />
+                                Add To Network
+                              </Button>
+                            )}
+                          </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>
+                            {getConnectionStatus(profile) === 'pending_received' 
+                              ? `Accept Connection Request from ${profile.first_name}`
+                              : `Verify Connection with ${profile.first_name}`
+                            }
+                          </DialogTitle>
+                          <DialogDescription>
+                            {getConnectionStatus(profile) === 'pending_received'
+                              ? `${profile.first_name} has sent you a connection request. Please verify their email and/or phone number to accept and add them to your network.`
+                              : `To add ${profile.first_name} to your verified network, please provide their email and/or phone number. We'll confirm your connection to maintain network quality.`
+                            }
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-6 mt-6">
+                          <div className="space-y-2">
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              placeholder={"sam@gmail.com"}
+                              value={verificationEmail}
+                              onChange={(e) => setVerificationEmail(e.target.value)}
+                              disabled={isSubmitting}
+                            />
+                          </div>
+                          <p>or...</p>
+                          <div className="space-y-2">
+                            <Label htmlFor="phone">Phone Number</Label>
+                            <Input
+                              id="phone"
+                              type="tel"
+                              placeholder="5551234567"
+                              value={verificationPhone}
+                              onChange={(e) => setVerificationPhone(e.target.value)}
+                              disabled={isSubmitting}
+                            />
+                          </div>
+                          
+                          {/* Status Message Display */}
+                          {verificationStatus !== 'idle' && (
+                            <div className={`mt-6 p-4 rounded-lg text-sm ${
+                              verificationStatus === 'success' 
+                                ? 'bg-green-50 text-green-700 border border-green-200' 
+                                : verificationStatus === 'error'
+                                ? 'bg-red-50 text-red-700 border border-red-200'
+                                : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                            }`}>
+                              {statusMessage}
+                            </div>
+                          )}
+                          
+                          <div className="flex justify-end gap-2 mt-8">
+                            <DialogTrigger asChild>
+                              <Button variant="outline" disabled={isSubmitting}>
+                                Cancel
+                              </Button>
+                            </DialogTrigger>
+                            <Button 
+                              onClick={handleNetworkVerification}
+                              disabled={isSubmitting || (!verificationEmail && !verificationPhone)}
+                            >
+                              {isSubmitting 
+                                ? "Verifying..." 
+                                : selectedProfile && getConnectionStatus(selectedProfile) === 'pending_received' 
+                                  ? "Accept Request" 
+                                  : "Send Verification"
+                              }
+                            </Button>
+                          </div>
+                        </div>
+                        </DialogContent>
+                        </Dialog>
+                      );
+                    }
+                  })()}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-neutral-600">
+                No people found matching 
+              </div>
+            )}
+          </div>
+        )}
+
+          {/* Verification Dialog */}
+          <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>
+                  Verify Connection with {selectedProfile?.first_name}
+                </DialogTitle>
+                <DialogDescription>
+                  To add {selectedProfile?.first_name} to your verified network, please provide their email and/or phone number. We&apos;ll confirm your connection to maintain network quality.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-6 mt-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="sam@gmail.com"
+                    value={verificationEmail}
+                    onChange={(e) => setVerificationEmail(e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <p>or...</p>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="5551234567"
+                    value={verificationPhone}
+                    onChange={(e) => setVerificationPhone(e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                </div>
+                
+                {/* Status Message Display */}
+                {verificationStatus !== 'idle' && (
+                  <div className={`mt-6 p-4 rounded-lg text-sm ${
+                    verificationStatus === 'success' 
+                      ? 'bg-green-50 text-green-700 border border-green-200' 
+                      : verificationStatus === 'error'
+                      ? 'bg-red-50 text-red-700 border border-red-200'
+                      : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                  }`}>
+                    {statusMessage}
+                  </div>
+                )}
+                
+                <div className="flex justify-end gap-2 mt-8">
+                  <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={isSubmitting}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleNetworkVerification}
+                    disabled={isSubmitting || (!verificationEmail && !verificationPhone)}
+                  >
+                    {isSubmitting ? "Verifying..." : "Send Verification"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <div className="flex justify-between items-center mt-12">
+            <Button 
+              onClick={() => updateStep(2)}
+              className="bg-neutral-200 hover:bg-neutral-300 text-neutral-900 px-8 py-2"
+            >
+              Back
+            </Button>
+            <Button 
+              onClick={() => updateStep(4)}
+              className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {currentStep === 4 && (
         <div className="max-w-6xl mx-auto px-8 py-16">
           <div className="text-center mb-12">
             <h2 className="text-2xl font-bold text-neutral-900 mb-2">Personalization: Index on Your Network and Existing Interests</h2>
@@ -654,8 +1109,8 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
               <label htmlFor="interests" className="text-base font-medium">Keywords that describe what you are interested in *</label>
               <textarea
                 id="interests"
-                value={step3Form.interests}
-                onChange={(e) => setStep3Form(prev => ({ ...prev, interests: e.target.value }))}
+                value={step4Form.interests}
+                onChange={(e) => setStep4Form((prev: Step4FormState) => ({ ...prev, interests: e.target.value }))}
                 placeholder="Blockchain, Product Engineering, Series A-D Startups, Systems, Quant, ..."
                 className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-lg 
                           mt-2 min-h-[120px] max-h-[50vh] resize-y 
@@ -669,8 +1124,8 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
               <label htmlFor="opportunities_looking_for" className="text-base font-medium">What exactly are you looking for? What kinds of opportunities (roles, programs, fellowships) interest you? *</label>
               <textarea
                 id="opportunities_looking_for"
-                value={step3Form.opportunities_looking_for}
-                onChange={(e) => setStep3Form(prev => ({ ...prev, opportunities_looking_for: e.target.value }))}
+                value={step4Form.opportunities_looking_for}
+                onChange={(e) => setStep4Form((prev: Step4FormState) => ({ ...prev, opportunities_looking_for: e.target.value }))}
                 placeholder="I'm extremely interested in startups ranging from Seed to Series B that are operating within the FinTech environment. I'm interested in VC and would love to be a part of a VC fellowship to get more exposure into tech investing and due dilligence. "
                 className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-lg 
                           mt-2 min-h-[120px] max-h-[50vh] resize-y 
@@ -685,7 +1140,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
               <label className="text-base font-medium">Build Out Your Network on The Niche</label>
               <p className="text-sm text-neutral-600 mt-1 mb-4">Bring in 2-3 people to The Niche.</p>
               <div className="space-y-4">
-                {step3Form.networkRecommendations.map((rec, index) => (
+                {step4Form.networkRecommendations.map((rec, index) => (
                   <div key={index} className="border border-input rounded-md p-6 bg-background">
                     <h4 className="text-base font-medium text-neutral-800 mb-4">Person {index + 1}</h4>
                     <div className="space-y-4">
@@ -698,9 +1153,9 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                           type="text"
                           value={rec.name}
                           onChange={(e) => {
-                            const newRecs = [...step3Form.networkRecommendations]
+                            const newRecs = [...step4Form.networkRecommendations]
                             newRecs[index] = { ...newRecs[index], name: e.target.value }
-                            setStep3Form(prev => ({ ...prev, networkRecommendations: newRecs }))
+                            setStep4Form((prev: Step4FormState) => ({ ...prev, networkRecommendations: newRecs }))
                           }}
                           placeholder="Full name"
                           className="h-12 text-lg px-4 w-full rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -715,9 +1170,9 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                           type="email"
                           value={rec.email}
                           onChange={(e) => {
-                            const newRecs = [...step3Form.networkRecommendations]
+                            const newRecs = [...step4Form.networkRecommendations]
                             newRecs[index] = { ...newRecs[index], email: e.target.value }
-                            setStep3Form(prev => ({ ...prev, networkRecommendations: newRecs }))
+                            setStep4Form((prev: Step4FormState) => ({ ...prev, networkRecommendations: newRecs }))
                           }}
                           placeholder="email@example.com"
                           className="h-12 text-lg px-4 w-full rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -732,9 +1187,9 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                           type="connection"
                           value={rec.connection}
                           onChange={(e) => {
-                            const newRecs = [...step3Form.networkRecommendations]
+                            const newRecs = [...step4Form.networkRecommendations]
                             newRecs[index] = { ...newRecs[index], connection: e.target.value }
-                            setStep3Form(prev => ({ ...prev, networkRecommendations: newRecs }))
+                            setStep4Form((prev: Step4FormState) => ({ ...prev, networkRecommendations: newRecs }))
                           }}
                           placeholder="Interned together at xAI..."
                           className="h-12 text-lg px-4 w-full rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -756,7 +1211,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
 
           <div className="flex justify-between items-center mt-12">
             <Button 
-              onClick={() => updateStep(2)}
+              onClick={() => updateStep(3)}
               className="bg-neutral-200 hover:bg-neutral-300 text-neutral-900 px-8 py-2"
             >
               Back

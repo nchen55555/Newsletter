@@ -146,7 +146,7 @@ export async function ArticleNewsfeed() {
         {/* Welcome Header - Centered */}
         <div className="text-center pt-16 pb-8">
             <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-black">
-                The Latest Feed
+                The Latest Company Profiles
             </h1>
         <p className="text-lg md:text-xl text-neutral-500 leading-relaxed font-light max-w-3xl mx-auto mb-8">
             Every week, The Niche publishes two to three company profiles on opportunities within our partner circle for you to stay tuned. We interview the founders directly and dive deep into how each sector operates, what teams are looking for, what the market looks right now in each industry, etc. 

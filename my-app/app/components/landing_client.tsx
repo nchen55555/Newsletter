@@ -8,10 +8,146 @@ import { motion, useInView } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import type { ArticleCardPost } from "./article_issues";
+import type { MediaLibraryItem } from "@/app/types";
 import NeuralRainbowNetwork from "@/app/components/rainbow_graph";
 import {Subscribe} from "@/app/components/subscribe";
 
-export default function LandingClient({ posts }: { posts: ArticleCardPost[] }) {
+// Automatic Rolling Company Carousel Component
+function CompanyCarousel({ items }: { items: MediaLibraryItem[] }) {
+  const builder = imageUrlBuilder(client);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  function urlForImage(source: SanityImageSource) {
+    return builder.image(source);
+  }
+  
+  // Safety check and filter to show only partners and pending partners
+  const filteredItems = (items || []).filter(item => item.partner || item.pending_partner);
+  
+  // Auto-scroll functionality
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (filteredItems.length > 1) {
+      interval = setInterval(() => {
+        setCurrentIndex((prev) => (prev + 1) % filteredItems.length);
+      }, 4000); // Change slide every 4 seconds
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [filteredItems.length]);
+
+  if (filteredItems.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-neutral-600">No partner companies available at the moment.</p>
+      </div>
+    );
+  }
+
+  const currentItem = filteredItems[currentIndex];
+
+  return (
+    <div className="relative max-w-md mx-auto">
+      {/* Card Container */}
+      <motion.div 
+        key={currentIndex}
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: -20 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="group cursor-pointer"
+      >
+        <div className="aspect-[4/3] rounded-2xl overflow-hidden relative shadow-2xl">
+          {currentItem.image ? (
+            <Image
+              src={urlForImage(currentItem.image).url()}
+              alt={currentItem.alt || currentItem.caption || `Company ${currentItem.company}`}
+              width={400}
+              height={300}
+              className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 group-hover:scale-110 transition-all duration-500 flex items-center justify-center">
+              <span className="text-neutral-500 text-lg font-medium">Company {currentItem.company}</span>
+            </div>
+          )}
+          
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-60 group-hover:opacity-80 transition-all duration-500" />
+          
+          {/* Content overlay */}
+          <div className="absolute inset-0 p-6 flex flex-col justify-end">
+            {/* Partner badge */}
+            {/* Caption/Title - positioned lower */}
+            {currentItem.caption && (
+              <h3 className="text-xl font-semibold text-white mb-1 mt-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                {currentItem.caption}
+              </h3>
+            )}
+             {currentItem.alt && (
+              <h2 className="text-xl font-semibold text-white mb-1 mt-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                {currentItem.alt}
+              </h2>
+            )}
+            
+            {/* Description */}
+            {currentItem.description && (
+              <p className="text-white/90 text-sm transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 line-clamp-2">
+                {currentItem.description}
+              </p>
+            )}
+            
+            {/* Location */}
+            {currentItem.location && (
+              <p className="text-white/75 text-xs mt-2 transform translate-y-6 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
+                📍 {currentItem.location}
+              </p>
+            )}
+            
+            {/* Tags */}
+            {currentItem.tags && currentItem.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-3 transform translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
+                {currentItem.tags.slice(0, 3).map((tag, index) => (
+                  <span key={index} className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs text-white">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Progress dots indicator */}
+      {filteredItems.length > 1 && (
+        <div className="flex justify-center mt-4 gap-2">
+          {filteredItems.map((_, index) => (
+            <div
+              key={index}
+              className={`h-1 rounded-full transition-all duration-300 ${
+                index === currentIndex ? 'bg-neutral-900 w-8' : 'bg-neutral-400 w-2'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Company counter */}
+      {filteredItems.length > 1 && (
+        <div className="text-center mt-2 text-sm text-neutral-600">
+          {currentIndex + 1} of {filteredItems.length} partner companies
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function LandingClient({ posts, mediaLibrary = [] }: { posts: ArticleCardPost[], mediaLibrary?: MediaLibraryItem[] }) {
   const builder = imageUrlBuilder(client);
   const pathname = usePathname();
   const [typedText, setTypedText] = useState('');
@@ -459,20 +595,32 @@ export default function LandingClient({ posts }: { posts: ArticleCardPost[] }) {
         transition={{ duration: 1.5, ease: "easeOut" }}
         className="min-h-screen bg-gradient-to-b from-white via-neutral-100 to-neutral-50 flex flex-col shadow-2xl border-t border-neutral-200"
       >
-        <div className="flex flex-1 flex-col w-full max-w-[1400px] px-2 sm:px-4 lg:px-6 mx-auto py-8 sm:py-12 lg:py-16 gap-8 lg:gap-12 items-center justify-center">
-          {/* Text content */}
-          <div className="w-full flex flex-col justify-center text-center px-4 sm:px-8">
+        <div className="flex flex-1 flex-col lg:flex-row w-full max-w-[1400px] px-2 sm:px-4 lg:px-6 mx-auto py-8 sm:py-12 lg:py-16 gap-8 lg:gap-16 items-center">
+          {/* Text content - Left side */}
+          <div className="flex-1 flex flex-col justify-center text-center lg:text-left px-4 sm:px-8">
             <motion.div
-              initial={{ opacity: 0, y: -30 }}
-              animate={opportunitiesInView ? { opacity: 1, y: 0 } : { opacity: 0, y: -30 }}
+              initial={{ opacity: 0, x: -50 }}
+              animate={opportunitiesInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
               transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
             >
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-6 lg:mb-8 text-neutral-800 leading-relaxed">
                 Opportunities in our Public Beta
               </h1>
-              <p className="text-sm sm:text-base md:text-lg text-neutral-600 mb-8 lg:mb-12 leading-relaxed max-w-4xl mx-auto">
-              Connect, discover, and grow with a personalized and verified professional network of opportunities. In this public beta, opportunities partnered with The Niche are fast-tracked and go straight to the founder&apos;s inbox. If there is mutual interest from them, we immediately connect you straight to them. Non-partner companies are just a resource for you to explore.
+              <p className="text-sm sm:text-base md:text-lg text-neutral-600 mb-8 lg:mb-12 leading-relaxed">
+              In this public beta, opportunities partnered with The Niche are fast-tracked and go straight to the founder&apos;s inbox. If there is mutual interest from them, we immediately connect you straight to them. Non-partner companies are just a resource for you to explore.
               </p>
+            </motion.div>
+          </div>
+
+          {/* Company Carousel - Right side */}
+          <div className="flex-1 flex justify-center lg:justify-end">
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={opportunitiesInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
+              transition={{ duration: 1, delay: 0.6, ease: "easeOut" }}
+              className="w-full max-w-lg"
+            >
+              <CompanyCarousel items={mediaLibrary} />
             </motion.div>
           </div>
         </div>

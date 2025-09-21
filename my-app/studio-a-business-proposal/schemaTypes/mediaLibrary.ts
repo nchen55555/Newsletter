@@ -72,6 +72,11 @@ export const mediaLibrary = defineType({
       title: 'External Media',
       type: 'string',
     }),
+    defineField({
+      name: 'location',
+      title: 'Location',
+      type: 'string',
+    }),
     {
     name: 'people',
     type: 'array',

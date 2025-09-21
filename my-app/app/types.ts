@@ -75,6 +75,26 @@ export type CompanyWithImageUrl = CompanyData & {
   imageUrl: string | null;
 };
 
+// Media Library types for company carousel
+export interface MediaLibraryItem extends SanityDocument {
+  image?: SanityImageSource;
+  company: number;
+  publishedAt: string;
+  alt?: string;
+  caption?: string;
+  description?: string;
+  tags?: string[];
+  pending_partner?: boolean;
+  partner?: boolean;
+  hiring_tags?: string[];
+  external_media?: string;
+  location?: string;
+  people?: Array<{
+    name: string;
+    media_url?: string;
+  }>;
+}
+
 // lib/resume-types.ts
 export type ExperienceJob = {
   company: string;
@@ -152,6 +172,7 @@ export interface Step3UpdateData {
   interests?: string;
   opportunities_looking_for?: string;
   network_recommendations?: NetworkRecommendation[];
+  applied?: boolean;
 }
 
 

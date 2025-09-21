@@ -56,6 +56,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    updateData.applied = true
+
     // 6. Update subscriber profile with step 3 data
     const { error: dbError } = await supabase
       .from('subscribers')

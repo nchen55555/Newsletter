@@ -3,7 +3,7 @@
 import { useId, useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Info, ExternalLink, HelpCircle } from "lucide-react";
+import { ArrowRight, Info, ExternalLink, HelpCircle, MapPin } from "lucide-react";
 import { CompanyData } from "@/app/types";
 import ApplyButton from "@/app/components/apply";
 import EarlyInterestButton from "@/app/components/early_interest";
@@ -49,13 +49,6 @@ export function CompanyCard({ disableProfile=false, company, showHighMutualInter
   const router = useRouter();
   const [appliedToNiche, setAppliedToNiche] = useState(false);
 
-  // Debug logging
-  console.log('Company data:', {
-    name: company.company,
-    external_media: company.external_media,
-    people: company.people
-  });
-
   // Check if user has applied to The Niche
   useEffect(() => {
     const checkAppliedStatus = async () => {
@@ -75,7 +68,7 @@ export function CompanyCard({ disableProfile=false, company, showHighMutualInter
 
   const facts = useMemo(() => {
     const arr: Array<{ label: string; value: string | number | undefined }> = [];
-    if (company?.location) arr.push({ label: "Location", value: String(company.location) });
+    // if (company?.location) arr.push({ label: "Location", value: String(company.location) });
     if (company?.employees) arr.push({ label: "Headcount", value: String(company.employees) });
     if (company?.founded) arr.push({ label: "Founded", value: String(company.founded) });
     if (company?.stage) arr.push({ label: "Stage", value: String(company.stage) });
@@ -205,8 +198,8 @@ export function CompanyCard({ disableProfile=false, company, showHighMutualInter
           )}
           </div>
 
-          {/* Website and Employee Links Section */}
-          {(company.external_media || (company.people && company.people.length > 0)) && (
+          {/* Website, Location and Employee Links Section */}
+          {(company.external_media || company.location || (company.people && company.people.length > 0)) && (
             <div className="mt-4 text-left">
               <div className="flex flex-col gap-2">
                 {/* Website Link */}
@@ -220,6 +213,14 @@ export function CompanyCard({ disableProfile=false, company, showHighMutualInter
                     <ExternalLink className="h-3 w-3" />
                     Company Website
                   </a>
+                )}
+
+                {/* Location */}
+                {company.location && (
+                  <div className="inline-flex items-center gap-1 text-sm font-medium text-neutral-700">
+                    {/* <MapPin className="h-3 w-3" /> */}
+                    📍 {company.location}
+                  </div>
                 )}
                 
                 {/* Employee Links - only show for priority non-partner companies */}
