@@ -104,19 +104,20 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
         !companyRecommendations.includes(opportunity.company) && 
         !bookmarkedCompanies.includes(opportunity.company) && 
         opportunity.partner && 
-        !opportunity.pending_partner && 
-        !bookmarkedCompanies
+        !opportunity.pending_partner  
     );
 
     // Potential partner opportunities (coming soon)
     const pendingPartnerOpportunities = featuredOpportunities.filter(opportunity => 
         opportunity.pending_partner && 
-        !bookmarkedCompanies
+        !bookmarkedCompanies.includes(opportunity.company) && 
+        !companyRecommendations.includes(opportunity.company)
     );
 
     const externalOpportunities = featuredOpportunities.filter(opportunity => 
         !opportunity.partner && 
-        !bookmarkedCompanies
+        !bookmarkedCompanies.includes(opportunity.company) && 
+        !companyRecommendations.includes(opportunity.company)
     );
 
     return (
