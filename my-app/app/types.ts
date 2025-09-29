@@ -3,6 +3,7 @@ export type ProfileData = {
     email: string;
     first_name: string;
     last_name: string;
+    school: string;
     linkedin_url: string;
     resume_url: string;
     personal_website: string;
@@ -23,6 +24,8 @@ export type ProfileData = {
     pending_connections?: number[];
     verified?: boolean;
     application_tracker_confirmed?: boolean,
+    bookmarked_companies?: number[];
+    requested_connections?: number[];
   };
 
 export type ProfileFormState = {
@@ -30,6 +33,7 @@ export type ProfileFormState = {
   email: string;
   first_name: string;
   last_name: string;
+  school: string;
   linkedin_url: string;
   resume_url: string;
   personal_website: string;

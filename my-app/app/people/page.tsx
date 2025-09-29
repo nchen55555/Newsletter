@@ -10,71 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Users, AlertCircle } from "lucide-react";
 import ProfileAvatar from "@/app/components/profile_avatar";
+import ProfileCard from "@/app/components/profile_card";
 import { encodeSimple } from "@/app/utils/simple-hash";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-function ProfileCard({ profile, onClick, connectionStatus = 'none' }: { profile: ProfileData; onClick: () => void; connectionStatus?: 'connected' | 'pending_sent' | 'pending_received' | 'none' }) {
-
-  const getConnectionBadge = () => {
-    switch (connectionStatus) {
-      case 'connected':
-        return (
-          <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-            Connected
-          </div>
-        );
-      case 'pending_sent':
-        return (
-          <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
-            Request Sent
-          </div>
-        );
-      case 'pending_received':
-        return (
-          <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-            Request Received
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="group cursor-pointer" onClick={onClick}>
-      <div className="bg-white border border-neutral-200 rounded-2xl hover:shadow-lg transition-all duration-300 p-6 relative flex items-center gap-6 min-h-[120px]">
-        {/* Profile Image */}
-        <div className="flex-shrink-0">
-          <ProfileAvatar
-            name={`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email || 'User'}
-            imageUrl={profile.profile_image_url || undefined}
-            size={80}
-            editable={false}
-            className="w-20 h-20 rounded-full transition-all duration-300"
-          />
-        </div>
-        
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          {/* Name and Connection Badge */}
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-xl font-semibold text-neutral-900">
-              {profile.first_name} {profile.last_name}
-            </h3>
-            {getConnectionBadge()}
-          </div>
-          
-          {/* Bio */}
-          {profile.bio && (
-            <p className="text-neutral-600 text-sm leading-relaxed line-clamp-3 text-left">
-              {profile.bio}
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 
 
@@ -157,6 +96,7 @@ export default function PeoplePage() {
   const [gridSearchQuery, setGridSearchQuery] = useState("");
   const [verifiedConnections, setVerifiedConnections] = useState<number[]>([]);
   const [pendingConnections, setPendingConnections] = useState<number[]>([]);
+  const [requestedConnections, setRequestedConnections] = useState<number[]>([]);
   const [userApplied, setUserApplied] = useState<boolean | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
@@ -176,6 +116,7 @@ export default function PeoplePage() {
       .then(data => {
         setVerifiedConnections(data.connections || []);
         setPendingConnections(data.pending_connections || []);
+        setRequestedConnections(data.requested_connections || []);
         setUserApplied(data.applied || false);
         setCurrentUserId(data.id);
       })
@@ -206,8 +147,8 @@ export default function PeoplePage() {
     }
     
     // Check if they have sent a pending request to user
-    if (profile.pending_connections?.includes(currentUserId)) {
-      return 'pending_received';
+    if (profile.requested_connections?.includes(profile.id)) {
+      return 'requested';
     }
     
     return 'none';
@@ -263,24 +204,24 @@ export default function PeoplePage() {
     return hasNames && isMutuallyConnected(profile);
   }) || [];
 
-  // Filter pending connections (requests sent by current user)
-  const pendingSentProfiles = allProfiles?.filter(profile => {
+  // Filter profiles based on user's pending_connections array
+  const userPendingConnectionProfiles = allProfiles?.filter(profile => {
     const hasNames = profile.first_name && 
                     profile.last_name && 
                     profile.first_name.trim() !== '' && 
                     profile.last_name.trim() !== '';
     
-    return hasNames && getConnectionStatus(profile) === 'pending_sent';
+    return hasNames && pendingConnections.includes(profile.id);
   }) || [];
 
-  // Filter pending connections (requests received by current user)
-  const pendingReceivedProfiles = allProfiles?.filter(profile => {
+  // Filter profiles based on user's requested_connections array  
+  const userRequestedConnectionProfiles = allProfiles?.filter(profile => {
     const hasNames = profile.first_name && 
                     profile.last_name && 
                     profile.first_name.trim() !== '' && 
                     profile.last_name.trim() !== '';
     
-    return hasNames && getConnectionStatus(profile) === 'pending_received';
+    return hasNames && requestedConnections.includes(profile.id);
   }) || [];
 
   if (isLoading) {
@@ -388,14 +329,16 @@ export default function PeoplePage() {
                           </div>
                         )}
 
-                        {/* Pending Connections Sent Section */}
-                        {pendingSentProfiles.length > 0 && (
+                      
+
+                        {/* User's Pending Connections Section */}
+                        {userPendingConnectionProfiles.length > 0 && (
                           <div className="w-full max-w-6xl mx-auto mt-12">
                             <h2 className="text-2xl font-semibold mb-6 text-center text-neutral-900">
-                              Pending Requests Sent
+                              Your Pending Requests to Others
                             </h2>
                             <div className="space-y-4">
-                              {pendingSentProfiles.map((profile) => (
+                              {userPendingConnectionProfiles.map((profile) => (
                                 <ProfileCard 
                                   key={profile.id} 
                                   profile={profile} 
@@ -407,19 +350,19 @@ export default function PeoplePage() {
                           </div>
                         )}
 
-                        {/* Pending Connections Received Section */}
-                        {pendingReceivedProfiles.length > 0 && (
+                        {/* User's Requested Connections Section */}
+                        {userRequestedConnectionProfiles.length > 0 && (
                           <div className="w-full max-w-6xl mx-auto mt-12">
                             <h2 className="text-2xl font-semibold mb-6 text-center text-neutral-900">
-                              Pending Requests Received
+                              People Requesting To Connect with You
                             </h2>
                             <div className="space-y-4">
-                              {pendingReceivedProfiles.map((profile) => (
+                              {userRequestedConnectionProfiles.map((profile) => (
                                 <ProfileCard 
                                   key={profile.id} 
                                   profile={profile} 
                                   onClick={() => handleProfileClick(profile)}
-                                  connectionStatus="pending_received"
+                                  connectionStatus="requested"
                                 />
                               ))}
                             </div>

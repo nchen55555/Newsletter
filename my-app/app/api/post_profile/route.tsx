@@ -241,6 +241,7 @@ async function handleProfileUpdate(req: NextRequest) {
     // Only update fields that are present in formData
     if (formData.get('first_name')) updateData.first_name = String(formData.get('first_name'));
     if (formData.get('last_name')) updateData.last_name = String(formData.get('last_name'));
+    if (formData.get('school')) updateData.school = String(formData.get('school'));
     if (formData.get('linkedin_url')) updateData.linkedin_url = String(formData.get('linkedin_url'));
     if (formData.get('personal_website')) updateData.personal_website = String(formData.get('personal_website'));
     if (formData.get('phone_number')) updateData.phone_number = String(formData.get('phone_number'));
@@ -248,7 +249,9 @@ async function handleProfileUpdate(req: NextRequest) {
     if (formData.get('is_public_profile') !== null) updateData.is_public_profile = String(formData.get('is_public_profile')) === 'true';
     if (formData.get('newsletter_opt_in') !== null) updateData.newsletter_opt_in = String(formData.get('newsletter_opt_in')) === 'true';
     if (formData.get('applied') !== null) updateData.applied = String(formData.get('applied')) === 'true';
-    
+    if (formData.get('verified') !== null) updateData.verified = String(formData.get('verified')) === 'true';
+    if (formData.get('school')) updateData.school = String(formData.get('school'));
+
     // Update file URLs if new files were uploaded
     if (resume_url) updateData.resume_url = resume_url;
     if (transcript_url) updateData.transcript_url = transcript_url;

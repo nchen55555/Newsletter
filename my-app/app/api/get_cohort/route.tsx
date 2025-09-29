@@ -12,7 +12,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('subscribers')
-    .select('id, email, linkedin_url, phone_number, personal_website, first_name, last_name, profile_image_url, bio')
+    .select('id, email, linkedin_url, phone_number, personal_website, first_name, last_name, profile_image_url, bio, school')
     .eq('is_public_profile', 'TRUE')
     .eq('applied', 'TRUE')
 

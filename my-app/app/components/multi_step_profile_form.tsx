@@ -19,6 +19,8 @@ import { ChevronLeft, ChevronRight, Search, UserPlus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import ProfileAvatar from './profile_avatar'
+import ProfileCard from './profile_card'
+import { FileText, Heart, Users, Handshake, MousePointer } from 'lucide-react'
 
 interface MultiStepProfileFormProps extends ProfileData {
   access_token: string,
@@ -50,7 +52,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     <div className="relative">
       {/* Carousel Container */}
       <div className="overflow-hidden rounded-lg">
-        <CompanyCard disableProfile={true} key={currentCompany._id} company={currentCompany} potential={currentCompany.pending_partner} external={!currentCompany.partner}/>
+        <CompanyCard key={currentCompany._id} company={currentCompany} potential={currentCompany.pending_partner} external={!currentCompany.partner}/>
       </div>
 
       {/* Navigation Controls */}
@@ -118,7 +120,8 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [allProfiles, setAllProfiles] = useState<ProfileData[]>([])
   const [currentUserData, setCurrentUserData] = useState<ProfileData | null>(null)
-  
+
+
   // Verification dialog state
   const [selectedProfile, setSelectedProfile] = useState<ProfileData | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -161,6 +164,10 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         if (step === 3 && allProfiles.length === 0) {
           loadAllProfiles();
         }
+        // Load profiles if navigating directly to step 4
+        if (step === 4 && allProfiles.length === 0) {
+          loadAllProfiles();
+        }
       }
     }
   }, [searchParams, companies.length, allProfiles.length]);
@@ -178,6 +185,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     email: props.email,
     first_name: props.first_name || "",
     last_name: props.last_name || "",
+    school: props.school || "",
     linkedin_url: props.linkedin_url || "",
     resume_url: props.resume_url || "",
     personal_website: props.personal_website || "",
@@ -198,6 +206,8 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const [loading, setLoading] = useState(false)
 
   // Load companies for step 2 (same query as companies page, limited to 20)
+
+
 
 
   const loadCompanies = async () => {
@@ -266,9 +276,10 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       return 'pending_sent'
     }
     
-    // Check if they have sent a pending request to user
-    if (profile.pending_connections?.includes(currentUserData.id)) {
-      return 'pending_received'
+    
+    // Check if they are in user's requested connections
+    if (currentUserData.requested_connections?.includes(profile.id)) {
+      return 'requested'
     }
     
     return 'none'
@@ -388,8 +399,9 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     setDialogOpen(true)
   }
 
-  const handleFinishSetup = async () => {
+  const handleStep4 = async () => {
     setLoading(true);
+    console.log("HERE IN S4")
     if (!step4Form.interests) {
         setFormError("Keywords that describe what you are interested in are required.");
         setLoading(false);
@@ -411,104 +423,53 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       return; 
     }
     try {
-      console.log(step4Form)
+      console.log("Step 4", step4Form)
       // First, post step4 form data
-      const step4Response = await fetch('/api/post_step3', {
+      await fetch('/api/post_step3', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(step4Form)
       });
+    } finally {
+      setLoading(false);
+    }
+  }
 
-      if (step4Response.ok) {
-        console.log('Step 4 data saved successfully');
-        
-        // Only send welcome email if step 3 data was saved successfully
-        const emailResponse = await fetch('/api/send-welcome-email', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: form.email, 
-            first_name: form.first_name, 
-            last_name: form.last_name
-          })
-        });
 
-        if (emailResponse.ok) {
-          console.log('Welcome email sent successfully');
-          setEmailSent(true);
-        } else {
-          console.error('Failed to send welcome email');
-          const emailError = await emailResponse.text();
-          console.error('Email error details:', emailError);
-          setEmailSent(false);
-        }
+    const handleFinishSetup = async () => {
+    setLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('verified', 'true');
+      await fetch('/api/post_profile', { 
+        method: 'PATCH',
+        body: formData
+      })
+      const emailResponse = await fetch('/api/send-welcome-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: form.email, 
+          first_name: form.first_name, 
+          last_name: form.last_name
+        })
+      });
+
+      if (emailResponse.ok) {
+        console.log('Welcome email sent successfully');
+        setEmailSent(true);
       } else {
-        console.error('Failed to save step 4 data');
-        const step4Error = await step4Response.text();
-        console.error('Step 4 error details:', step4Error);
-        setFormError("Failed to save profile data. Please try again.");
-        setLoading(false);
-        return;
+        console.error('Failed to send welcome email');
+        const emailError = await emailResponse.text();
+        console.error('Email error details:', emailError);
+        setEmailSent(false);
       }
-
-      // // Parse resume first, then generate interest profile
-      // try {
-      //   const response = await fetch(`/api/gemini_format`,
-      //     {
-      //       method: 'POST',
-      //       headers: {
-      //         'Content-Type': 'application/json',
-      //       },
-      //       body: JSON.stringify({
-      //         resume_url: props.resume_url,
-      //       })
-      //     }
-      //   );
-      //   if (response.ok) {
-      //       const data = await response.json();
-      //       const parsedResumeResponse = await fetch('/api/post_parsed_resume', {
-      //         method: 'POST',
-      //         headers: {
-      //           'Content-Type': 'application/json',
-      //         },
-      //         body: JSON.stringify({
-      //           parsed_resume_json: data.data,
-      //         })
-      //       })
-
-      //       // Then generate interest profile using parsed resume
-      //       const interestProfileResponse = await fetch('/api/post_generated_interest_profile', {
-      //         method: 'POST',
-      //         headers: {
-      //           'Content-Type': 'application/json',
-      //         },
-      //         body: JSON.stringify({
-      //           interest_companies: step3Form.interestedCompanies,
-      //           interest: step4Form.interests,
-      //           bio: form.bio,
-      //           resume: data.data, // Use the parsed resume data directly
-      //           email: form.email
-      //         })
-      //       });
-
-      //       if (interestProfileResponse.ok) {
-      //         console.log('Interest profile generated successfully');
-      //       } else {
-      //         console.error('Failed to generate interest profile');
-      //       }
-
-      //   } else {
-      //       console.error('Failed to fetch parsed resume data');
-      //   }
-        
       
-      // } catch (profileError) {
-      //   console.error('Error in resume parsing or profile generation:', profileError);
-      // }
 
     } catch (error) {
       console.error('Error in finish setup process:', error);
@@ -525,7 +486,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     setShowConfirmation(false);
     
     // Use the hash function to encode the user ID
-    window.location.href = `/profile`;
+    window.location.href = `/opportunities`;
   };
 
 
@@ -556,6 +517,10 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         setFormError("Bio is required.");
         return;
       }
+      if (!form.school) {
+        setFormError("School is required.");
+        return;
+      }
 
       // Build form data (same as original form)
       const formData = new FormData();
@@ -570,6 +535,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       formData.append('is_public_profile', form.is_public_profile.toString());
       formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
       formData.append('applied', 'true');
+      formData.append('school', form.school);
       
       // Handle resume: use file if provided, otherwise keep existing URL
       if (form.resume_file) {
@@ -674,84 +640,33 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       </div>
 
       {currentStep === 0 && (
-          <div className="max-w-6xl mx-auto px-8 py-16">
-            <div className="grid lg:grid-cols-2 gap-16 items-start min-h-[70vh]">
-              {/* Left side - Large headline positioned to align with middle step */}
-              <div className="flex items-center" style={{ marginTop: '120px' }}>
-                <h1 className="text-5xl lg:text-6xl font-bold text-neutral-900 leading-tight">
-                  Make Your Profile
-                </h1>
-              </div>
-
-              {/* Right side - Numbered steps */}
-              <div className="space-y-12">
-                <div className="flex items-start gap-6">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center">
-                      <span className="text-2xl font-bold text-neutral-900">A</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-semibold text-neutral-900">Verification</h3>
-                    <p className="text-neutral-600 leading-relaxed">
-                      Share with us some basic information about yourself including your resume, transcript, and projects.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-6">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center">
-                      <span className="text-2xl font-bold text-neutral-900">B</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-semibold text-neutral-900">Personalization: Our Network</h3>
-                    <p className="text-neutral-600 leading-relaxed">
-                      In this Beta, The Niche has partnered with 8 portfolio startups to match with exceptional talent. Browse through a preview of some of these partners and indicate interest to connect and apply.  
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-6">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center">
-                      <span className="text-2xl font-bold text-neutral-900">C</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-semibold text-neutral-900">Connect with People</h3>
-                    <p className="text-neutral-600 leading-relaxed">
-                      Search for and connect with 1-2 people on The Niche to start building your verified network.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-6">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center">
-                      <span className="text-2xl font-bold text-neutral-900">D</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-semibold text-neutral-900">Personalization: Index on Your Existing Network and Interests</h3>
-                    <p className="text-neutral-600 leading-relaxed">
-                      Introduce opportunities in your existing portfolio that you are interested in so that we can find similar ones to connect. 
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-6">
-                  <Button 
-                    onClick={() => updateStep(1)}
-                    className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-3 text-lg font-medium rounded-lg"
-                  >
-                    Get Started
-                  </Button>
-                </div>
-              </div>
+        <div className="max-w-4xl mx-auto px-8 py-16">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl lg:text-5xl font-bold text-neutral-900 leading-tight mb-8">
+              Welcome to The Niche
+            </h1>
+            <div className="text-lg text-neutral-700 leading-relaxed space-y-6">
+              <p>
+                The Niche is a newsletter-turned-marketplace that works with a select cohort of high-talent-bar startups (Anysphere/Cursor, Listen Labs, Exa, Warp, etc.) to connect them with a select network of high-performing technical early talent. Students gain access through the network solely through personal referral. 
+              </p>
+              <p>
+                The platform operates under two key principles: (1) personalization and (2) verification. We connect and tailor opportunities to students based on their interests, compentencies, &quot;verified&quot; by the professional networks they operate in so that each opportunity a student connects with is truly a good fit.
+              </p>
+              <p>
+                We index on verifiable data and our deep understanding of early talent to recommend and determine personalized matches. To ensure that every recommendation is a good fit, we publish company profiles of our partner startups for students to review and personalize the opportunities they are introduced to. <strong>We never reach out to you to sell a partner company - you look at our company profiles and organically request for an intro to a partner company</strong>
+              </p>
             </div>
           </div>
+
+          <div className="flex justify-center mt-16">
+            <Button 
+              onClick={() => updateStep(1)}
+              className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-3 text-lg"
+            >
+              Get Started
+            </Button>
+          </div>
+        </div>
       )}
 
       {currentStep === 1 && (
@@ -801,10 +716,10 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                 <div className="space-y-4">
                   <h3 className="text-xl font-semibold text-neutral-900">In this public beta...</h3>
                   <p className="text-neutral-600 leading-relaxed">
-                    The Niche has partnered with 8 high-growth, high-talent density startups. Scroll through some of these profiles. 
+                    The Niche has partnered with a select cohort of high-talent startups that recruit primarily from us. Scroll through some of these profiles. 
                   </p>
                   <p className="text-neutral-600 leading-relaxed">
-                    <strong>Bookmark</strong> profiles you are interested in and <strong>Connect/Express Early Interest</strong> to profiles you are strongly impressed by and would like to chat with. This helps us understand your interests to tailor and connect you with more opportunities. If you connect with a company on our platform and there is mutual interest, we will forward your profile directly to the founders. 
+                    <strong>Bookmark</strong> profiles you are interested in. This helps us understand your interests to tailor and connect you with more opportunities. 
                   </p>
                 </div>
               </div>
@@ -855,11 +770,11 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         </div>
       )}
 
-      {currentStep === 3 && (
+      {currentStep === 4 && (
         <div className="max-w-6xl mx-auto px-8 py-16">
           <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">Connect with People on The Niche</h2>
-            <p className="text-neutral-600 mt-4">Search for and connect with 1-2 people to start building your verified professional network.</p>
+            <h2 className="text-2xl font-bold text-neutral-900 mb-2">Build Your Verifiable Professional Network</h2>
+            <p className="text-neutral-600 mt-4">Who you choose to verify and bring to your professional network allows us to index more on your interests and connect you with more relevant opportunities. Connect with people on The Niche that you would want to share opportunities with! </p>
           </div>
 
         {/* Search Bar */}
@@ -875,6 +790,33 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             className="pl-10 pr-4 py-2 w-full rounded-full border-neutral-200 focus:border-black focus:ring-black"
           />
         </div>
+
+        {/* Recommended Profiles from Same School */}
+        {!searchQuery.trim() && form.school && (
+          <div className="max-w-4xl mx-auto mb-8">
+            <h3 className="text-lg font-semibold text-neutral-900 mb-4 text-center">
+              Recommended To You
+            </h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              {allProfiles
+                .filter(profile => profile.school === form.school && profile.id !== form.id)
+                .slice(0, 4)
+                .map((profile) => (
+                  <ProfileCard
+                    key={profile.id}
+                    profile={profile}
+                    onClick={() => {handleDialogChange(true); handleConnectClick(profile)}}
+                    connectionStatus={getConnectionStatus(profile)}
+                  />
+                ))}
+            </div>
+            {allProfiles.filter(profile => profile.school === form.school && profile.id !== form.id).length === 0 && (
+              <p className="text-center text-neutral-500 text-sm">
+                No other students from {form.school} have joined yet.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Search Results - Profile Rows */}
         {searchQuery.trim() && (
@@ -923,7 +865,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                         return (
                           <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
                             <DialogTrigger asChild>
-                              {status === 'pending_received' ? (
+                              {status === 'requested' ? (
                                 <Button className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200 whitespace-nowrap" onClick={() => handleConnectClick(profile)}>
                                   <UserPlus className="w-4 h-4" />
                                   Accept Request
@@ -938,13 +880,13 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                         <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                           <DialogTitle>
-                            {getConnectionStatus(profile) === 'pending_received' 
+                            {getConnectionStatus(profile) === 'requested' 
                               ? `Accept Connection Request from ${profile.first_name}`
                               : `Verify Connection with ${profile.first_name}`
                             }
                           </DialogTitle>
                           <DialogDescription>
-                            {getConnectionStatus(profile) === 'pending_received'
+                            {getConnectionStatus(profile) === 'requested'
                               ? `${profile.first_name} has sent you a connection request. Please verify their email and/or phone number to accept and add them to your network.`
                               : `To add ${profile.first_name} to your verified network, please provide their email and/or phone number. We'll confirm your connection to maintain network quality.`
                             }
@@ -1000,7 +942,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                             >
                               {isSubmitting 
                                 ? "Verifying..." 
-                                : selectedProfile && getConnectionStatus(selectedProfile) === 'pending_received' 
+                                : selectedProfile && getConnectionStatus(selectedProfile) === 'requested' 
                                   ? "Accept Request" 
                                   : "Send Verification"
                               }
@@ -1087,24 +1029,25 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             </DialogContent>
           </Dialog>
 
-          <div className="flex justify-between items-center mt-12">
+           <div className="flex justify-between items-center mt-12">
             <Button 
-              onClick={() => updateStep(2)}
+              onClick={() => updateStep(3)}
               className="bg-neutral-200 hover:bg-neutral-300 text-neutral-900 px-8 py-2"
             >
               Back
             </Button>
             <Button 
-              onClick={() => updateStep(4)}
+              onClick={() => { handleFinishSetup() }}
+              disabled={loading}
               className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2"
             >
-              Next
+              {loading ? 'Finishing Setup...' : 'Finish Setup'}
             </Button>
           </div>
         </div>
       )}
 
-      {currentStep === 4 && (
+      {currentStep === 3 && (
         <div className="max-w-6xl mx-auto px-8 py-16">
           <div className="text-center mb-12">
             <h2 className="text-2xl font-bold text-neutral-900 mb-2">Personalization: Index on Your Network and Existing Interests</h2>
@@ -1126,7 +1069,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                 onChange={(e) => setStep4Form((prev: Step4FormState) => ({ ...prev, interests: e.target.value }))}
                 placeholder="Blockchain, Product Engineering, Series A-D Startups, Systems, Quant, ..."
                 className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-lg 
-                          mt-2 min-h-[120px] max-h-[50vh] resize-y 
+                          mt-2 min-h-[80px] max-h-[50vh] resize-y 
                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring 
                           focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
@@ -1141,7 +1084,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                 onChange={(e) => setStep4Form((prev: Step4FormState) => ({ ...prev, opportunities_looking_for: e.target.value }))}
                 placeholder="I'm extremely interested in startups ranging from Seed to Series B that are operating within the FinTech environment. I'm interested in VC and would love to be a part of a VC fellowship to get more exposure into tech investing and due dilligence. "
                 className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-lg 
-                          mt-2 min-h-[120px] max-h-[50vh] resize-y 
+                          mt-2 min-h-[80px] max-h-[50vh] resize-y 
                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring 
                           focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
@@ -1151,7 +1094,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             {/* Network Recommendations Section */}
             <div className="py-6">
               <label className="text-base font-medium">Bring Your Network to The Niche</label>
-              <p className="text-sm text-neutral-600 mt-1 mb-4">Bring in 2-3 people to The Niche.</p>
+              <p className="text-sm text-neutral-600 mt-1 mb-4">Bring in 2 people that you would want to bring to your verified network to The Niche.</p>
               <div className="space-y-4">
                 {step4Form.networkRecommendations.map((rec, index) => (
                   <div key={index} className="border border-input rounded-md p-6 bg-background">
@@ -1224,17 +1167,21 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
 
           <div className="flex justify-between items-center mt-12">
             <Button 
-              onClick={() => updateStep(3)}
+              onClick={() => updateStep(2)}
               className="bg-neutral-200 hover:bg-neutral-300 text-neutral-900 px-8 py-2"
             >
               Back
             </Button>
             <Button 
-              onClick={handleFinishSetup}
-              disabled={loading}
-              className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2"
+              onClick={() => { handleStep4(); updateStep(4); }}
+              disabled={
+                !step4Form?.interests?.trim() ||
+                !step4Form?.opportunities_looking_for?.trim() ||
+                step4Form?.networkRecommendations?.some(rec => !rec.name?.trim() || !rec.email?.trim())
+              }
+              className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Finishing Setup...' : 'Finish Setup'}
+              Next
             </Button>
           </div>
         </div>
@@ -1244,27 +1191,151 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
         <DialogContent className="sm:max-w-5xl w-full p-8 max-h-[80vh] overflow-y-auto">
           <DialogHeader className="text-center">
-            <DialogTitle className="text-xl font-semibold">
+            {/* <DialogTitle className="text-xl font-semibold">
               Profile Created
-            </DialogTitle>
+            </DialogTitle> */}
             <DialogDescription className="text-lg mt-2">
               Hi {form.first_name}! 
               <br></br><br></br>
-              <strong>Congratulations for creating your profile with The Niche!</strong> It takes about 2-3 days for us to verify your identity, analyze your profile, and recommend opportunities indexed to your skillsets and interests. We will send you an email when your profile is ready for you. 
+              Congratulations and welcome to this private beta launch of The Niche. We are thrilled to have you part of this exclusive, referral-based community. We have curated and partnered with an exclusive set of high-talent startups that connect with early talent primarily and exclusively from us. If you are interested in a partner company, please click connect and we fast-track your profile to the founder&#39;s DMs. If there is mutual interest, we will make the introduction.  
               <br></br>
               <br></br>
-              In the meantime, you can start exploring our platform, using the application tracker, and connecting with others on the platform. 
+              <strong>In the meantime, to personalize the opportunities that come your way, take a look at your opportunities page and bookmark/connect with startups that interest you! You will also want to curate your network by verifying your connects on The Niche so that we can index on your network to connect you with more relevant opportunities.</strong>
+              <br></br>
+              <br></br>
+              <div className="p-6 overflow-x-auto">
+                    {/* Horizontal Process Flow */}
+                    <div className="flex flex-row items-center justify-center gap-4 min-w-fit">
+                        {/* Circular Data Flow */}
+                        <div className="relative w-64 h-68">
+                            {/* Center - Personalized Recommendations */}
+                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                                <div className="text-center flex flex-col items-center">
+                                    <div className="w-20 h-20 flex items-center justify-center mb-2">
+                                        <p className="text-xs text-neutral-700 font-medium leading-tight">Personalized<br/>Recommendations</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Skills - Top */}
+                            <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
+                                <div className="text-center">
+                                    <div className="w-14 h-14 flex items-center justify-center mb-2">
+                                        <FileText className="w-7 h-7 text-neutral-600" />
+                                    </div>
+                                    <p className="text-xs text-neutral-600 font-medium">Skills</p>
+                                </div>
+                            </div>
+
+                            {/* Interests - Bottom Left */}
+                            <div className="absolute bottom-0 left-0">
+                                <div className="text-center">
+                                    <div className="w-14 h-14 flex items-center justify-center mb-2">
+                                        <Heart className="w-7 h-7 text-neutral-600" />
+                                    </div>
+                                    <p className="text-xs text-neutral-600 font-medium">Interests</p>
+                                </div>
+                            </div>
+
+                            {/* Networks - Bottom Right */}
+                            <div className="absolute bottom-0 right-0">
+                                <div className="text-center">
+                                    <div className="w-14 h-14 flex items-center justify-center mb-2">
+                                        <Users className="w-7 h-7 text-neutral-600" />
+                                    </div>
+                                    <p className="text-xs text-neutral-600 font-medium">Networks</p>
+                                </div>
+                            </div>
+
+                            {/* Small arrows pointing to center */}
+                            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 256 256">
+                                <defs>
+                                    <marker id="small-arrow" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+                                        <polygon points="0 0, 6 2, 0 4" fill="#a3a3a3" />
+                                    </marker>
+                                </defs>
+                                
+                                {/* Small arrow from Skills */}
+                                <line
+                                    x1="128" y1="80"
+                                    x2="128" y2="95"
+                                    stroke="#a3a3a3"
+                                    strokeWidth="1"
+                                    markerEnd="url(#small-arrow)"
+                                />
+                                
+                                {/* Small arrow from Networks */}
+                                <line
+                                    x1="170" y1="180"
+                                    x2="155" y2="155"
+                                    stroke="#a3a3a3"
+                                    strokeWidth="1"
+                                    markerEnd="url(#small-arrow)"
+                                />
+                                
+                                {/* Small arrow from Interests */}
+                                <line
+                                    x1="86" y1="180"
+                                    x2="101" y2="155"
+                                    stroke="#a3a3a3"
+                                    strokeWidth="1"
+                                    markerEnd="url(#small-arrow)"
+                                />
+                            </svg>
+                        </div>
+
+                        {/* Arrow 1 - from edge of circular diagram to You Connect */}
+                        <div className="flex items-center">
+                            <svg className="w-12 h-6" viewBox="0 0 48 24">
+                                <path d="M 4 12 L 40 12" stroke="#a3a3a3" strokeWidth="2" markerEnd="url(#arrow-flow)" />
+                                <defs>
+                                    <marker id="arrow-flow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                        <polygon points="0 0, 8 3, 0 6" fill="#a3a3a3" />
+                                    </marker>
+                                </defs>
+                            </svg>
+                        </div>
+
+                        {/* Connect */}
+                        <div className="text-center">
+                            <div className="w-16 h-16 flex items-center justify-center mb-3">
+                                <MousePointer className="w-8 h-8 text-neutral-600" />
+                            </div>
+                            <p className="text-sm text-neutral-700 font-medium">You<br/>Connect</p>
+                        </div>
+
+                        {/* Arrow 2 - from You Connect to Direct Founder Connection */}
+                        <div className="flex items-center">
+                            <svg className="w-12 h-6" viewBox="0 0 48 24">
+                                <path d="M 4 12 L 40 12" stroke="#a3a3a3" strokeWidth="2" markerEnd="url(#arrow-flow)" />
+                                <defs>
+                                    <marker id="arrow-flow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                        <polygon points="0 0, 8 3, 0 6" fill="#a3a3a3" />
+                                    </marker>
+                                </defs>
+                            </svg>
+                        </div>
+
+                        {/* Founder Connection */}
+                        <div className="text-center">
+                            <div className="w-16 h-16 flex items-center justify-center mb-3">
+                                <Handshake className="w-8 h-8 text-neutral-600" />
+                            </div>
+                            <p className="text-sm text-neutral-700 font-medium">Founder <br />Introduction</p>
+                        </div>
+                    </div>
+                    
+                    
+                </div>
+              We are just getting started and have a lot of exciting features and partnerships in the works. If you have any feedback or suggestions, please don&#39;t hesitate to reach out to us. We are very open to referrals as well, so if you know anyone who would be a great fit for The Niche, please let us know via email! 
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-4 pt-4">
-            <p className="text-sm text-neutral-600">
-              Click below to view your external profile.
-            </p>
+          <div className="flex flex-col gap-4 pt-4 text-left">
             <Button 
               onClick={handleConfirmationClose}
-              className="bg-neutral-900 hover:bg-neutral-800 text-white px-4 py-2 text-sm w-auto"
+              className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-2 text-sm w-fit"
             >
-              External Profile
+              View Partners
             </Button>
           </div>
         </DialogContent>

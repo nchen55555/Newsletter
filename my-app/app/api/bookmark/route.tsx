@@ -6,8 +6,7 @@ export async function POST(req: NextRequest) {
   const { company , action } = await req.json();
   
   try {
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient({ cookies });
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
@@ -51,6 +50,44 @@ export async function POST(req: NextRequest) {
         details: updateError.message 
       }, { status: 500 });
     }
+
+    // const { data: companyData, error: userFetchError } = await supabase
+    //   .from('companies')
+    //   .select('user_bookmarks')
+    //   .eq('id', company)
+    //   .single()
+
+    // if (userFetchError) {
+    //   console.error('Bookmark update to companies error:', userFetchError);
+    //   return NextResponse.json({ 
+    //     error: 'Failed to bookmark', 
+    //     details: userFetchError.message 
+    //   }, { status: 500 });
+    // }
+
+    // const userBookmarks = companyData?.user_bookmarks ?? [];
+
+    // let userUpdatedBookmarks;
+    // if (action === "add") {
+    //     userUpdatedBookmarks = userBookmarks.includes(company)
+    //     ? userBookmarks
+    //     : [...userBookmarks, company];
+    // } else if (action === "remove") {
+    //     userUpdatedBookmarks = userBookmarks.filter((c: number) => c !== company);
+    // }
+
+    // const { error: userUpdateError } = await supabase
+    //   .from('companies')
+    //   .update({ user_bookmarks: userUpdatedBookmarks })
+    //   .eq('id', company);
+
+    // if (userUpdateError) {
+    //   console.error('Bookmark update error:', updateError);
+    //   return NextResponse.json({ 
+    //     error: 'Failed to bookmark', 
+    //     details: userUpdateError.message 
+    //   }, { status: 500 });
+    // }
 
     return NextResponse.json({ success: true, bookmarks: updatedBookmarks });
 

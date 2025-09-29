@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     // Create email content using decoupled data
     const emailContent = {
-      message: `Thank you for making your profile with The Niche! This email confirms your account creation. It takes about 2-3 days for us to verify your identity, analyze your profile, and recommend opportunities indexed to your skillsets and interests. We will send you an email when your profile is ready for you. In the meantime, you can start exploring our platform, reading through the feed, and connecting with others on the platform.`
+      message: `You have made your profile with The Niche. Welcome to the community!`
     };
     // Check if API key exists
     if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {

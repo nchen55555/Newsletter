@@ -43,6 +43,7 @@ export default function EarlyInterestButton({ company }: { company: string }) {
     status: "",
     transcript_file: null,
     applied: false, 
+    school: "",
   });
   const [access_token, setAccessToken] = useState<string | null>(null);
 
@@ -86,6 +87,7 @@ export default function EarlyInterestButton({ company }: { company: string }) {
           transcript_url: profile.transcript_url,
           transcript_file: null,
           applied: profile.applied,
+          school: profile.school || "",
         });
   
         // Optionally set the raw data if you still need it
@@ -203,7 +205,7 @@ export default function EarlyInterestButton({ company }: { company: string }) {
     }
 
     // Only proceed with early interest submission if profile update succeeded
-    const res2 = await fetch('/api/post_early_interest', {
+    const res2 = await fetch('/api/post_application', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${access_token}`,
@@ -240,12 +242,12 @@ export default function EarlyInterestButton({ company }: { company: string }) {
           variant="default"
           className="inline-flex items-center justify-center bg-neutral-900 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-neutral-800 transition-colors text-sm w-full"
           type="button"
-          aria-label="express early interest"
+          aria-label="early interest"
           disabled={applied || !appliedToNiche}
           style={applied ? { cursor: "not-allowed" } : {}}
         >
           <AlertTriangle className="w-4 h-4 mr-2" />
-          express early interest
+          early interest
         </Button>
       </span>
     </TooltipTrigger>
@@ -310,7 +312,7 @@ export default function EarlyInterestButton({ company }: { company: string }) {
               {appSuccess && (
                 <Alert className="mt-6">
                   <CheckCircle2Icon />
-                  <AlertTitle>Early interest submitted successfully! We&apos;ll notify you when this company becomes a partner.</AlertTitle>
+                  <AlertTitle>Early interest submitted successfully! We&apos;ll notify you when this company becomes a partner and if there is mutual interest.</AlertTitle>
                 </Alert>
               )}
               {appError && (

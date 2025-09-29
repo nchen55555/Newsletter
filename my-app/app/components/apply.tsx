@@ -43,6 +43,7 @@ export default function ApplyButton({ company }: { company: string }) {
     status: "",
     transcript_file: null,
     applied: false, 
+    school: "",
   });
   const [access_token, setAccessToken] = useState<string | null>(null);
 
@@ -91,6 +92,7 @@ export default function ApplyButton({ company }: { company: string }) {
           transcript_url: profile.transcript_url,
           transcript_file: null,
           applied: profile.applied,
+          school: profile.school || "",
         });
   
         // Optionally set the raw data if you still need it

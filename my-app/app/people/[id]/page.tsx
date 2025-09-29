@@ -15,13 +15,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ProfileData } from "@/app/types";
-import { Linkedin, Globe, UserPlus } from "lucide-react";
+import { ProfileData, CompanyData } from "@/app/types";
+import { Linkedin, Globe, UserPlus, Info } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import ProfileAvatar from "../../components/profile_avatar";
+import { CompanyRow } from "../../companies/company-row";
 import { decodeSimple } from "../../utils/simple-hash";
 
 export default function PeopleProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  const [data, setData] = useState<ProfileData | null>(null);
+  const [data, setData] = useState<ProfileData | null>(null); 
   const [profileId, setProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [verificationEmail, setVerificationEmail] = useState("");
@@ -30,7 +32,9 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'error' | 'invalid'>('idle');
   const [statusMessage, setStatusMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'none' | 'connected' | 'pending_sent' | 'pending_received'>('none');
+  const [connectionStatus, setConnectionStatus] = useState<'none' | 'connected' | 'pending_sent' | 'requested'>('none');
+  const [bookmarkedCompanies, setBookmarkedCompanies] = useState<(CompanyData & { imageUrl: string | null })[]>([]);
+  const [loadingBookmarks, setLoadingBookmarks] = useState(false);
 
   useEffect(() => {
     const getParams = async () => {
@@ -83,7 +87,7 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
           const userData = await response.json();
           const userConnections = userData.connections || [];
           const userPendingConnections = userData.pending_connections || [];
-          const currentUserId = userData.id;
+          const userRequestedConnections = userData.requested_connections || [];
           
           // Check if this profile's actual ID is in the user's connections (mutual connection)
           if (userConnections.includes(actualId)) {
@@ -97,10 +101,10 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
             return;
           }
           
-          // Check if this profile has sent a pending request to the user
-          // We need to fetch this profile's pending connections
-          if (data?.pending_connections?.includes(currentUserId)) {
-            setConnectionStatus('pending_received');
+          
+          // Check if this profile is in the user's requested connections
+          if (userRequestedConnections.includes(actualId)) {
+            setConnectionStatus('requested');
             return;
           }
           
@@ -118,6 +122,41 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
     
     checkConnectionStatus();
   }, [profileId, data]);
+
+  // Fetch bookmarked companies using API
+  useEffect(() => {
+    const fetchBookmarkedCompanies = async () => {
+      if (!data?.bookmarked_companies || connectionStatus !== 'connected') {
+        setBookmarkedCompanies([]);
+        return;
+      }
+
+      setLoadingBookmarks(true);
+      try {
+        const response = await fetch('/api/companies', {
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const allCompanies = await response.json();
+          
+          // Filter companies based on bookmarked company IDs
+          const filteredCompanies = allCompanies.filter((company: CompanyData & { imageUrl: string | null }) => 
+            data.bookmarked_companies?.includes(company.company)
+          );
+
+          setBookmarkedCompanies(filteredCompanies);
+        }
+      } catch (error) {
+        console.error('Error fetching bookmarked companies:', error);
+        setBookmarkedCompanies([]);
+      } finally {
+        setLoadingBookmarks(false);
+      }
+    };
+
+    fetchBookmarkedCompanies();
+  }, [data, connectionStatus]);
 
 
 
@@ -261,34 +300,19 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                         <UserPlus className="w-4 h-4" />
                         Request Sent
                       </Button>
-                    ) : (
+                    ) : connectionStatus === 'requested' ? (
                       <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
                         <DialogTrigger asChild>
-                          {connectionStatus === 'pending_received' ? (
-                            <Button className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200">
-                              <UserPlus className="w-4 h-4" />
-                              Accept Request
-                            </Button>
-                          ) : (
-                            <Button className="inline-flex items-center gap-2">
-                              <UserPlus className="w-4 h-4" />
-                              Add To Network
-                            </Button>
-                          )}
+                          <Button className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200">
+                            <UserPlus className="w-4 h-4" />
+                            Accept Request
+                          </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-md">
                         <DialogHeader>
-                          <DialogTitle>
-                            {connectionStatus === 'pending_received' 
-                              ? `Accept Connection Request from ${data.first_name}`
-                              : `Verify Connection with ${data.first_name}`
-                            }
-                          </DialogTitle>
+                          <DialogTitle>Accept Connection Request from {data.first_name}</DialogTitle>
                           <DialogDescription>
-                            {connectionStatus === 'pending_received'
-                              ? `${data.first_name} has sent you a connection request. Please verify their email and/or phone number to accept and add them to your network.`
-                              : `To add ${data.first_name} to your verified network, please provide their email and/or phone number. We'll confirm your connection to maintain network quality.`
-                            }
+                            {data.first_name} has sent you a connection request. Please verify their email and/or phone number to accept and add them to your network.
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-6 mt-6">
@@ -339,12 +363,78 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                               onClick={handleNetworkVerification}
                               disabled={isSubmitting || (!verificationEmail && !verificationPhone)}
                             >
-                              {isSubmitting 
-                                ? "Verifying..." 
-                                : connectionStatus === 'pending_received' 
-                                  ? "Accept Request" 
-                                  : "Send Verification"
-                              }
+                              {isSubmitting ? "Verifying..." : "Accept Request"}
+                            </Button>
+                          </div>
+                        </div>
+                        </DialogContent>
+                      </Dialog>
+                    ) : (
+                      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+                        <DialogTrigger asChild>
+                          <Button className="inline-flex items-center gap-2">
+                            <UserPlus className="w-4 h-4" />
+                            Add To Network
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>
+                            Verify Connection with {data.first_name}
+                          </DialogTitle>
+                          <DialogDescription>
+                            To add {data.first_name} to your verified network, please provide their email and/or phone number. We&apos;ll confirm your connection to maintain network quality.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-6 mt-6">
+                          <div className="space-y-2">
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              placeholder={"sam@gmail.com"}
+                              value={verificationEmail}
+                              onChange={(e) => setVerificationEmail(e.target.value)}
+                              disabled={isSubmitting}
+                            />
+                          </div>
+                          <p>or...</p>
+                          <div className="space-y-2">
+                            <Label htmlFor="phone">Phone Number</Label>
+                            <Input
+                              id="phone"
+                              type="tel"
+                              placeholder="5551234567"
+                              value={verificationPhone}
+                              onChange={(e) => setVerificationPhone(e.target.value)}
+                              disabled={isSubmitting}
+                            />
+                          </div>
+                          
+                          {/* Status Message Display */}
+                          {verificationStatus !== 'idle' && (
+                            <div className={`mt-6 p-4 rounded-lg text-sm ${
+                              verificationStatus === 'success' 
+                                ? 'bg-green-50 text-green-700 border border-green-200' 
+                                : verificationStatus === 'error'
+                                ? 'bg-red-50 text-red-700 border border-red-200'
+                                : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                            }`}>
+                              {statusMessage}
+                            </div>
+                          )}
+                          
+                          <div className="flex justify-end gap-2 mt-8">
+                            <DialogTrigger asChild>
+                              <Button variant="outline" disabled={isSubmitting}>
+                                Cancel
+                              </Button>
+                            </DialogTrigger>
+                            <Button 
+                              onClick={handleNetworkVerification}
+                              disabled={isSubmitting || (!verificationEmail && !verificationPhone)}
+                            >
+                              {isSubmitting ? "Verifying..." : "Send Verification"}
                             </Button>
                           </div>
                         </div>
@@ -402,6 +492,39 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                   </div>
                 </div>
               )}
+
+              {/* Bookmarked Companies Section */}
+              <div className="w-full max-w-4xl space-y-6">
+                <h3 className="text-lg font-medium text-neutral-900">Companies {data.first_name} Bookmarked</h3>
+                {connectionStatus === 'connected' ? (
+                  <>
+                    {loadingBookmarks ? (
+                      <div className="space-y-4">
+                        <Skeleton className="h-32 w-full rounded-lg" />
+                        <Skeleton className="h-32 w-full rounded-lg" />
+                        <Skeleton className="h-32 w-full rounded-lg" />
+                      </div>
+                    ) : bookmarkedCompanies.length > 0 ? (
+                      <div className="space-y-4">
+                        {bookmarkedCompanies.map((company) => (
+                          <CompanyRow key={company._id} company={company} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-neutral-500">
+                        {data.first_name} hasn&apos;t bookmarked any companies yet.
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <Alert className="max-w-2xl mx-auto">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      Verify your connection to see what {data.first_name} is interested in
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
 
               <div className="text-center text-sm text-neutral-600 py-8">
                 Network Profile

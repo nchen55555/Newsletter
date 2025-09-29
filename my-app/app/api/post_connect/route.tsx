@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     // 4. Get the current user's profile to retrieve existing connections and pending connections
     const { data: currentProfile, error: fetchError } = await supabase
       .from('subscribers')
-      .select('id, connections, pending_connections')
+      .select('id, connections, pending_connections, requested_connections, first_name, last_name')
       .eq('email', user.email)
       .single();
 
@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
     // 5. Get existing connections array or initialize empty array
     let connections: number[] = [];
     let pendingConnections: number[] = [];
+    let requestedConnections: number[] = [];
     
     if (currentProfile?.connections && Array.isArray(currentProfile.connections)) {
       connections = currentProfile.connections;
@@ -52,7 +53,11 @@ export async function POST(req: NextRequest) {
     if (currentProfile?.pending_connections && Array.isArray(currentProfile.pending_connections)) {
       pendingConnections = currentProfile.pending_connections;
     }
-    
+
+    if (currentProfile?.requested_connections && Array.isArray(currentProfile.requested_connections)) {
+      requestedConnections = currentProfile.requested_connections;
+    }
+
     console.log('Current user profile connections:', currentProfile?.connections);
     console.log('Initialized connections array:', connections);
 
@@ -71,7 +76,7 @@ export async function POST(req: NextRequest) {
     // 7. Get the target user's profile to check their pending connections
     const { data: targetProfile, error: targetFetchError } = await supabase
       .from('subscribers')
-      .select('pending_connections, connections')
+      .select('pending_connections, connections, requested_connections, first_name, email')
       .eq('id', connectIdNum)
       .single();
 
@@ -85,6 +90,11 @@ export async function POST(req: NextRequest) {
 
     let targetPendingConnections: number[] = [];
     let targetConnections: number[] = [];
+    let targetRequestedConnections: number[] = [];
+    
+    if (targetProfile?.requested_connections && Array.isArray(targetProfile.requested_connections)) {
+      targetRequestedConnections = targetProfile.requested_connections;
+    }
     
     if (targetProfile?.pending_connections && Array.isArray(targetProfile.pending_connections)) {
       targetPendingConnections = targetProfile.pending_connections;
@@ -100,7 +110,7 @@ export async function POST(req: NextRequest) {
     console.log('Initialized target pending array:', targetPendingConnections);
 
     // 8. Check if current user's ID is already in target's pending connections
-    const currentUserInTargetPending = targetPendingConnections.includes(currentUserId);
+    const currentUserInTargetPending = requestedConnections.includes(connectIdNum);
 
     if (currentUserInTargetPending) {
       // This is a reciprocal connection - create mutual connection
@@ -118,6 +128,7 @@ export async function POST(req: NextRequest) {
       
       // Remove current user's ID from target's pending connections
       const updatedTargetPending = targetPendingConnections.filter(id => id !== currentUserId);
+      const updatedRequestedConnections = requestedConnections.filter(id => id !== connectIdNum);
       console.log('Updated target pending:', updatedTargetPending);
       
       // Update both users' profiles
@@ -131,7 +142,7 @@ export async function POST(req: NextRequest) {
       const updateResults = await Promise.all([
         supabase
           .from('subscribers')
-          .update({ connections: connections })
+          .update({ connections: connections, requested_connections: updatedRequestedConnections })
           .eq('email', user.email),
         supabase
           .from('subscribers')
@@ -176,67 +187,31 @@ export async function POST(req: NextRequest) {
     } else {
       // This is a new request - add current user's ID to target's pending connections
         pendingConnections.push(connect_id);
+        targetRequestedConnections.push(currentUserId);
         console.log("pending connections for user now ", targetPendingConnections, "and connections ", targetConnections)
 
         // 9. Update the target's profile with the new pending connections array
         console.log('About to update pending connections for target user ID:', connectIdNum);
         console.log('New pending connections array:', targetPendingConnections);
-        
-        const { error: updateError, count } = await supabase
-          .from('subscribers')
+
+        await Promise.all([
+        supabase
+         .from('subscribers')
           .update({ pending_connections: pendingConnections })
-          .eq('email', user.email);
-
-
-        if (updateError) {
-          console.error('===== FULL SUPABASE ERROR =====');
-          console.error('Error message:', updateError.message);
-          console.error('Error code:', updateError.code);
-          console.error('Error details:', updateError.details);
-          console.error('Full error object:', JSON.stringify(updateError, null, 2));
-          console.error('===============================');
-          return NextResponse.json({ 
-            error: 'Failed to update connections', 
-            details: updateError.message,
-            code: updateError.code
-          }, { status: 500 });
-        }
-        console.log('Rows affected by pending connection update:', count);
+          .eq('email', user.email),
+        supabase
+          .from('subscribers')
+          .update({ requested_connections: targetRequestedConnections })
+          .eq('id', connect_id)
+      ]);
+        
 
     }
-
-
-      const { data: currentUserData, error: currentUserError } = await supabase
-        .from('subscribers')
-        .select('first_name, last_name')
-        .eq('email', user.email)
-        .single();
-
-      if (currentUserError || !currentUserData) {
-        console.error('Error fetching current user data:', currentUserError);
-        // Continue without sender name if fetch fails
-      }
 
       
-
-      // Send email notification for new pending request
-      const { data: sendProfile, error: sendFetchError } = await supabase
-        .from('subscribers')
-        .select('first_name, email')
-        .eq('id', connectIdNum)
-        .single();
-
-    if (sendFetchError) {
-      console.error('Error fetching current profile:', sendFetchError);
-      return NextResponse.json({ 
-        error: 'Failed to fetch current profile', 
-        details: sendFetchError.message 
-      }, { status: 500 });
-    }
-
     // Create email content using decoupled data (only for pending requests)
-    const senderName = currentUserData?.first_name && currentUserData?.last_name 
-      ? `${currentUserData.first_name} ${currentUserData.last_name}`
+    const senderName = currentProfile?.first_name && currentProfile?.last_name
+      ? `${currentProfile.first_name} ${currentProfile.last_name}`
       : user.email;
       
     const emailContent = {
@@ -254,10 +229,10 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await resend.emails.send({
       from: 'Nicole <nicole@theniche.tech>',
-      to: [sendProfile.email],
+      to: [targetProfile.email],
       subject: '[THE NICHE] Someone Wants to Connect With You!',
       html: `
-        <p>Hi ${sendProfile.first_name},</p>
+        <p>Hi ${targetProfile.first_name},</p>
         <p>${emailContent.message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
         <p><a href="https://theniche.tech/people/${encodeSimple(currentUserId)}" style="color: #0066cc; text-decoration: none;">Visit your network on The Niche</a></p>
         <p>Best,<br>The Niche Team</p>

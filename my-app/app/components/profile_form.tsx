@@ -65,6 +65,7 @@ export default function ProfileForm({
     newsletter_opt_in: newsletter_opt_in || false,
     transcript_url: transcript_url || "",
     transcript_file: null,
+    school: "",
   });
 
   const [formError, setFormError] = useState<string | null>(null)

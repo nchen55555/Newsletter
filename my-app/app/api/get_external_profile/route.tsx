@@ -63,6 +63,7 @@ export async function GET(request: Request){
             parsed_resume_json: subscriber?.parsed_resume_json,
             interests: subscriber?.interests,
             generated_interest_profile: subscriber?.generated_interest_profile,
+            bookmarked_companies: subscriber?.bookmarked_companies,
         })
 
     } catch (error) {

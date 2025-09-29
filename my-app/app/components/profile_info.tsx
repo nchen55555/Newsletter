@@ -56,6 +56,11 @@ export default function ProfileInfo({
         </div>
         <hr />
         <div className="py-6">
+          <Label htmlFor="school" className="text-base font-medium">School *</Label>
+          <Input id="school" name="school" value={form.school} onChange={handleChange} required className="h-12 text-lg px-4 mt-2" />
+        </div>
+        <hr />
+        <div className="py-6">
         <Label htmlFor="bio" className="text-base font-medium">Bio *</Label>
         <textarea
           id="bio"

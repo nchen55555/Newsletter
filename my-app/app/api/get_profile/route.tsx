@@ -62,6 +62,8 @@ export async function GET(){
             connections: subscriber?.connections,
             application_tracker_confirmed: subscriber?.application_tracker_confirmed,
             pending_connections: subscriber?.pending_connections,
+            school: subscriber?.school,
+            requested_connections: subscriber?.requested_connections,
         })
 
     } catch (error) {
