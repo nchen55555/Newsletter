@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ProfileFormState } from '@/app/types'
 import ProfileAvatar from './profile_avatar'
+import { useState, useRef, useEffect } from 'react'
 
 export default function ProfileInfo({
   form,
@@ -12,9 +13,56 @@ export default function ProfileInfo({
   setForm: React.Dispatch<React.SetStateAction<ProfileFormState>>
 }) {
 
+  const [showSchoolSuggestions, setShowSchoolSuggestions] = useState(false)
+  const [filteredSchools, setFilteredSchools] = useState<string[]>([])
+  const schoolInputRef = useRef<HTMLInputElement>(null)
+  
+  const schools = [
+    'MIT',
+    'Harvard',
+    'Georgia Tech',
+    'Stanford', 
+    'Waterloo',
+    'UIUC',
+    'University of Michigan',
+    'UT Austin',
+    'Yale'
+  ]
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
+
+  function handleSchoolChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value
+    setForm({ ...form, school: value })
+    
+    if (value.length > 0) {
+      const filtered = schools.filter(school => 
+        school.toLowerCase().includes(value.toLowerCase())
+      )
+      setFilteredSchools(filtered)
+      setShowSchoolSuggestions(filtered.length > 0)
+    } else {
+      setShowSchoolSuggestions(false)
+    }
+  }
+
+  function selectSchool(school: string) {
+    setForm({ ...form, school })
+    setShowSchoolSuggestions(false)
+  }
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (schoolInputRef.current && !schoolInputRef.current.contains(event.target as Node)) {
+        setShowSchoolSuggestions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   return (
     <div className="grid lg:grid-cols-3 gap-12">
@@ -55,9 +103,31 @@ export default function ProfileInfo({
           <Input id="last_name" name="last_name" value={form.last_name} onChange={handleChange} required className="h-12 text-lg px-4 mt-2" />
         </div>
         <hr />
-        <div className="py-6">
+        <div className="py-6 relative" ref={schoolInputRef}>
           <Label htmlFor="school" className="text-base font-medium">School *</Label>
-          <Input id="school" name="school" value={form.school} onChange={handleChange} required className="h-12 text-lg px-4 mt-2" />
+          <Input 
+            id="school" 
+            name="school" 
+            value={form.school} 
+            onChange={handleSchoolChange} 
+            required 
+            className="h-12 text-lg px-4 mt-2"
+            placeholder="Start typing to search schools..."
+            autoComplete="off"
+          />
+          {showSchoolSuggestions && filteredSchools.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
+              {filteredSchools.map((school, index) => (
+                <div
+                  key={index}
+                  onClick={() => selectSchool(school)}
+                  className="px-4 py-2 hover:bg-neutral-50 cursor-pointer text-lg border-b border-neutral-100 last:border-b-0"
+                >
+                  {school}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <hr />
         <div className="py-6">
