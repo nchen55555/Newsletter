@@ -8,11 +8,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Users, AlertCircle } from "lucide-react";
+import { Search, Users, AlertCircle, UserPlus, CheckCircle2Icon, Terminal } from "lucide-react";
 import ProfileAvatar from "@/app/components/profile_avatar";
 import ProfileCard from "@/app/components/profile_card";
 import { encodeSimple } from "@/app/utils/simple-hash";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { DialogDescription } from "@radix-ui/react-dialog";
 
 
 
@@ -97,8 +100,15 @@ export default function PeoplePage() {
   const [verifiedConnections, setVerifiedConnections] = useState<number[]>([]);
   const [pendingConnections, setPendingConnections] = useState<number[]>([]);
   const [requestedConnections, setRequestedConnections] = useState<number[]>([]);
+  const [showReferralDialog, setShowReferralDialog] = useState(false);
+  const [referralName, setReferralName] = useState("");
+  const [referralEmail, setReferralEmail] = useState("");
+  const [referralBackground, setReferralBackground] = useState("");
+  const [referralFormError, setReferralFormError] = useState<string | null>(null);
+  const [referralFormSuccess, setReferralFormSuccess] = useState(false);
   const [userApplied, setUserApplied] = useState<boolean | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [referrerName, setReferrerName] = useState<string>("");
 
 
   const router = useRouter();
@@ -119,6 +129,7 @@ export default function PeoplePage() {
         setRequestedConnections(data.requested_connections || []);
         setUserApplied(data.applied || false);
         setCurrentUserId(data.id);
+        setReferrerName(`${data.first_name} ${data.last_name}`);
       })
       .catch(error => {
         console.error("Failed to fetch user profile:", error);
@@ -177,6 +188,44 @@ export default function PeoplePage() {
     setSearchQuery(`${profile.first_name} ${profile.last_name}`);
     setShowDropdown(false);
     handleProfileClick(profile);
+  };
+
+  const handleReferralFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setReferralFormError(null);
+    setReferralFormSuccess(false);
+
+    if (!referralEmail || !referralBackground) {
+      setReferralFormError("Please fill in all required fields.");
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/post_referral', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: referrerName,
+          referralName: referralName,
+          referralEmail: referralEmail,
+          referralBackground: referralBackground,
+          id: currentUserId
+        }),
+      });
+
+      if (res.ok) {
+        setReferralFormSuccess(true);
+        setReferralEmail("");
+        setReferralBackground("");
+      } else {
+        setReferralFormError("Failed to submit referral. Please try again.");
+      }
+    } catch (error) {
+      setReferralFormError(`An error occurred. Please try again. ${error}`);
+    }
   };
 
   // Filter profiles for the grid view
@@ -274,41 +323,81 @@ export default function PeoplePage() {
                           />
                           
                           {/* Search Results Dropdown */}
-                          {showDropdown && searchResults.length > 0 && (
+                          {showDropdown && (
                             <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
-                              {searchResults.map((profile) => (
-                                <div
-                                  key={profile.id}
-                                  onClick={() => handleSearchResultClick(profile)}
-                                  className="flex items-center gap-3 p-3 hover:bg-neutral-50 cursor-pointer border-b border-neutral-100 last:border-b-0"
-                                >
-                                  <ProfileAvatar
-                                    name={`${profile.first_name} ${profile.last_name}`}
-                                    imageUrl={profile.profile_image_url || undefined}
-                                    size={32}
-                                    editable={false}
-                                    className="w-8 h-8 rounded-full flex-shrink-0"
-                                  />
-                                  <div className="flex-1 text-left">
-                                    <div className="font-medium text-neutral-900">
-                                      {profile.first_name} {profile.last_name}
+                              {searchResults.length > 0 && (
+                                <>
+                                  {searchResults.map((profile) => (
+                                    <div
+                                      key={profile.id}
+                                      onClick={() => handleSearchResultClick(profile)}
+                                      className="flex items-center gap-3 p-3 hover:bg-neutral-50 cursor-pointer border-b border-neutral-100"
+                                    >
+                                      <ProfileAvatar
+                                        name={`${profile.first_name} ${profile.last_name}`}
+                                        imageUrl={profile.profile_image_url || undefined}
+                                        size={32}
+                                        editable={false}
+                                        className="w-8 h-8 rounded-full flex-shrink-0"
+                                      />
+                                      <div className="flex-1 text-left">
+                                        <div className="font-medium text-neutral-900">
+                                          {profile.first_name} {profile.last_name}
+                                        </div>
+                                      </div>
                                     </div>
+                                  ))}
+                                </>
+                              )}
+                              
+                              {/* Refer Someone New Option */}
+                              <div
+                                onClick={() => {
+                                  setShowDropdown(false);
+                                  setShowReferralDialog(true);
+                                }}
+                                className="flex items-center gap-3 p-3 hover:bg-blue-50 cursor-pointer border-t border-neutral-200 bg-neutral-50"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-yellow-400 via-pink-400 to-blue-400 flex items-center justify-center flex-shrink-0">
+                                  <UserPlus className="w-4 h-4 text-white" />
+                                </div>
+                                <div className="flex-1 text-left">
+                                  <div className="font-medium">
+                                    Refer Someone to Your Professional Network
+                                  </div>
+                                  <div className="text-sm text-neutral-500">
+                                    We are personal referral only and we will verify if your referral is a good fit for our partner companies!
                                   </div>
                                 </div>
-                              ))}
+                              </div>
                             </div>
                           )}
                         </div>
 
-                        <Button 
-                              variant="outline" 
-                              size="lg"
-                              className="inline-flex items-center gap-2 rounded-full border-neutral-300 text-neutral-700 hover:border-black hover:text-black transition-all duration-200 mt-8"
-                              onClick={() => setViewProfileGrid(true)}
-                            >
-                              <Users className="w-4 h-4" />
-                              Peruse Our Entire Network Grid on The Niche
-                            </Button>
+                        {/* Action Buttons */}
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
+                          <Button 
+                            variant="outline" 
+                            size="lg"
+                            className="inline-flex items-center gap-2 rounded-full border-neutral-300 text-neutral-700 hover:border-black hover:text-black transition-all duration-200"
+                            onClick={() => setShowReferralDialog(true)}
+                          >
+                            <div className="w-4 h-4 rounded-full bg-gradient-to-r from-yellow-400 via-pink-400 to-blue-400 flex items-center justify-center">
+                              <UserPlus className="w-2.5 h-2.5 text-white" />
+                            </div>
+                            Refer Someone to Your Professional Network
+                          </Button>
+
+                          <Button 
+                            variant="outline" 
+                            size="lg"
+                            className="inline-flex items-center gap-2 rounded-full border-neutral-300 text-neutral-700 hover:border-black hover:text-black transition-all duration-200"
+                            onClick={() => setViewProfileGrid(true)}
+                          >
+                            <Users className="w-4 h-4" />
+                            Peruse Our Entire Network Grid on The Niche
+                          </Button>
+                        </div>
                         
                         {/* Verified Connections Section */}
                         {verifiedConnectionProfiles.length > 0 && (
@@ -437,6 +526,78 @@ export default function PeoplePage() {
           </div> 
         </div>
       </Container>
+
+      {/* Referral Dialog */}
+      <Dialog open={showReferralDialog} onOpenChange={setShowReferralDialog}>
+        <DialogTrigger asChild>
+          <span style={{ display: 'none' }} />
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[600px] p-8" showCloseButton={false}>
+          <DialogHeader className="mb-8">
+            <DialogTitle className="text-2xl font-semibold">Refer Someone You Want to Bring To Your Verified Professional Network</DialogTitle>
+            <DialogDescription  className="text-neutral-600 mt-2">
+              We are personal referral only and will verify if your referral is a good fit for our partner companies!
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleReferralFormSubmit}>
+            <div className="grid gap-8">
+              <div className="grid gap-2">
+                <Label htmlFor="referralName" className="text-base font-medium">Name *</Label>
+                <Input 
+                  id="referralName" 
+                  name="referralName"
+                  type="name"
+                  value={referralName} 
+                  onChange={(e) => setReferralName(e.target.value)}
+                  placeholder="Jane Doe"
+                  className="h-12 text-lg px-4" 
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="referralEmail" className="text-base font-medium">Email *</Label>
+                <Input 
+                  id="referralEmail" 
+                  name="referralEmail"
+                  type="email"
+                  value={referralEmail} 
+                  onChange={(e) => setReferralEmail(e.target.value)}
+                  placeholder="person@email.com"
+                  className="h-12 text-lg px-4" 
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="referralBackground" className="text-base font-medium">How Do You Know Them?</Label>
+                <Input
+                  id="referralBackground"
+                  name="referralBackground"
+                  value={referralBackground}
+                  onChange={(e) => setReferralBackground(e.target.value)}
+                  placeholder="Group project partner, former colleague at ..."
+                  className="h-12 text-lg px-4"
+                  required
+                />
+              </div>
+              {referralFormSuccess && (
+                <Alert>
+                  <CheckCircle2Icon />
+                  <AlertTitle className="break-words whitespace-normal">Referral submitted successfully! We&apos;ll review and reach out to them if they&apos;re a good fit.</AlertTitle>
+                </Alert>
+              )}
+              {referralFormError && (
+                <Alert variant="destructive">
+                  <Terminal className="h-4 w-4" />
+                  <AlertTitle>{referralFormError}</AlertTitle>
+                </Alert>
+              )}
+            </div>
+            <DialogFooter className="mt-8 gap-4">
+              <Button type="submit" className="h-12 px-8 text-lg">Submit Referral</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
