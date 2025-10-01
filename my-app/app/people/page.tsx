@@ -298,10 +298,10 @@ export default function PeoplePage() {
                         
                         {/* Show content based on application status */}
                         {userApplied === false ? (
-                          <Alert className="max-w-2xl mx-auto mb-8">
+                          <Alert className="max-w-2xl mx-auto mb-8 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => router.push('/profile')}>
                             <AlertCircle className="h-4 w-4" />
                             <AlertDescription>
-                              You must have submitted your profile to The Niche to access the network.
+                              Create your profile and have your professional network verified to get access
                             </AlertDescription>
                           </Alert>
                         ) : userApplied === true ? (

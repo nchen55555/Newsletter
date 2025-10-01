@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {useRouter} from "next/navigation"
 
 
 export interface CompanyData extends SanityDocument {
@@ -53,6 +54,8 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
     const [bookmarkedCompanies, setBookmarkedCompanies] = useState<number[]>([])
     const [verifiedToTheNiche, setVerifiedToTheNiche] = useState(false)
     const [showHowItWorksDialog, setShowHowItWorksDialog] = useState(false)
+
+    const router = useRouter();
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -328,10 +331,10 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                             
                         </div>
                     )}
-                    {!verifiedToTheNiche && (<Alert className="max-w-2xl mx-auto">
+                    {!verifiedToTheNiche && (<Alert className="max-w-2xl mx-auto cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => router.push('/profile')}>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Create your profile and wait for it to get verified to access
+                  Create your profile and have your professional network verified to get access
                 </AlertDescription>
               </Alert>)} 
                 </div>
