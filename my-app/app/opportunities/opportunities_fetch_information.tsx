@@ -276,8 +276,7 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                                             {/* Explanation Text */}
                                             <div className="mt-8 text-center max-w-4xl mx-auto">
                                                 <p className="text-base text-neutral-700 leading-relaxed">
-                                                    Your interests, skills, and verified professional network feeds our algorithm to create personalized recommendations. That is why the more you tell us about yourself the better we are able to match you with the best opportunities. When you connect with our recommendations,  
-                                                    you are fast-tracked directly to the founder&apos;s inbox, ensuring your connect gets the attention it deserves.
+                                                    Your interests, skills, and verified professional network feeds our algorithm to create personalized recommendations. That is why the more you tell us about yourself the better we are able to match you with the best opportunities. <strong> You request an intro to our partners by clicking on the company and connecting on the opportunities tab. Our platform fast-tracks you directly to the founder&apos;s inbox, so that if there is mutual interest, you meet directly with the founders.</strong>
                                                 </p>
                                             </div>
                                         </div>

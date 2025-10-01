@@ -1332,7 +1332,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
               We are just getting started and have a lot of exciting features and partnerships in the works. If you have any feedback or suggestions, please don&#39;t hesitate to reach out to us. We are very open to referrals as well, so if you know anyone who would be a great fit for The Niche, please let us know via email! 
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-4 pt-4 text-left">
+          <div className="flex flex-col gap-4 pt-4">
             <Button 
               onClick={handleConfirmationClose}
               className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-2 text-sm w-fit"
