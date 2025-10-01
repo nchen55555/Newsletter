@@ -48,15 +48,15 @@ export async function POST(req: NextRequest) {
     }
 
     const emailContent = {
-        message: `Hope you are well! My name is Nicole. A mutual friend of ours, ${capitalizedName}, has requested that you join their <a href="https://theniche.tech/access" style="color: #0066cc; text-decoration: none;">verified, professional network</a> on The Niche, so I wanted to personally reach out to you to extend an invite to The Niche, which ${capitalizedName} referred you to. 
+        message: `Hope you are well! My name is Nicole. A mutual friend of ours, ${capitalizedName}, has requested that you join their <a href="https://theniche.tech/access" style="color: #0066cc; text-decoration: none;">verified, professional network</a> on The Niche, so I wanted to personally reach out to you to extend an invite. 
                 
         The Niche is an exclusive network that partners with some of the highest-growth startups and connects them to exceptional early talent, indexing on their interests, matched to their skills, and most importantly, "verified" by their networks. Interfacing directly with the founders of our partners, our company profiles include Listen Labs, Exa, Basis, Phia (founded by Phoebe Gates), and most recently, Anysphere (Cursor) which, for the first time, is building  their early talent pipelines on our platform.
 
         The network is accessible only be referral so congratulations on receiving this email! In particular, your background piqued my interest, and I would love to extend an <a href="https://theniche.tech/access" style="color: #0066cc; text-decoration: none;">initial invite</a> for you to access and build your professional network on the platform.
 
-        You will need to curate your profile (resumes, transcripts, github urls, personal networks, interests, etc), which we use to recommend professional opportunities to you. You build out your professional network on the platform too, connecting with people in your know that you have worked on group projects with or professionally. We use your verified professional network to index and better recommend you opportunities. If you are interested in connecting with an opportunity, your profile is directly showcased and expedited to our partner company's founders. 
+        You will need to curate your profile (resumes, transcripts, github urls, personal networks, interests, etc), which we use to recommend professional opportunities to you. You build out your professional network on the platform too, connecting with people in your know that you have worked on group projects with or professionally. We use your verified professional network to index and better recommend you opportunities, and as a way for you to also be in the know of what opportunities your smartest friends are currently interested in. You can request to connect and intro with our partner startups, and your profile will be sent directly to the founders. Pending mutual interest, your next communication with that company will be direct with the founders!
 
-        If you have any questions or if you're interested in chatting more as well, feel free to book a time on <a href="https://calendly.com/nicole_chen/an-intro-to-the-niche" style="color: #0066cc; text-decoration: none;">my Calendly</a>! Welcome to the private beta of The Niche network! 
+        If you have any questions or if you're interested in chatting more as well, feel free to let us know as well. We are excited to welcome you to the private beta of The Niche network! 
         `
       };
       // Check if API key exists
