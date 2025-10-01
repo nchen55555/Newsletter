@@ -215,7 +215,7 @@ export async function POST(req: NextRequest) {
       : user.email;
       
     const emailContent = {
-      message: `${senderName} just sent you a request to join their verified professional network on The Niche. If you connect back, you'll both be added to each other's verified network. This helps us better customize your opportunities and recommendations as we surface what your network is also interested in to you!`
+      message: `${senderName} just sent you a request to join their verified professional network on The Niche.`
     };
     // Check if API key exists
     if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {
@@ -230,12 +230,13 @@ export async function POST(req: NextRequest) {
     const { data, error } = await resend.emails.send({
       from: 'Nicole <nicole@theniche.tech>',
       to: [targetProfile.email],
-      subject: '[THE NICHE] Someone Wants to Connect With You!',
+      subject: `${senderName} wants to invite you to their network on The Niche`,
+      bcc: [`${user.email}`],
       html: `
         <p>Hi ${targetProfile.first_name},</p>
         <p>${emailContent.message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
         <p><a href="https://theniche.tech/people/${encodeSimple(currentUserId)}" style="color: #0066cc; text-decoration: none;">Visit your network on The Niche</a></p>
-        <p>Best,<br>The Niche Team</p>
+        <p>Best,<br><br>The Niche Team</p>
       `,
     });
 
