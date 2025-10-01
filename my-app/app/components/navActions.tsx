@@ -83,7 +83,7 @@ export function NavActions() {
             <DropdownMenuSeparator />
             <DropdownMenuItem><Link href="/profile">profile</Link></DropdownMenuItem>
             {/* <DropdownMenuItem><Link href="/ats">ats</Link></DropdownMenuItem> */}
-            <DropdownMenuItem><Link href="/bookmarks">bookmarks</Link></DropdownMenuItem>
+            {/* <DropdownMenuItem><Link href="/bookmarks">bookmarks</Link></DropdownMenuItem> */}
             <DropdownMenuItem><Link href="/ats">applications</Link></DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout}>logout</DropdownMenuItem>
           </DropdownMenuContent>
