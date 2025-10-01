@@ -215,7 +215,7 @@ export async function POST(req: NextRequest) {
       : user.email;
       
     const emailContent = {
-      message: `${senderName} just sent you a connection request on The Niche! If you connect back, you'll both be added to each other's verified network. Visit your network to respond to the request.`
+      message: `${senderName} just sent you a request to join their verified professional network on The Niche. If you connect back, you'll both be added to each other's verified network. This helps us better customize your opportunities and recommendations as we surface what your network is also interested in to you!`
     };
     // Check if API key exists
     if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {
