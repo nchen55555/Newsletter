@@ -63,6 +63,7 @@ export default function ProfileForm({
     bio: bio || "",
     is_public_profile: is_public_profile || false,
     newsletter_opt_in: newsletter_opt_in || false,
+    needs_visa_sponsorship: false,
     transcript_url: transcript_url || "",
     transcript_file: null,
     school: "",
@@ -111,6 +112,7 @@ export default function ProfileForm({
       formData.append('id', form.id.toString());
       formData.append('first_name', form.first_name);
       formData.append('last_name', form.last_name);
+      formData.append('school', form.school);
       formData.append('linkedin_url', form.linkedin_url);
       formData.append('personal_website', form.personal_website);
       formData.append('phone_number', form.phone_number);
@@ -118,6 +120,7 @@ export default function ProfileForm({
       formData.append('bio', form.bio);
       formData.append('is_public_profile', form.is_public_profile.toString());
       formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
+      formData.append('needs_visa_sponsorship', form.needs_visa_sponsorship.toString());
       
       let resumeFile: File | null = form.resume_file ?? null;
       if (!resumeFile && form.resume_url) {

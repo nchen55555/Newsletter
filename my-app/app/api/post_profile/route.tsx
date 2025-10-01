@@ -251,6 +251,9 @@ async function handleProfileUpdate(req: NextRequest) {
     if (formData.get('applied') !== null) updateData.applied = String(formData.get('applied')) === 'true';
     if (formData.get('verified') !== null) updateData.verified = String(formData.get('verified')) === 'true';
     if (formData.get('school')) updateData.school = String(formData.get('school'));
+    if (formData.get('needs_visa_sponsorship') !== null) updateData.needs_visa_sponsorship = String(formData.get('needs_visa_sponsorship')) === 'true';
+
+    console.log("PROFIEL ", updateData)
 
     // Update file URLs if new files were uploaded
     if (resume_url) updateData.resume_url = resume_url;

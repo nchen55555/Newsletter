@@ -44,6 +44,7 @@ export default function ApplyButton({ company }: { company: string }) {
     transcript_file: null,
     applied: false, 
     school: "",
+    needs_visa_sponsorship: false,
   });
   const [access_token, setAccessToken] = useState<string | null>(null);
 
@@ -93,6 +94,7 @@ export default function ApplyButton({ company }: { company: string }) {
           transcript_file: null,
           applied: profile.applied,
           school: profile.school || "",
+          needs_visa_sponsorship: profile.needs_visa_sponsorship,
         });
   
         // Optionally set the raw data if you still need it
@@ -175,6 +177,7 @@ export default function ApplyButton({ company }: { company: string }) {
     // Add boolean toggle values (convert to string for FormData)
     formData.append('is_public_profile', form.is_public_profile.toString());
     formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
+    formData.append('needs_visa_sponsorship', form.needs_visa_sponsorship.toString());
     
     // Handle resume: use file if provided, otherwise keep existing URL
     if (form.resume_file) {

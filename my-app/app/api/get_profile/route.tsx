@@ -64,6 +64,7 @@ export async function GET(){
             pending_connections: subscriber?.pending_connections,
             school: subscriber?.school,
             requested_connections: subscriber?.requested_connections,
+            needs_visa_sponsorship: subscriber?.needs_visa_sponsorship,
         })
 
     } catch (error) {

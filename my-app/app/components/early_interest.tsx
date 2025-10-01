@@ -40,6 +40,7 @@ export default function EarlyInterestButton({ company }: { company: string }) {
     bio: "",
     is_public_profile: false,
     newsletter_opt_in: false,
+    needs_visa_sponsorship: false,
     status: "",
     transcript_file: null,
     applied: false, 
@@ -83,6 +84,7 @@ export default function EarlyInterestButton({ company }: { company: string }) {
           bio: profile.bio || "",
           is_public_profile: profile.is_public_profile,
           newsletter_opt_in: profile.newsletter_opt_in,
+          needs_visa_sponsorship: profile.needs_visa_sponsorship,
           status: profile.status,
           transcript_url: profile.transcript_url,
           transcript_file: null,
@@ -158,6 +160,7 @@ export default function EarlyInterestButton({ company }: { company: string }) {
     formData.append('id', form.id.toString());
     formData.append('first_name', form.first_name);
     formData.append('last_name', form.last_name);
+    formData.append('school', form.school);
     formData.append('linkedin_url', form.linkedin_url);
     formData.append('personal_website', form.personal_website);
     formData.append('phone_number', form.phone_number);
@@ -167,6 +170,7 @@ export default function EarlyInterestButton({ company }: { company: string }) {
     // Add boolean toggle values (convert to string for FormData)
     formData.append('is_public_profile', form.is_public_profile.toString());
     formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
+    formData.append('needs_visa_sponsorship', form.needs_visa_sponsorship.toString());
     
     // Handle resume: use file if provided, otherwise keep existing URL
     if (form.resume_file) {

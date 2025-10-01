@@ -323,6 +323,9 @@ export function ExternalProfile(props: ProfileData) {
                 {props.newsletter_opt_in && (
                   <span className="text-neutral-500">· Newsletter Opt-in</span>
                 )}
+                {props.needs_visa_sponsorship && (
+                  <span className="text-neutral-500">· Needs Visa Sponsorship</span>
+                )}
               </div>
             </div>
           </div>

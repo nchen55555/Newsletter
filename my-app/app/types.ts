@@ -26,6 +26,7 @@ export type ProfileData = {
     application_tracker_confirmed?: boolean,
     bookmarked_companies?: number[];
     requested_connections?: number[];
+    needs_visa_sponsorship?: boolean;
   };
 
 export type ProfileFormState = {
@@ -44,6 +45,7 @@ export type ProfileFormState = {
   bio: string;
   is_public_profile: boolean;
   newsletter_opt_in: boolean;
+  needs_visa_sponsorship: boolean;
   status?: string;
   transcript_url?: string;
   transcript_file?: File | null;

@@ -200,6 +200,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     transcript_file: null,
     transcript_url: props.transcript_url || "",
     parsed_resume_json: "",
+    needs_visa_sponsorship: props.needs_visa_sponsorship || false,
   });
 
   const [formError, setFormError] = useState<string | null>(null)
@@ -534,6 +535,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       formData.append('bio', form.bio);
       formData.append('is_public_profile', form.is_public_profile.toString());
       formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
+      formData.append('needs_visa_sponsorship', form.needs_visa_sponsorship.toString());
       formData.append('applied', 'true');
       formData.append('school', form.school);
       
