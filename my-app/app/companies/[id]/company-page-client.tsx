@@ -275,15 +275,15 @@ export default function CompanyPageClient({
           </div>
         </div>
 
-        {company && company.hiring_tags && company.hiring_tags.length > 0 && (
+        {company && company.people && company.people.length > 0 && (
           <div className="mb-8">
             <h1 className="text-3xl font-semibold text-neutral-900 mt-12 mb-12">Opportunities</h1>
             <div className="space-y-3">
-              {company.hiring_tags.map((role: string, index: number) => (
+              {company.people.map((person, index) => (
                 <div key={index} className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg">
-                  <span className="font-medium text-neutral-900">{role}</span>
+                  <span className="font-medium text-neutral-900">{person.name}</span>
                   {company.partner && !company.pending_partner ? (
-                    <ApplyButton company={company.company.toString()} />
+                    <ApplyButton company={company.company.toString()} person={person.name} />
                   ) : company.pending_partner ? (
                     <EarlyInterestButton company={company.company.toString()} />
                   ) : (

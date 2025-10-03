@@ -13,6 +13,7 @@ export function Navigation() {
   const [profileAlert, setProfileAlert] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true); // ← new
   const [alertRightAlign, setAlertRightAlign] = useState(false);
+  const [requestedConnectionsCount, setRequestedConnectionsCount] = useState(0);
   const alertRef = React.useRef<HTMLDivElement | null>(null);
 
   // Measure overflow only when visible
@@ -45,7 +46,11 @@ export function Navigation() {
         if (!res.ok) return;
         const profile = await res.json();
 
-        if (!didSet) setProfileAlert(!profile.applied);
+        if (!didSet) {
+          setProfileAlert(!profile.applied);
+          const requestedConnections = profile.requested_connections_new || [];
+          setRequestedConnectionsCount(requestedConnections.length);
+        }
       } catch (e) {
         console.error("Failed to fetch profile:", e);
         if (!didSet) setProfileAlert(false); // fail-closed
@@ -86,7 +91,16 @@ export function Navigation() {
             <Link href="/opportunities" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">opportunities</Link>
             <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">feed</Link>
             {/* <Link href="/feed" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">your feed</Link> */}
-            <Link href="/people" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">people</Link>
+            <div className="relative inline-block">
+              <Link href="/people" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">
+                people
+              </Link>
+              {requestedConnectionsCount > 0 && (
+                <span className="absolute -top-4 -right-4 bg-gradient-to-r from-yellow-400 via-pink-400 to-blue-400 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium z-10">
+                  {requestedConnectionsCount}
+                </span>
+              )}
+            </div>
             </>
           )}
 
@@ -122,7 +136,16 @@ export function Navigation() {
               <Link href="/opportunities" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>opportunities</Link>
               <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>company profiles</Link>
               <Link href="/ats" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>your apps</Link>
-              <Link href="/people" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">people</Link>
+              <div className="relative inline-block">
+                <Link href="/people" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>
+                  people
+                </Link>
+                {requestedConnectionsCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 via-pink-400 to-blue-400 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium z-10">
+                    {requestedConnectionsCount}
+                  </span>
+                )}
+              </div>
             </>
           )}
           <NavActions />

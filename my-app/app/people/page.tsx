@@ -1,7 +1,7 @@
 'use client'
 import { Container } from "@/app/components/container";
 import { Navigation } from "@/app/components/header";
-import { ProfileData } from "@/app/types";
+import { ProfileData, ConnectionData } from "@/app/types";
 import React, { useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -97,9 +97,9 @@ export default function PeoplePage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [viewProfileGrid, setViewProfileGrid] = useState(false);
   const [gridSearchQuery, setGridSearchQuery] = useState("");
-  const [verifiedConnections, setVerifiedConnections] = useState<number[]>([]);
-  const [pendingConnections, setPendingConnections] = useState<number[]>([]);
-  const [requestedConnections, setRequestedConnections] = useState<number[]>([]);
+  const [verifiedConnections, setVerifiedConnections] = useState<ConnectionData[]>([]);
+  const [pendingConnections, setPendingConnections] = useState<ConnectionData[]>([]);
+  const [requestedConnections, setRequestedConnections] = useState<ConnectionData[]>([]);
   const [showReferralDialog, setShowReferralDialog] = useState(false);
   const [referralName, setReferralName] = useState("");
   const [referralEmail, setReferralEmail] = useState("");
@@ -124,9 +124,9 @@ export default function PeoplePage() {
     fetch("/api/get_profile", { credentials: "include" })
       .then(res => res.json())
       .then(data => {
-        setVerifiedConnections(data.connections || []);
-        setPendingConnections(data.pending_connections || []);
-        setRequestedConnections(data.requested_connections || []);
+        setVerifiedConnections(data.connections_new || []);
+        setPendingConnections(data.pending_connections_new || []);
+        setRequestedConnections(data.requested_connections_new || []);
         setUserApplied(data.applied || false);
         setCurrentUserId(data.id);
         setReferrerName(`${data.first_name} ${data.last_name}`);
@@ -148,12 +148,16 @@ export default function PeoplePage() {
     if (!currentUserId) return 'none';
     
     // Check if they are in user's verified connections (mutual connection exists)
-    if (verifiedConnections.includes(profile.id)) {
+    const isConnected = verifiedConnections.some((conn: ConnectionData) => conn.connect_id === profile.id);
+      
+    if (isConnected) {
       return 'connected';
     }
     
     // Check if user has sent a pending request to them
-    if (pendingConnections.includes(profile.id)) {
+    const isPendingSent = pendingConnections.some((conn: ConnectionData) => conn.connect_id === profile.id);
+      
+    if (isPendingSent) {
       return 'pending_sent';
     }
     
@@ -260,7 +264,9 @@ export default function PeoplePage() {
                     profile.first_name.trim() !== '' && 
                     profile.last_name.trim() !== '';
     
-    return hasNames && pendingConnections.includes(profile.id);
+    const isPending = pendingConnections.some((conn: ConnectionData) => conn.connect_id === profile.id);
+      
+    return hasNames && isPending;
   }) || [];
 
   // Filter profiles based on user's requested_connections array  
@@ -270,7 +276,9 @@ export default function PeoplePage() {
                     profile.first_name.trim() !== '' && 
                     profile.last_name.trim() !== '';
     
-    return hasNames && requestedConnections.includes(profile.id);
+    const isRequested = requestedConnections.some((conn: ConnectionData) => conn.connect_id === profile.id);
+      
+    return hasNames && isRequested;
   }) || [];
 
   if (isLoading) {

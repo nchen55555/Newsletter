@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
 import ProfileInfo from './profile_info'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ProfileFormState, ProfileData } from '@/app/types'
+import { ProfileFormState, ProfileData, ConnectionData } from '@/app/types'
 import { useSubscriptionContext } from './subscription_context'
 import { CompanyCard } from '@/app/companies/company-cards'
 import { CompanyWithImageUrl } from '@/app/types'
@@ -17,10 +17,10 @@ import {
 } from "@/components/ui/dialog"
 import { ChevronLeft, ChevronRight, Search, UserPlus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import ProfileAvatar from './profile_avatar'
 import ProfileCard from './profile_card'
 import { FileText, Heart, Users, Handshake, MousePointer } from 'lucide-react'
+import { ConnectionScale } from './connection-scale'
 
 interface MultiStepProfileFormProps extends ProfileData {
   access_token: string,
@@ -125,8 +125,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   // Verification dialog state
   const [selectedProfile, setSelectedProfile] = useState<ProfileData | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [verificationEmail, setVerificationEmail] = useState('')
-  const [verificationPhone, setVerificationPhone] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'error' | 'invalid'>('idle')
   const [statusMessage, setStatusMessage] = useState('')
@@ -267,19 +265,28 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const getConnectionStatus = (profile: ProfileData) => {
     if (!currentUserData) return 'none'
     
+    const userConnections = currentUserData.connections_new || [];
+    const userPendingConnections = currentUserData.pending_connections_new || [];
+    const userRequestedConnections = currentUserData.requested_connections_new || [];
+    
     // Check if they are in user's verified connections (mutual connection exists)
-    if (currentUserData.connections?.includes(profile.id)) {
+    const isConnected = userConnections.some((conn: ConnectionData) => conn.connect_id === profile.id);
+      
+    if (isConnected) {
       return 'connected'
     }
     
     // Check if user has sent a pending request to them
-    if (currentUserData.pending_connections?.includes(profile.id)) {
+    const isPendingSent = userPendingConnections.some((conn: ConnectionData) => conn.connect_id === profile.id);
+      
+    if (isPendingSent) {
       return 'pending_sent'
     }
     
-    
     // Check if they are in user's requested connections
-    if (currentUserData.requested_connections?.includes(profile.id)) {
+    const isRequested = userRequestedConnections.some((conn: ConnectionData) => conn.connect_id === profile.id);
+      
+    if (isRequested) {
       return 'requested'
     }
     
@@ -305,90 +312,68 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const handleDialogChange = (open: boolean) => {
     setDialogOpen(open)
     if (!open) {
-      // Reset form and status when dialog closes
-      setVerificationEmail('')
-      setVerificationPhone('')
+      // Reset status when dialog closes
       setVerificationStatus('idle')
       setStatusMessage('')
       setSelectedProfile(null)
     }
   }
 
-  // Handle network verification
-  const handleNetworkVerification = async () => {
+  // Handle connection scale
+  const handleConnectionScale = async (scaleValue: number) => {
     if (!selectedProfile) return
-
-    const normalizePhoneNumber = (phone: string) => {
-        return phone.replace(/[\s\-\(\)\+]/g, '');
-      };
-  
-      const isEmailVerified = verificationEmail === selectedProfile?.email;
-      const isPhoneVerified = verificationPhone && selectedProfile?.phone_number && 
-        normalizePhoneNumber(verificationPhone) === normalizePhoneNumber(selectedProfile.phone_number);
-      
-    const isVerified = isEmailVerified || isPhoneVerified;
-      
-    
-    if (!isVerified) {
-      setVerificationStatus('invalid')
-      setStatusMessage('Please provide either an email or phone number to verify your connection.')
-      return
-    }
 
     setIsSubmitting(true)
     setVerificationStatus('idle')
     
     try {
-      
-      if (isVerified) {
-        const response = await fetch('/api/post_connect', {
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({connect_id: selectedProfile.id})
+      const response = await fetch('/api/post_connect', {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          connect_id: selectedProfile.id,
+          rating: scaleValue
         })
-        
-        if (response.ok) {
-          const result = await response.json()
-          if (result.type === 'mutual') {
-            setVerificationStatus('success')
-            setStatusMessage(`You are now connected with ${selectedProfile.first_name}! The connection was mutual.`)
-          } else {
-            setVerificationStatus('success')
-            setStatusMessage(`Connection request sent to ${selectedProfile.first_name}! They've received a notification.`)
-          }
-          // Update current user data to reflect new connection
-          if (result.type === 'mutual') {
-            // Mutual connection - update connections
-            setCurrentUserData((prev: ProfileData | null) => 
-              prev ? {
-                ...prev,
-                connections: [...(prev.connections || []), selectedProfile.id]
-              } : null
-            )
-          } else {
-            // Pending connection - update pending_connections
-            setCurrentUserData((prev: ProfileData | null) => 
-              prev ? {
-                ...prev,
-                pending_connections: [...(prev.pending_connections || []), selectedProfile.id]
-              } : null
-            )
-          }
-          setVerificationEmail('')
-          setVerificationPhone('')
-          setDialogOpen(false)
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        if (result.type === 'mutual') {
+          setVerificationStatus('success')
+          setStatusMessage(`You are now connected with ${selectedProfile.first_name}! The connection was mutual.`)
         } else {
-          setVerificationStatus('error')
-          setStatusMessage('Failed to send verification request. Please try again.')
+          setVerificationStatus('success')
+          setStatusMessage(`Connection request sent to ${selectedProfile.first_name}! They've received a notification.`)
         }
+        // Update current user data to reflect new connection
+        if (result.type === 'mutual') {
+          // Mutual connection - update connections
+          setCurrentUserData((prev: ProfileData | null) => 
+            prev ? {
+              ...prev,
+              connections_new: [...(prev.connections_new || []), {connect_id: selectedProfile.id, rating: scaleValue}],
+              connections: [...(prev.connections || []), selectedProfile.id]
+            } : null
+          )
+        } else {
+          // Pending connection - update pending_connections
+          setCurrentUserData((prev: ProfileData | null) => 
+            prev ? {
+              ...prev,
+              pending_connections_new: [...(prev.pending_connections_new || []), {connect_id: selectedProfile.id, rating: scaleValue}],
+              pending_connections: [...(prev.pending_connections || []), selectedProfile.id]
+            } : null
+          )
+        }
+        setDialogOpen(false)
       } else {
-        setVerificationStatus('invalid')
-        setStatusMessage('Request not verified. Wrong email or phone number.')
+        setVerificationStatus('error')
+        setStatusMessage('Failed to send connection request. Please try again.')
       }
     } catch (error) {
-      console.error('Network verification failed:', error)
+      console.error('Connection failed:', error)
       setVerificationStatus('error')
-      setStatusMessage('Failed to send verification request. Please try again.')
+      setStatusMessage('Failed to send connection request. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -875,49 +860,31 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                               ) : (
                                 <Button className="inline-flex items-center gap-2 whitespace-nowrap" onClick={() => handleConnectClick(profile)}>
                                   <UserPlus className="w-4 h-4" />
-                                  Add To Network
+                                  Add to Verified Network
                                 </Button>
                               )}
                             </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
+                        <DialogContent className="sm:max-w-xl w-full px-12 py-8">
                         <DialogHeader>
                           <DialogTitle>
                             {getConnectionStatus(profile) === 'requested' 
                               ? `Accept Connection Request from ${profile.first_name}`
-                              : `Verify Connection with ${profile.first_name}`
+                              : `Connect with ${profile.first_name}`
                             }
                           </DialogTitle>
                           <DialogDescription>
                             {getConnectionStatus(profile) === 'requested'
-                              ? `${profile.first_name} has sent you a connection request. Please verify their email and/or phone number to accept and add them to your network.`
-                              : `To add ${profile.first_name} to your verified network, please provide their email and/or phone number. We'll confirm your connection to maintain network quality.`
+                              ? `${profile.first_name} has sent you a connection request. Rate your connection strength to accept and add them to your network.`
+                              : `To add ${profile.first_name} to your verified network, please rate your connection strength. This helps us maintain network quality and provide better recommendations.`
                             }
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-6 mt-6">
-                          <div className="space-y-2">
-                            <Label htmlFor="email">Email Address</Label>
-                            <Input
-                              id="email"
-                              type="email"
-                              placeholder={"sam@gmail.com"}
-                              value={verificationEmail}
-                              onChange={(e) => setVerificationEmail(e.target.value)}
-                              disabled={isSubmitting}
-                            />
-                          </div>
-                          <p>or...</p>
-                          <div className="space-y-2">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input
-                              id="phone"
-                              type="tel"
-                              placeholder="5551234567"
-                              value={verificationPhone}
-                              onChange={(e) => setVerificationPhone(e.target.value)}
-                              disabled={isSubmitting}
-                            />
-                          </div>
+                          <ConnectionScale
+                            onSubmit={handleConnectionScale}
+                            isSubmitting={isSubmitting}
+                            personName={profile.first_name}
+                          />
                           
                           {/* Status Message Display */}
                           {verificationStatus !== 'idle' && (
@@ -931,25 +898,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                               {statusMessage}
                             </div>
                           )}
-                          
-                          <div className="flex justify-end gap-2 mt-8">
-                            <DialogTrigger asChild>
-                              <Button variant="outline" disabled={isSubmitting}>
-                                Cancel
-                              </Button>
-                            </DialogTrigger>
-                            <Button 
-                              onClick={handleNetworkVerification}
-                              disabled={isSubmitting || (!verificationEmail && !verificationPhone)}
-                            >
-                              {isSubmitting 
-                                ? "Verifying..." 
-                                : selectedProfile && getConnectionStatus(selectedProfile) === 'requested' 
-                                  ? "Accept Request" 
-                                  : "Send Verification"
-                              }
-                            </Button>
-                          </div>
                         </div>
                         </DialogContent>
                         </Dialog>
@@ -967,41 +915,23 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
           </div>
         )}
 
-          {/* Verification Dialog */}
+          {/* Connection Dialog */}
           <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-xl w-full px-12 py-8">
               <DialogHeader>
                 <DialogTitle>
-                  Verify Connection with {selectedProfile?.first_name}
+                  Connect with {selectedProfile?.first_name}
                 </DialogTitle>
                 <DialogDescription>
-                  To add {selectedProfile?.first_name} to your verified network, please provide their email and/or phone number. We&apos;ll confirm your connection to maintain network quality.
+                  To add {selectedProfile?.first_name} to your verified network, please rate your connection strength. This helps us maintain network quality and provide better recommendations.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-6 mt-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="sam@gmail.com"
-                    value={verificationEmail}
-                    onChange={(e) => setVerificationEmail(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <p>or...</p>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="5551234567"
-                    value={verificationPhone}
-                    onChange={(e) => setVerificationPhone(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
+                <ConnectionScale
+                  onSubmit={handleConnectionScale}
+                  isSubmitting={isSubmitting}
+                  personName={selectedProfile?.first_name}
+                />
                 
                 {/* Status Message Display */}
                 {verificationStatus !== 'idle' && (
@@ -1015,18 +945,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                     {statusMessage}
                   </div>
                 )}
-                
-                <div className="flex justify-end gap-2 mt-8">
-                  <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={isSubmitting}>
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleNetworkVerification}
-                    disabled={isSubmitting || (!verificationEmail && !verificationPhone)}
-                  >
-                    {isSubmitting ? "Verifying..." : "Send Verification"}
-                  </Button>
-                </div>
               </div>
             </DialogContent>
           </Dialog>

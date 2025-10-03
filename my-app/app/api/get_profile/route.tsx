@@ -60,10 +60,13 @@ export async function GET(){
             interests: subscriber?.interests,
             verified: subscriber?.verified,
             connections: subscriber?.connections,
+            connections_new: subscriber?.connections_new,
             application_tracker_confirmed: subscriber?.application_tracker_confirmed,
             pending_connections: subscriber?.pending_connections,
+            pending_connections_new: subscriber?.pending_connections_new,
             school: subscriber?.school,
             requested_connections: subscriber?.requested_connections,
+            requested_connections_new: subscriber?.requested_connections_new,
             needs_visa_sponsorship: subscriber?.needs_visa_sponsorship,
         })
 

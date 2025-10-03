@@ -1,3 +1,8 @@
+export type ConnectionData = {
+  connect_id: number;
+  rating: number;
+};
+
 export type ProfileData = {
     id: number,
     email: string;
@@ -22,10 +27,13 @@ export type ProfileData = {
     opportunities_looking_for?: string;
     connections?: number[];
     pending_connections?: number[];
+    requested_connections?: number[];
+    connections_new?: ConnectionData[];
+    pending_connections_new?: ConnectionData[];
+    requested_connections_new?: ConnectionData[];
     verified?: boolean;
     application_tracker_confirmed?: boolean,
     bookmarked_companies?: number[];
-    requested_connections?: number[];
     needs_visa_sponsorship?: boolean;
   };
 

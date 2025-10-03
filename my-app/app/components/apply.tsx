@@ -15,7 +15,7 @@ import { CheckCircle2Icon, Terminal, Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
-export default function ApplyButton({ company }: { company: string }) {
+export default function ApplyButton({ company, person }: { company: string; person?: string }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { isSubscribed } = useSubscriptionContext();
   const [data, setData] = useState<ProfileData | null>(null);
@@ -227,7 +227,8 @@ export default function ApplyButton({ company }: { company: string }) {
         email: form.email,
         candidate_id: form.id,
         company_id: company,
-        additional_info: additionalInfo
+        additional_info: additionalInfo,
+        person: person
       })
     })
     
@@ -278,9 +279,9 @@ export default function ApplyButton({ company }: { company: string }) {
           </DialogTrigger>
           <DialogContent className="sm:max-w-5xl w-full p-8 max-h-[80vh] overflow-y-auto" showCloseButton={false}>
             <DialogHeader className="mb-8">
-              <DialogTitle className="text-2xl font-semibold">Application of Interest</DialogTitle>
+              <DialogTitle className="text-2xl font-semibold">Connecting you to {person}</DialogTitle>
               <DialogDescription className="text-lg mt-2">
-                In the notes section, indicate any additional information that you think would be beneficial for us and our partner companies to know and/or questions you have about the company.
+                In the intro blurb below, provide a brief background of why you want to meet {person} and what excites you about connecting to the company!
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleApply}>
@@ -320,13 +321,13 @@ export default function ApplyButton({ company }: { company: string }) {
                 value={additionalInfo} 
                 onChange={(e) => setAdditionalInfo(e.target.value)} 
                 required 
-                placeholder="Tell us why you're interested and what draws you to the company. If you are extremely interested in this company, say that! Each message should be customized to the opportunity." 
+                placeholder="Tell us why you're interested in connecting and what draws you to this opportunity." 
                 className="w-full min-h-[120px] text-lg px-4 py-3 mt-2 border border-neutral-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               {appSuccess && (
                 <Alert className="mt-6">
                   <CheckCircle2Icon />
-                  <AlertTitle>Application submitted successfully!</AlertTitle>
+                  <AlertTitle>Request to the company submitted!</AlertTitle>
                 </Alert>
               )}
               {appError && (

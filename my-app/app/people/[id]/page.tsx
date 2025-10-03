@@ -5,8 +5,6 @@ import { Navigation } from "../../components/header";
 import { Container } from "../../components/container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -15,24 +13,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ProfileData, CompanyData } from "@/app/types";
+import { ProfileData, CompanyData, ConnectionData } from "@/app/types";
 import { Linkedin, Globe, UserPlus, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ProfileAvatar from "../../components/profile_avatar";
 import { CompanyRow } from "../../companies/company-row";
 import { decodeSimple } from "../../utils/simple-hash";
+import { ConnectionScale } from "../../components/connection-scale";
 
 export default function PeopleProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const [data, setData] = useState<ProfileData | null>(null); 
   const [profileId, setProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [verificationEmail, setVerificationEmail] = useState("");
-  const [verificationPhone, setVerificationPhone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'error' | 'invalid'>('idle');
   const [statusMessage, setStatusMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'none' | 'connected' | 'pending_sent' | 'requested'>('none');
+  const [existingRating, setExistingRating] = useState<number | undefined>(undefined);
   const [bookmarkedCompanies, setBookmarkedCompanies] = useState<(CompanyData & { imageUrl: string | null })[]>([]);
   const [loadingBookmarks, setLoadingBookmarks] = useState(false);
 
@@ -85,26 +83,40 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
         const response = await fetch("/api/get_profile", { credentials: "include" });
         if (response.ok) {
           const userData = await response.json();
-          const userConnections = userData.connections || [];
-          const userPendingConnections = userData.pending_connections || [];
-          const userRequestedConnections = userData.requested_connections || [];
+          const userConnections = userData.connections_new || [];
+          const userPendingConnections = userData.pending_connections_new || [];
+          const userRequestedConnections = userData.requested_connections_new || [];
           
           // Check if this profile's actual ID is in the user's connections (mutual connection)
-          if (userConnections.includes(actualId)) {
+          const connectedEntry = (userConnections as ConnectionData[]).find((conn: ConnectionData) => conn.connect_id === actualId);
+            
+          if (connectedEntry) {
             setConnectionStatus('connected');
+            if (connectedEntry.rating) {
+              setExistingRating(connectedEntry.rating);
+            }
             return;
           }
           
           // Check if user has sent a pending request to this profile
-          if (userPendingConnections.includes(actualId)) {
+          const pendingEntry = (userPendingConnections as ConnectionData[]).find((conn: ConnectionData) => conn.connect_id === actualId);
+            
+          if (pendingEntry) {
             setConnectionStatus('pending_sent');
+            if (pendingEntry.rating) {
+              setExistingRating(pendingEntry.rating);
+            }
             return;
           }
           
-          
           // Check if this profile is in the user's requested connections
-          if (userRequestedConnections.includes(actualId)) {
+          const requestedEntry = (userRequestedConnections as ConnectionData[]).find((conn: ConnectionData) => conn.connect_id === actualId);
+            
+          if (requestedEntry) {
             setConnectionStatus('requested');
+            if (requestedEntry.rating) {
+              setExistingRating(requestedEntry.rating);
+            }
             return;
           }
           
@@ -163,69 +175,46 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
   const handleDialogChange = (open: boolean) => {
     setDialogOpen(open);
     if (!open) {
-      // Reset form and status when dialog closes
-      setVerificationEmail("");
-      setVerificationPhone("");
+      // Reset status when dialog closes
       setVerificationStatus('idle');
       setStatusMessage("");
     }
   };
 
-  const handleNetworkVerification = async () => {
-    if (!verificationEmail && !verificationPhone) {
-      setVerificationStatus('invalid');
-      setStatusMessage("Please provide either an email or phone number to verify your connection.");
-      return;
-    }
-
+  const handleConnectionScale = async (scaleValue: number) => {
     setIsSubmitting(true);
     setVerificationStatus('idle');
     
     try {
-      // Normalize phone numbers by removing common formatting characters
-      const normalizePhoneNumber = (phone: string) => {
-        return phone.replace(/[\s\-\(\)\+]/g, '');
-      };
+      const response = await fetch('/api/post_connect', {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          connect_id: data?.id,
+          rating: scaleValue
+        })
+      });
       
-      const isEmailVerified = verificationEmail === data?.email;
-      const isPhoneVerified = verificationPhone && data?.phone_number && 
-        normalizePhoneNumber(verificationPhone) === normalizePhoneNumber(data.phone_number);
-      
-      const isVerified = isEmailVerified || isPhoneVerified;
-      
-      if (isVerified) {
-        const response = await fetch('/api/post_connect', {
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({connect_id: data?.id})
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          if (result.type === 'mutual') {
-            setVerificationStatus('success');
-            setStatusMessage(`You are now connected with ${data?.first_name}! The connection was mutual.`);
-            setConnectionStatus('connected');
-          } else {
-            setVerificationStatus('success');
-            setStatusMessage(`Connection request sent to ${data?.first_name}! They've received a notification.`);
-            setConnectionStatus('pending_sent');
-          }
-          setVerificationEmail("");
-          setVerificationPhone("");
-          setDialogOpen(false);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.type === 'mutual') {
+          setVerificationStatus('success');
+          setStatusMessage(`You are now connected with ${data?.first_name}! The connection was mutual.`);
+          setConnectionStatus('connected');
         } else {
-          setVerificationStatus('error');
-          setStatusMessage("Failed to send verification request. Please try again.");
+          setVerificationStatus('success');
+          setStatusMessage(`Connection request sent to ${data?.first_name}! They've received a notification.`);
+          setConnectionStatus('pending_sent');
         }
+        setDialogOpen(false);
       } else {
-        setVerificationStatus('invalid');
-        setStatusMessage("Request not verified. Wrong email or phone number.");
+        setVerificationStatus('error');
+        setStatusMessage("Failed to send connection request. Please try again.");
       }
     } catch (error) {
-      console.error('Network verification failed:', error);
+      console.error('Connection failed:', error);
       setVerificationStatus('error');
-      setStatusMessage("Failed to send verification request. Please try again.");
+      setStatusMessage("Failed to send connection request. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -308,37 +297,20 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                             Accept Request
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
+                        <DialogContent className="sm:max-w-xl w-full px-12 py-8">
                         <DialogHeader>
                           <DialogTitle>Accept Connection Request from {data.first_name}</DialogTitle>
                           <DialogDescription>
-                            {data.first_name} has sent you a connection request. Please verify their email and/or phone number to accept and add them to your network.
+                            {data.first_name} has sent you a connection request. 
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-6 mt-6">
-                          <div className="space-y-2">
-                            <Label htmlFor="email">Email Address</Label>
-                            <Input
-                              id="email"
-                              type="email"
-                              placeholder={"sam@gmail.com"}
-                              value={verificationEmail}
-                              onChange={(e) => setVerificationEmail(e.target.value)}
-                              disabled={isSubmitting}
-                            />
-                          </div>
-                          <p>or...</p>
-                          <div className="space-y-2">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input
-                              id="phone"
-                              type="tel"
-                              placeholder="5551234567"
-                              value={verificationPhone}
-                              onChange={(e) => setVerificationPhone(e.target.value)}
-                              disabled={isSubmitting}
-                            />
-                          </div>
+                          <ConnectionScale
+                            onSubmit={handleConnectionScale}
+                            isSubmitting={isSubmitting}
+                            personName={data.first_name}
+                            initialRating={existingRating}
+                          />
                           
                           {/* Status Message Display */}
                           {verificationStatus !== 'idle' && (
@@ -352,20 +324,6 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                               {statusMessage}
                             </div>
                           )}
-                          
-                          <div className="flex justify-end gap-2 mt-8">
-                            <DialogTrigger asChild>
-                              <Button variant="outline" disabled={isSubmitting}>
-                                Cancel
-                              </Button>
-                            </DialogTrigger>
-                            <Button 
-                              onClick={handleNetworkVerification}
-                              disabled={isSubmitting || (!verificationEmail && !verificationPhone)}
-                            >
-                              {isSubmitting ? "Verifying..." : "Accept Request"}
-                            </Button>
-                          </div>
                         </div>
                         </DialogContent>
                       </Dialog>
@@ -374,42 +332,25 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                         <DialogTrigger asChild>
                           <Button className="inline-flex items-center gap-2">
                             <UserPlus className="w-4 h-4" />
-                            Add To Network
+                            Add to Verified Network
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
+                        <DialogContent className="sm:max-w-xl w-full px-12 py-8">
                         <DialogHeader>
                           <DialogTitle>
-                            Verify Connection with {data.first_name}
+                            Connect with {data.first_name}
                           </DialogTitle>
                           <DialogDescription>
-                            To add {data.first_name} to your verified network, please provide their email and/or phone number. We&apos;ll confirm your connection to maintain network quality.
+                            To add {data.first_name} to your verified network, please rate your connection strength. This helps us maintain network quality and provide better recommendations.
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-6 mt-6">
-                          <div className="space-y-2">
-                            <Label htmlFor="email">Email Address</Label>
-                            <Input
-                              id="email"
-                              type="email"
-                              placeholder={"sam@gmail.com"}
-                              value={verificationEmail}
-                              onChange={(e) => setVerificationEmail(e.target.value)}
-                              disabled={isSubmitting}
-                            />
-                          </div>
-                          <p>or...</p>
-                          <div className="space-y-2">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input
-                              id="phone"
-                              type="tel"
-                              placeholder="5551234567"
-                              value={verificationPhone}
-                              onChange={(e) => setVerificationPhone(e.target.value)}
-                              disabled={isSubmitting}
-                            />
-                          </div>
+                          <ConnectionScale
+                            onSubmit={handleConnectionScale}
+                            isSubmitting={isSubmitting}
+                            personName={data.first_name}
+                            initialRating={existingRating}
+                          />
                           
                           {/* Status Message Display */}
                           {verificationStatus !== 'idle' && (
@@ -423,20 +364,6 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                               {statusMessage}
                             </div>
                           )}
-                          
-                          <div className="flex justify-end gap-2 mt-8">
-                            <DialogTrigger asChild>
-                              <Button variant="outline" disabled={isSubmitting}>
-                                Cancel
-                              </Button>
-                            </DialogTrigger>
-                            <Button 
-                              onClick={handleNetworkVerification}
-                              disabled={isSubmitting || (!verificationEmail && !verificationPhone)}
-                            >
-                              {isSubmitting ? "Verifying..." : "Send Verification"}
-                            </Button>
-                          </div>
                         </div>
                         </DialogContent>
                       </Dialog>

@@ -25,7 +25,7 @@ export async function GET(
     // Get the current user's profile to check their connections
     const { data: currentUser, error: userError } = await supabase
       .from('subscribers')
-      .select('id, connections')
+      .select('id, connections, connections_new')
       .eq('email', session.user.email)
       .single();
 
@@ -33,7 +33,12 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const userConnections = currentUser.connections || [];
+    const userConnections = currentUser.connections_new || [];
+    
+    // Extract IDs from connection objects if using new format
+    const connectionIds = Array.isArray(userConnections) && userConnections.length > 0 && typeof userConnections[0] === 'object'
+      ? userConnections.map((conn: {connect_id: number, rating: number}) => conn.connect_id)
+      : userConnections;
 
     if (userConnections.length === 0) {
       return NextResponse.json([]);
@@ -44,7 +49,7 @@ export async function GET(
       .from('subscribers')
       .select('id, first_name, last_name, profile_image_url, linkedin_url, bio')
       .or(`bookmarked_companies.cs.{${companyId}},company_recommendations.cs.{${companyId}}`)
-      .in('id', userConnections)
+      .in('id', connectionIds)
       .eq('is_public_profile', true)
       .order('first_name')
       .order('last_name');
