@@ -15,11 +15,14 @@ import { PortableText, type PortableTextComponents, type PortableTextBlock } fro
 import ApplyButton from "@/app/components/apply";
 import EarlyInterestButton from "@/app/components/early_interest";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
+import Share from "@/app/components/share";
+import Post from "@/app/components/post";
 import ProfileCard from "@/app/components/profile_card";
 import { client } from "@/lib/sanity/client";
 import imageUrlBuilder from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { encodeSimple } from "@/app/utils/simple-hash";
+import { VerificationProtectedContent } from "@/app/components/verification-protected-content";
 
 const { projectId, dataset } = client.config();
 const urlFor = (source: SanityImageSource) =>
@@ -50,6 +53,9 @@ export default function CompanyPageClient({
   company, 
   companyPost
 }: CompanyPageClientProps) {
+  console.log('CompanyPageClient company data:', company);
+  console.log('CompanyPageClient companyPost data:', companyPost);
+  
   const [bookmarkedUsers, setBookmarkedUsers] = useState<BookmarkedUser[]>([]);
   const [isLoadingBookmarks, setIsLoadingBookmarks] = useState(true);
   const [showReferralDialog, setShowReferralDialog] = useState(false);
@@ -117,7 +123,7 @@ export default function CompanyPageClient({
 
   // Fetch user profile for referral functionality
   useEffect(() => {
-    fetch("/api/get_profile", { credentials: "include" })
+    fetch("/api/get_external_profile", { credentials: "include" })
       .then(res => res.json())
       .then(data => {
         setCurrentUserId(data.id);
@@ -173,9 +179,9 @@ export default function CompanyPageClient({
 
   return (
     <Container>
-      <div className="pt-10 pb-16">
+      <div className="pt-10 pb-5">
         {/* Company Header */}
-        <div className="mb-12">
+        <div className="mb-5">
           <div className="flex flex-col lg:flex-row gap-8 items-start">
             {/* Company Logo and Basic Info */}
             <div className="flex-shrink-0">
@@ -197,7 +203,6 @@ export default function CompanyPageClient({
               
               {/* Action Buttons */}
               <div className="flex flex-col gap-3">
-                <RainbowBookmark company={company.company} />
                 {/* Company Info Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {company.location && (
@@ -275,32 +280,43 @@ export default function CompanyPageClient({
           </div>
         </div>
 
-        {company && company.people && company.people.length > 0 && (
-          <div className="mb-8">
-            <h1 className="text-3xl font-semibold text-neutral-900 mt-12 mb-12">Opportunities</h1>
-            <div className="space-y-3">
-              {company.people.map((person, index) => (
-                <div key={index} className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg">
-                  <span className="font-medium text-neutral-900">{person.name}</span>
-                  {company.partner && !company.pending_partner ? (
-                    <ApplyButton company={company.company.toString()} person={person.name} />
-                  ) : company.pending_partner ? (
-                    <EarlyInterestButton company={company.company.toString()} />
-                  ) : (
-                    <span className="text-sm text-neutral-500">Not a partner</span>
-                  )}
-                </div>
-              ))}
+        {/* Action Buttons Section */}
+        <div className="flex items-center justify-center gap-4 py-6 border-b border-neutral-200">
+          <RainbowBookmark company={company.company} />
+          <Share company={company.company} />
+          <Post company={company.company} companyData={company} />
+        </div>
+
+        {company && company.people && (
+          <div className="mb-8 border-b">
+          <VerificationProtectedContent 
+            sectionTitle={`Introductions via The Niche Network`}
+            className="mt-12 mb-12"
+            hideWhenNotVerified={true}
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-neutral-900">{company.people}</span>
+              {company.partner && !company.pending_partner ? (
+                <ApplyButton company={company.company.toString()} person={company.people} />
+              ) : company.pending_partner ? (
+                <EarlyInterestButton company={company.company.toString()} />
+              ) : (
+                <span className="text-sm text-neutral-500">Not a partner</span>
+              )}
             </div>
+            </VerificationProtectedContent>
           </div>
         )}
 
 
         {/* Company Profile/Article */}
-        <h1 className="text-3xl font-semibold text-neutral-900 mt-12 mb-12">Our Company Profile</h1>
+        <VerificationProtectedContent 
+            sectionTitle={`Our Company Profile`}
+            className="mt-12 mb-12"
+          >
 
         {companyPost && companyPost.body && Array.isArray(companyPost.body) && companyPost.body.length > 0 ? (
-          <div className="mb-12">
+          <div className="mb-12 border-b">
             <PortableText value={companyPost.body} components={components} />
           </div>
         ) : (
@@ -311,6 +327,7 @@ export default function CompanyPageClient({
                 </AlertDescription>
               </Alert>
         )}
+        </VerificationProtectedContent>
 
 
         {/* Team Members */}
@@ -339,25 +356,25 @@ export default function CompanyPageClient({
         )} */}
 
         {/* Refer Someone New Button */}
-        {/* Users Who Bookmarked This Company */}
+        {/* People in Network Section */}
         {!isLoadingBookmarks && (
-          <div className="mt-12 mb-12">
-            <h1 className="text-3xl font-semibold text-neutral-900 mb-6 text-left">
-                  People in Your Network Who We Think Would Be A Good Fit Here ({bookmarkedUsers.length})
-                </h1>
-                 <div className="mt-12 mb-8 flex justify-start">
-          <Button 
-            variant="outline" 
-            size="lg"
-            className="inline-flex items-center gap-2 rounded-full border-neutral-300 text-neutral-700 hover:border-black hover:text-black transition-all duration-200"
-            onClick={() => setShowReferralDialog(true)}
+          <VerificationProtectedContent 
+            sectionTitle={`People in Your Network Who We Think Would Be A Good Fit Here (${bookmarkedUsers.length})`}
+            className="mt-12 mb-12"
           >
-            <div className="w-4 h-4 rounded-full bg-gradient-to-r from-yellow-400 via-pink-400 to-blue-400 flex items-center justify-center">
-              <UserPlus className="w-2.5 h-2.5 text-white" />
+            <div className="mt-8 mb-8 flex justify-start">
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="inline-flex items-center gap-2 rounded-full border-neutral-300 text-neutral-700 hover:border-black hover:text-black transition-all duration-200"
+                onClick={() => setShowReferralDialog(true)}
+              >
+                <div className="w-4 h-4 rounded-full bg-gradient-to-r from-yellow-400 via-pink-400 to-blue-400 flex items-center justify-center">
+                  <UserPlus className="w-2.5 h-2.5 text-white" />
+                </div>
+                Refer Someone You Think Would Be A Good Fit Here
+              </Button>
             </div>
-            Refer Someone to Your Professional Network
-          </Button>
-        </div>
 
             {bookmarkedUsers.length > 0 ? (
               <>
@@ -394,7 +411,7 @@ export default function CompanyPageClient({
                 </AlertDescription>
               </Alert>
             )}
-          </div>
+          </VerificationProtectedContent>
         )}      
       </div>
 
@@ -405,7 +422,7 @@ export default function CompanyPageClient({
         </DialogTrigger>
         <DialogContent className="sm:max-w-[600px] p-8" showCloseButton={false}>
           <DialogHeader className="mb-8">
-            <DialogTitle className="text-2xl font-semibold">Refer Someone You Want to Bring To Your Verified Professional Network</DialogTitle>
+            <DialogTitle className="text-2xl font-semibold">Refer Someone You Want to Bring To The Niche</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleReferralFormSubmit}>
             <div className="grid gap-8">

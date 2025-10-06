@@ -4,16 +4,19 @@ import { Navigation } from "../../components/header";
 import { Container } from "../../components/container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ProfileData } from "@/app/types";
+import { ProfileData, CompanyWithImageUrl } from "@/app/types";
 import ProfileAvatar from "@/app/components/profile_avatar";
 import { Linkedin, Globe, FileText } from "lucide-react";
 import { decodeSimple } from "@/app/utils/simple-hash";
+import { CompanyCard } from "../../components/company-card";
 
 export default function ExternalProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const [data, setData] = useState<ProfileData | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [decodedId, setDecodedId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [bookmarkedCompanies, setBookmarkedCompanies] = useState<CompanyWithImageUrl[]>([]);
+  const [loadingBookmarks, setLoadingBookmarks] = useState(false);
 
   useEffect(() => {
     const getParams = async () => {
@@ -51,6 +54,37 @@ export default function ExternalProfilePage({ params }: { params: Promise<{ id: 
     
     getParams();
   }, [params]);
+
+  // Fetch bookmarked companies using API
+  useEffect(() => {
+    const fetchBookmarkedCompanies = async () => {
+      if (!data?.bookmarked_companies) {
+        setBookmarkedCompanies([]);
+        return;
+      }
+      setLoadingBookmarks(true);
+      try {
+        const response = await fetch('/api/companies', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const allCompanies = await response.json();
+          
+          // Filter companies based on bookmarked company IDs
+          const filteredCompanies = allCompanies.filter((company: CompanyWithImageUrl) => 
+            data.bookmarked_companies?.includes(company.company)
+          );
+          setBookmarkedCompanies(filteredCompanies);
+        }
+      } catch (error) {
+        console.error('Error fetching bookmarked companies:', error);
+        setBookmarkedCompanies([]);
+      } finally {
+        setLoadingBookmarks(false);
+      }
+    };
+    fetchBookmarkedCompanies();
+  }, [data]);
 
   if (error) {
     return (
@@ -177,6 +211,28 @@ export default function ExternalProfilePage({ params }: { params: Promise<{ id: 
                 )}
               </div>
             )}
+
+            {/* Bookmarked Companies Section */}
+            <div className="w-full space-y-6">
+              <h3 className="text-lg font-medium text-neutral-900">Companies {data.first_name} Bookmarked</h3>
+              {loadingBookmarks ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-32 w-full rounded-lg" />
+                  <Skeleton className="h-32 w-full rounded-lg" />
+                  <Skeleton className="h-32 w-full rounded-lg" />
+                </div>
+              ) : bookmarkedCompanies.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {bookmarkedCompanies.map((company) => (
+                    <CompanyCard key={company._id} company={company} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-neutral-500">
+                  {data.first_name} hasn&apos;t bookmarked any companies yet.
+                </div>
+              )}
+            </div>
             
             <div className="text-center text-sm text-neutral-600 py-8">
               Company Profile

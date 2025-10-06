@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { CompanyData } from "@/app/types";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
+import Post from "../components/post";
+import Share from "../components/share";
 
 type CompanyWithImageUrl = CompanyData & {
   imageUrl: string | null;
@@ -122,34 +124,13 @@ export function CompanyRow({ company, potential = false }: { company: CompanyWit
 
           {/* Actions */}
           <div className="flex flex-col justify-between items-end flex-shrink-0 h-full">
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-col items-end gap-4">
+              <div className="flex items-end gap-2">
+                <RainbowBookmark company={company.company} />
+                <Share company={company.company} />
+                <Post company={company.company} companyData={company} />
+              </div>
 
-               <div className="flex items-center gap-3 mt-auto" onClick={(e) => e.stopPropagation()}>
-              <RainbowBookmark company={company.company} />
-              
-              {/* {company.partner && !potential && (
-                <PrimaryCTA companyId={company.company.toString()} />
-              )}
-              
-              {potential && (
-                <EarlyInterestCTA companyId={company.company.toString()} />
-              )} */}
-            </div>
-              {/* Profile link */}
-              {/* {company.tags?.length && appliedToNiche && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/${company.tags?.[0]}`);
-                  }}
-                  className="inline-flex items-center gap-1 text-sm font-medium text-blue-700 transition-colors duration-200 hover:text-blue-900"
-                >
-                  Profile <ArrowRight className="h-3 w-3" />
-                </button>
-              )} */}
-
-              {/* Website link */}
               {company.external_media && (
                 <a
                   href={company.external_media}

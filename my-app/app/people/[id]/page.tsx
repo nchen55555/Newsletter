@@ -279,20 +279,22 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                       {data.first_name} {data.last_name}
                     </h1>
                     
+                    
+                    
                     {connectionStatus === 'connected' ? (
-                      <Button disabled className="inline-flex items-center gap-2 bg-green-100 text-green-800 border-green-300">
+                      <Button disabled className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-100 via-pink-100 to-yellow-100 text-purple-800 border-purple-300">
                         <UserPlus className="w-4 h-4" />
                         Connected
                       </Button>
                     ) : connectionStatus === 'pending_sent' ? (
-                      <Button disabled className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 border-yellow-300">
+                      <Button disabled className="inline-flex items-center gap-2 bg-gray-100 text-gray-600 border-gray-300">
                         <UserPlus className="w-4 h-4" />
                         Request Sent
                       </Button>
                     ) : connectionStatus === 'requested' ? (
                       <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
                         <DialogTrigger asChild>
-                          <Button className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200">
+                          <Button className="inline-flex items-center gap-2 bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200">
                             <UserPlus className="w-4 h-4" />
                             Accept Request
                           </Button>
@@ -369,8 +371,43 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                       </Dialog>
                     )}
                   </div>
+                  
                 </div>
+                
               </div>
+{/* Show connection degree if connected */}
+                    {(connectionStatus === 'connected') && existingRating && (
+                      <div className="mb-4">
+                        <ConnectionScale
+                          onSubmit={async (newRating) => {
+                            try {
+                              const response = await fetch('/api/post_connect', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  connect_id: data?.id,
+                                  rating: newRating
+                                })
+                              });
+                              
+                              if (response.ok) {
+                                setExistingRating(newRating);
+                                console.log('Connection rating updated successfully');
+                              } else {
+                                console.error('Failed to update connection rating');
+                              }
+                            } catch (error) {
+                              console.error('Error updating connection rating:', error);
+                            }
+                          }}
+                          isSubmitting={false}
+                          personName={data.first_name}
+                          initialRating={existingRating}
+                          showConnectButton={false}
+                        />
+                      </div>
+                    )}
+              
 
               {/* Bio Section */}
               {data.bio && data.bio.length > 0 && (

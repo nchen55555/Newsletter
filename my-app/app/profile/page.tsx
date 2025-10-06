@@ -28,6 +28,7 @@ export default function Profile() {
           <Container className="max-w-4xl mx-auto">
             {!data.verified && <MultiStepProfileForm {...data} />}
             {data.verified && <ExternalProfile {...data} />}
+          
           </Container>
         </div>
       </div>

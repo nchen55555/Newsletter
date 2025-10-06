@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CompanyCard } from "../companies/company-cards";
 import { CompanyRow } from "../companies/company-row";
 import { Button } from "@/components/ui/button";
+import { VerificationProtectedContent } from "../components/verification-protected-content";
 import {
   Dialog,
   DialogContent,
@@ -14,8 +15,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {useRouter} from "next/navigation"
-
 
 export interface CompanyData extends SanityDocument {
   company: number
@@ -54,8 +53,6 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
     const [bookmarkedCompanies, setBookmarkedCompanies] = useState<number[]>([])
     const [verifiedToTheNiche, setVerifiedToTheNiche] = useState(false)
     const [showHowItWorksDialog, setShowHowItWorksDialog] = useState(false)
-
-    const router = useRouter();
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -287,55 +284,55 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                             
                         </div>
                     </div>
-                    {verifiedToTheNiche && (
-                        <div className="w-full max-w-6xl mx-auto">
-
-                            <div className="mb-12">
-                                <h2 className="text-2xl font-semibold mb-6 text-black">Opportunities You Should Connect With</h2>
-                            {/* Filtered/Recommended Companies - Card Section */}
-                            {filteredOpportunities.length > 0 && (
+                    <div className="w-full max-w-6xl mx-auto">
+                        {/* Recommended Opportunities Section */}
+                        <VerificationProtectedContent 
+                          sectionTitle="Opportunities You Should Connect With"
+                          fallbackTitle="Verification Required for Opportunity Access"
+                          fallbackDescription="Request to join The Niche network to view personalized opportunities and connect with startup founders"
+                          className="mb-12"
+                        >
+                          {verifiedToTheNiche && (
+                            <>
+                              {filteredOpportunities.length > 0 && (
                                 <div className="mb-12">
-                                    <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-2">
-                                        {filteredOpportunities.map((company) => (
-                                            <CompanyCard key={company._id} company={company} showHighMutualInterest={true} external={false}/>
-                                        ))}
-                                    </div>
+                                  <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-2">
+                                    {filteredOpportunities.map((company) => (
+                                      <CompanyCard key={company._id} company={company} showHighMutualInterest={true} external={false}/>
+                                    ))}
+                                  </div>
                                 </div>
-                            )}
+                              )}
 
-                            {/* Show alert if no recommendations */}
-                            {filteredOpportunities.length === 0 &&  (
-                                <Alert className="max-w-4xl mx-auto mb-8 ">
-                                    <Info className="h-4 w-4" />
-                                    <AlertDescription>
-                                        Your recommendations are still generating and will be available in 24 hours. Expand your verified network and bookmark or connect with the below companies that interest you to get more personalized recommendations here.
-                                    </AlertDescription>
+                              {/* Show alert if no recommendations */}
+                              {filteredOpportunities.length === 0 && (
+                                <Alert className="max-w-4xl mx-auto mb-8">
+                                  <Info className="h-4 w-4" />
+                                  <AlertDescription>
+                                    Your recommendations are still generating and will be available in 24 hours. Expand your verified network and bookmark or connect with the below companies that interest you to get more personalized recommendations here.
+                                  </AlertDescription>
                                 </Alert>
-                            )}
+                              )}
+                            </>
+                          )}
+                        </VerificationProtectedContent>
+
+                        {/* Other Opportunities Section */}
+                        <VerificationProtectedContent 
+                          sectionTitle="Your Bookmarks and Other Opportunities"
+                          fallbackTitle="Verification Required for Opportunity Access"
+                          fallbackDescription="Request to join The Niche network to view and bookmark startup opportunities"
+                          className="mb-12"
+                        >
+                          {verifiedToTheNiche && otherOpportunities.length > 0 && (
+                            <div className="space-y-4">
+                              {otherOpportunities.map((company) => (
+                                <CompanyRow key={company._id} potential={company.pending_partner} company={company} />
+                              ))}
                             </div>
-
-                            {/* Other Partner Companies - Row Layout */}
-                            {otherOpportunities.length > 0 && (
-                                <div className="mb-12">
-                                    <h2 className="text-2xl font-semibold mb-6 text-black">Your Bookmarks and Other Opportunities</h2>
-                                    <div className="space-y-4">
-                                        {otherOpportunities.map((company) => (
-                                            <CompanyRow key={company._id} potential={company.pending_partner} company={company} />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-
-                            
-                        </div>
-                    )}
-                    {!verifiedToTheNiche && (<Alert className="max-w-2xl mx-auto cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => router.push('/profile')}>
-                <Info className="h-4 w-4" />
-                <AlertDescription>
-                  Create your profile and have your professional network verified to get access
-                </AlertDescription>
-              </Alert>)} 
+                          )}
+                        </VerificationProtectedContent>
+                    </div> 
                 </div>
             )}
             {isLoading && (

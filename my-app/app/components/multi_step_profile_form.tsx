@@ -1,144 +1,30 @@
 'use client'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
-import ProfileInfo from './profile_info'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { ProfileFormState, ProfileData, ConnectionData } from '@/app/types'
+import ProfileInfoChatbot from './profile_info_chatbot'
+import { useRouter} from 'next/navigation'
+import { ProfileFormState, ProfileData} from '@/app/types'
 import { useSubscriptionContext } from './subscription_context'
-import { CompanyCard } from '@/app/companies/company-cards'
-import { CompanyWithImageUrl } from '@/app/types'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
-import { ChevronLeft, ChevronRight, Search, UserPlus } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import ProfileAvatar from './profile_avatar'
-import ProfileCard from './profile_card'
 import { FileText, Heart, Users, Handshake, MousePointer } from 'lucide-react'
-import { ConnectionScale } from './connection-scale'
 
 interface MultiStepProfileFormProps extends ProfileData {
   access_token: string,
 }
 
-interface Step4FormState {
-  interests: string | undefined;
-  opportunities_looking_for: string | undefined;
-  knownCohortMembers: {id: string, first_name: string, last_name: string, email: string}[];
-  networkRecommendations: { name: string; email: string; connection: string }[];
-}
-
-// Company Carousel Component
-function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const totalPages = companies.length
-
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % totalPages)
-  }
-
-  const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - 1 + totalPages) % totalPages)
-  }
-
-  const currentCompany = companies[currentIndex]
-
-  return (
-    <div className="relative">
-      {/* Carousel Container */}
-      <div className="overflow-hidden rounded-lg">
-        <CompanyCard key={currentCompany._id} company={currentCompany} potential={currentCompany.pending_partner} external={!currentCompany.partner}/>
-      </div>
-
-      {/* Navigation Controls */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6">
-          <Button
-            variant="outline"
-            onClick={prevSlide}
-            className="flex items-center gap-2"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Previous
-          </Button>
-          
-          <div className="flex items-center gap-2">
-            {Array.from({ length: Math.min(totalPages, 10) }).map((_, index) => {
-              const pageIndex = totalPages > 10 ? 
-                Math.max(0, Math.min(currentIndex - 5, totalPages - 10)) + index :
-                index;
-              return (
-                <button
-                  key={pageIndex}
-                  onClick={() => setCurrentIndex(pageIndex)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    pageIndex === currentIndex ? 'bg-neutral-900' : 'bg-neutral-300'
-                  }`}
-                />
-              );
-            })}
-          </div>
-          
-          <Button
-            variant="outline"
-            onClick={nextSlide}
-            className="flex items-center gap-2"
-          >
-            Next
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-      
-      {/* Progress indicator */}
-      <div className="text-center mt-4 text-sm text-neutral-600">
-        Company {currentIndex + 1} of {companies.length}
-      </div>
-    </div>
-  )
-}
-
-
 
 export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { isSubscribed } = useSubscriptionContext()
-  const [currentStep, setCurrentStep] = useState(0)
-  const [companies, setCompanies] = useState<CompanyWithImageUrl[]>([])
-  const [loadingCompanies, setLoadingCompanies] = useState(false)
-  const [showConfirmation, setShowConfirmation] = useState(false)
   const [, setEmailSent] = useState(false)
 
   
-  // Step 3 form state (people connections)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [allProfiles, setAllProfiles] = useState<ProfileData[]>([])
-  const [currentUserData, setCurrentUserData] = useState<ProfileData | null>(null)
 
-
-  // Verification dialog state
-  const [selectedProfile, setSelectedProfile] = useState<ProfileData | null>(null)
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'error' | 'invalid'>('idle')
-  const [statusMessage, setStatusMessage] = useState('')
-  
-  // Step 4 form state (interests and network)
-  const [step4Form, setStep4Form] = useState<Step4FormState>({
-    interests: props.interests,
-    opportunities_looking_for: props.opportunities_looking_for,
-    knownCohortMembers: [],
-    networkRecommendations: [
-      { name: '', email: '', connection: ''},
-      { name: '', email: '', connection: ''},
-    ]
-  })
 
 
   useEffect(() => {
@@ -147,36 +33,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     }
   }, [isSubscribed, router]);
 
-  // Read step from URL parameter on component mount
-  useEffect(() => {
-    const stepParam = searchParams.get('step');
-    if (stepParam !== null) {
-      const step = parseInt(stepParam, 10);
-      if (step >= 0 && step <= 4) {
-        setCurrentStep(step);
-        // Load companies if navigating directly to step 2
-        if (step === 2 && companies.length === 0) {
-          loadCompanies();
-        }
-        // Load profiles if navigating directly to step 3
-        if (step === 3 && allProfiles.length === 0) {
-          loadAllProfiles();
-        }
-        // Load profiles if navigating directly to step 4
-        if (step === 4 && allProfiles.length === 0) {
-          loadAllProfiles();
-        }
-      }
-    }
-  }, [searchParams, companies.length, allProfiles.length]);
-
-  // Update URL when step changes
-  const updateStep = (step: number) => {
-    setCurrentStep(step);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('step', step.toString());
-    router.push(`?${params.toString()}`, { scroll: false });
-  };
 
   const [form, setForm] = useState<ProfileFormState>({
     id: props.id,
@@ -199,241 +55,19 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     transcript_url: props.transcript_url || "",
     parsed_resume_json: "",
     needs_visa_sponsorship: props.needs_visa_sponsorship || false,
+    interests: props.interests || "",
+    network_recommendations: props.network_recommendations || [],
   });
 
   const [formError, setFormError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [profileFormComplete, setProfileFormComplete] = useState(false)
 
-  // Load companies for step 2 (same query as companies page, limited to 20)
-
-
-
-
-  const loadCompanies = async () => {
-    setLoadingCompanies(true)
-    try {
-        const response = await fetch('/api/companies')
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch companies: ${response.status}`)
-        }
-        
-        const companies = await response.json()
-        
-        // Filter to show only partners and pending partners, randomly select 5
-        const filteredCompanies = companies.filter((company: CompanyWithImageUrl) => company.partner || company.pending_partner)
-        const shuffled = filteredCompanies.sort(() => Math.random() - 0.5)
-        setCompanies(shuffled.slice(0, 5))
-    } catch (error) {
-      console.error('Error loading companies:', error)
-    } finally {
-      setLoadingCompanies(false)
-    }
-  }
-
-  // Load all profiles and current user data (same as /people/ page)
-  const loadAllProfiles = async () => {
-    try {
-      const [profilesResponse, userResponse] = await Promise.all([
-        fetch('/api/get_cohort', { credentials: 'include' }),
-        fetch('/api/get_profile', { credentials: 'include' })
-      ])
-      
-      if (profilesResponse.ok) {
-        const data = await profilesResponse.json()
-        setAllProfiles(data.profiles || [])
-      } else {
-        console.error('Failed to load profiles')
-        setAllProfiles([])
-      }
-
-      if (userResponse.ok) {
-        const userData = await userResponse.json()
-        setCurrentUserData(userData)
-      } else {
-        console.error('Failed to load user data')
-        setCurrentUserData(null)
-      }
-    } catch (error) {
-      console.error('Error loading data:', error)
-      setAllProfiles([])
-      setCurrentUserData(null)
-    } 
-  }
-
-  // Get connection status between current user and another profile (same logic as /people/ page)
-  const getConnectionStatus = (profile: ProfileData) => {
-    if (!currentUserData) return 'none'
-    
-    const userConnections = currentUserData.connections_new || [];
-    const userPendingConnections = currentUserData.pending_connections_new || [];
-    const userRequestedConnections = currentUserData.requested_connections_new || [];
-    
-    // Check if they are in user's verified connections (mutual connection exists)
-    const isConnected = userConnections.some((conn: ConnectionData) => conn.connect_id === profile.id);
-      
-    if (isConnected) {
-      return 'connected'
-    }
-    
-    // Check if user has sent a pending request to them
-    const isPendingSent = userPendingConnections.some((conn: ConnectionData) => conn.connect_id === profile.id);
-      
-    if (isPendingSent) {
-      return 'pending_sent'
-    }
-    
-    // Check if they are in user's requested connections
-    const isRequested = userRequestedConnections.some((conn: ConnectionData) => conn.connect_id === profile.id);
-      
-    if (isRequested) {
-      return 'requested'
-    }
-    
-    return 'none'
-  }
-
-  // Filter profiles based on search query (same logic as /people/ page)
-  const searchResults = allProfiles.filter(profile => {
-    const hasNames = profile.first_name && 
-                    profile.last_name && 
-                    profile.first_name.trim() !== '' && 
-                    profile.last_name.trim() !== '';
-    
-    if (!hasNames || !searchQuery.trim()) return false; // Only show results when searching
-    
-    const fullName = `${profile.first_name} ${profile.last_name}`.toLowerCase();
-    const query = searchQuery.toLowerCase();
-    return fullName.includes(query);
-  }).slice(0, 8) // Limit to 8 results like the people page
-
-
-  // Handle dialog change
-  const handleDialogChange = (open: boolean) => {
-    setDialogOpen(open)
-    if (!open) {
-      // Reset status when dialog closes
-      setVerificationStatus('idle')
-      setStatusMessage('')
-      setSelectedProfile(null)
-    }
-  }
-
-  // Handle connection scale
-  const handleConnectionScale = async (scaleValue: number) => {
-    if (!selectedProfile) return
-
-    setIsSubmitting(true)
-    setVerificationStatus('idle')
-    
-    try {
-      const response = await fetch('/api/post_connect', {
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          connect_id: selectedProfile.id,
-          rating: scaleValue
-        })
-      })
-      
-      if (response.ok) {
-        const result = await response.json()
-        if (result.type === 'mutual') {
-          setVerificationStatus('success')
-          setStatusMessage(`You are now connected with ${selectedProfile.first_name}! The connection was mutual.`)
-        } else {
-          setVerificationStatus('success')
-          setStatusMessage(`Connection request sent to ${selectedProfile.first_name}! They've received a notification.`)
-        }
-        // Update current user data to reflect new connection
-        if (result.type === 'mutual') {
-          // Mutual connection - update connections
-          setCurrentUserData((prev: ProfileData | null) => 
-            prev ? {
-              ...prev,
-              connections_new: [...(prev.connections_new || []), {connect_id: selectedProfile.id, rating: scaleValue}],
-              connections: [...(prev.connections || []), selectedProfile.id]
-            } : null
-          )
-        } else {
-          // Pending connection - update pending_connections
-          setCurrentUserData((prev: ProfileData | null) => 
-            prev ? {
-              ...prev,
-              pending_connections_new: [...(prev.pending_connections_new || []), {connect_id: selectedProfile.id, rating: scaleValue}],
-              pending_connections: [...(prev.pending_connections || []), selectedProfile.id]
-            } : null
-          )
-        }
-        setDialogOpen(false)
-      } else {
-        setVerificationStatus('error')
-        setStatusMessage('Failed to send connection request. Please try again.')
-      }
-    } catch (error) {
-      console.error('Connection failed:', error)
-      setVerificationStatus('error')
-      setStatusMessage('Failed to send connection request. Please try again.')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  // Handle opening connect dialog
-  const handleConnectClick = (profile: ProfileData) => {
-    setSelectedProfile(profile)
-    setDialogOpen(true)
-  }
-
-  const handleStep4 = async () => {
-    setLoading(true);
-    console.log("HERE IN S4")
-    if (!step4Form.interests) {
-        setFormError("Keywords that describe what you are interested in are required.");
-        setLoading(false);
-        return;
-      }
-
-    if (!step4Form.opportunities_looking_for) {
-      setFormError("What kinds of opportunities you are interested/looking for is required");
-      setLoading(false);
-      return;
-    }
-    // Check if networkRecommendations have actual content
-    const hasValidNetworkRecommendations = step4Form.networkRecommendations.some((rec: { name: string; email: string; connection: string }) => 
-      rec.name.trim() !== '' && rec.email.trim() !== '' && rec.connection.trim() !== ''
-    );
-    if (!hasValidNetworkRecommendations) {
-      setFormError("At least one complete network recommendation (name, email, and connection) is required.");
-      setLoading(false);
-      return; 
-    }
-    try {
-      console.log("Step 4", step4Form)
-      // First, post step4 form data
-      await fetch('/api/post_step3', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(step4Form)
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Load companies for step 2 (same query as companies page, limited to 20
 
 
     const handleFinishSetup = async () => {
-    setLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('verified', 'true');
-      await fetch('/api/post_profile', { 
-        method: 'PATCH',
-        body: formData
-      })
       const emailResponse = await fetch('/api/send-welcome-email', {
         method: 'POST',
         headers: {
@@ -460,17 +94,11 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     } catch (error) {
       console.error('Error in finish setup process:', error);
       setEmailSent(false);
-    } finally {
-      setLoading(false);
-    }
+    } 
     
-    setShowConfirmation(true);
-
   };
 
-  const handleConfirmationClose = () => {
-    setShowConfirmation(false);
-    
+  const handleConfirmationClose = () => {    
     // Use the hash function to encode the user ID
     window.location.href = `/opportunities`;
   };
@@ -479,7 +107,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormError(null)
-    setLoading(true)
 
     try {
       // Validate required fields (same as original form)
@@ -548,6 +175,18 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         return;
       }
 
+      // Add new ProfileInfoChatbot fields
+      if (form.interests) {
+        formData.append('interests', form.interests);
+      }
+      
+      if (form.network_recommendations && form.network_recommendations.length > 0) {
+        formData.append('network_recommendations', JSON.stringify(form.network_recommendations));
+      }
+
+      formData.append('applied', 'true')
+      formData.append('verified', 'true');
+
       // Make request (same as original form)
       const response = await fetch('/api/post_profile', {
         method: 'PATCH',
@@ -555,24 +194,18 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       });
 
       if (response.ok) {
-        // Profile saved successfully, move to step 2
-        updateStep(2)
-        await loadCompanies()
+        const result = await response.json();
+        console.log('Profile update successful:', result);
+        handleFinishSetup();
       } else {
-        const errorText = await response.text();
-        try {
-          const errorData = JSON.parse(errorText);
-          setFormError(errorData.error || errorData.details || 'Update failed. Please check your fields and try again.');
-        } catch {
-          setFormError('Update failed. Please check your fields and try again.');
-        }
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Profile update failed:', response.status, errorData);
+        setFormError(`Failed to update profile: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Failed to update profile:', error);
       setFormError('An unexpected error occurred.');
-    } finally {
-      setLoading(false)
-    }
+    } 
   }
 
 
@@ -580,535 +213,28 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
 
   return (
     <div>
-      {/* Progress Indicator */}
-      <div className="mb-8">
-        <div className="flex items-center justify-center space-x-4">
-          <div 
-            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-              currentStep >= 0 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-600'
-            }`}
-          >
-            0
-          </div>
-          <div className={`h-1 w-16 ${currentStep >= 1 ? 'bg-neutral-900' : 'bg-neutral-200'}`} />
-          <div 
-            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-              currentStep >= 1 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-600'
-            }`}
-          >
-            1
-          </div>
-          <div className={`h-1 w-16 ${currentStep >= 2 ? 'bg-neutral-900' : 'bg-neutral-200'}`} />
-          <div 
-            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-              currentStep >= 2 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-600'
-            }`}
-          >
-            2
-          </div>
-          <div className={`h-1 w-16 ${currentStep >= 3 ? 'bg-neutral-900' : 'bg-neutral-200'}`} />
-          <div 
-            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-              currentStep >= 3 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-600'
-            }`}
-          >
-            3
-          </div>
-          <div className={`h-1 w-16 ${currentStep >= 4 ? 'bg-neutral-900' : 'bg-neutral-200'}`} />
-          <div 
-            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-              currentStep >= 4 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-600'
-            }`}
-          >
-            4
-          </div>
+    <div className="max-w-6xl mx-auto px-8 py-16">
+    <ProfileInfoChatbot 
+      form={form} 
+      setForm={setForm} 
+      onComplete={(isComplete) => {
+        setProfileFormComplete(isComplete);
+        if (isComplete) {
+          // Automatically submit when chatbot flow completes
+          handleStep1Submit({ preventDefault: () => {} } as React.FormEvent);
+        }
+      }}
+    />
 
-        </div>
+    {formError && (
+      <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-800 text-sm font-medium">{formError}</p>
       </div>
-
-      {currentStep === 0 && (
-        <div className="max-w-4xl mx-auto px-8 py-16">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl lg:text-5xl font-bold text-neutral-900 leading-tight mb-8">
-              Welcome to The Niche
-            </h1>
-            <div className="text-lg text-neutral-700 leading-relaxed space-y-6">
-              <p>
-                The Niche is a newsletter-turned-marketplace that works with a select cohort of high-talent-bar startups (Anysphere/Cursor, Listen Labs, Exa, Warp, etc.) to connect them with a select network of high-performing technical early talent. Students gain access through the network solely through personal referral. 
-              </p>
-              <p>
-                The platform operates under two key principles: (1) personalization and (2) verification. We connect and tailor opportunities to students based on their interests, compentencies, &quot;verified&quot; by the professional networks they operate in so that each opportunity a student connects with is truly a good fit.
-              </p>
-              <p>
-                We index on verifiable data and our deep understanding of early talent to recommend and determine personalized matches. To ensure that every recommendation is a good fit, we publish company profiles of our partner startups for students to review and personalize the opportunities they are introduced to. <strong>We never reach out to you to sell a partner company - you look at our company profiles and organically request for an intro to a partner company</strong>
-              </p>
-            </div>
-          </div>
-
-          <div className="flex justify-center mt-16">
-            <Button 
-              onClick={() => updateStep(1)}
-              className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-3 text-lg"
-            >
-              Get Started
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {currentStep === 1 && (
-        <div className="max-w-6xl mx-auto px-8 py-16">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">Verification: Tell Us About Yourself</h2>
-          </div>
-
-          <form onSubmit={handleStep1Submit} className="space-y-6">
-            <ProfileInfo form={form} setForm={setForm} />
-            
-            {formError && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800 text-sm font-medium">{formError}</p>
-              </div>
-            )}
-
-            <div className="flex justify-between">
-              <Button 
-                onClick={() => updateStep(0)}
-                className="bg-neutral-200 hover:bg-neutral-300 text-neutral-900 px-8 py-2"
-              >
-                Back
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={loading}
-                className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2"
-              >
-                {loading ? 'Saving...' : 'Next'}
-              </Button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {currentStep === 2 && (
-        <div className="max-w-6xl mx-auto px-8 py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">Personalization: Index on Our Partners</h2>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-12">
-            {/* Left side - Instructions */}
-            <div className="lg:sticky lg:top-8 lg:self-start">
-              <div className="space-y-6 px-4">
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-neutral-900">In this public beta...</h3>
-                  <p className="text-neutral-600 leading-relaxed">
-                    The Niche has partnered with a select cohort of high-talent startups that recruit primarily from us. Scroll through some of these profiles. 
-                  </p>
-                  <p className="text-neutral-600 leading-relaxed">
-                    <strong>Bookmark</strong> profiles you are interested in. This helps us understand your interests to tailor and connect you with more opportunities. 
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Right side - Company Cards */}
-            <div className="lg:col-span-2">
-              <div className="space-y-4">
-                {loadingCompanies ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900 mx-auto"></div>
-                    <p className="mt-2 text-neutral-600">Loading companies...</p>
-                  </div>
-                ) : (
-                  <>
-                    {companies.length > 0 ? (
-                      <CompanyCarousel companies={companies} />
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-neutral-600">No companies available at the moment.</p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center mt-12">
-            <Button 
-              onClick={() => updateStep(1)}
-              className="bg-neutral-200 hover:bg-neutral-300 text-neutral-900 px-8 py-2"
-            >
-              Back
-            </Button>
-            <Button 
-              onClick={() => {
-                updateStep(3)
-                if (allProfiles.length === 0) {
-                  loadAllProfiles()
-                }
-              }}
-              className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2"
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {currentStep === 4 && (
-        <div className="max-w-6xl mx-auto px-8 py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">Build Your Verifiable Professional Network</h2>
-            <p className="text-neutral-600 mt-4">Who you choose to verify and bring to your professional network allows us to index more on your interests and connect you with more relevant opportunities. Connect with people on The Niche that you would want to share opportunities with! </p>
-          </div>
-
-        {/* Search Bar */}
-        <div className="max-w-md mx-auto relative mb-8">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4 z-10" />
-          <Input
-            type="text"
-            placeholder="Search by name..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-            }}
-            className="pl-10 pr-4 py-2 w-full rounded-full border-neutral-200 focus:border-black focus:ring-black"
-          />
-        </div>
-
-        {/* Recommended Profiles from Same School */}
-        {!searchQuery.trim() && form.school && (
-          <div className="max-w-4xl mx-auto mb-8">
-            <h3 className="text-lg font-semibold text-neutral-900 mb-4 text-center">
-              Recommended To You
-            </h3>
-            <div className="grid gap-4 md:grid-cols-2">
-              {allProfiles
-                .filter(profile => profile.school === form.school && profile.id !== form.id)
-                .slice(0, 4)
-                .map((profile) => (
-                  <ProfileCard
-                    key={profile.id}
-                    profile={profile}
-                    onClick={() => {handleDialogChange(true); handleConnectClick(profile)}}
-                    connectionStatus={getConnectionStatus(profile)}
-                  />
-                ))}
-            </div>
-            {allProfiles.filter(profile => profile.school === form.school && profile.id !== form.id).length === 0 && (
-              <p className="text-center text-neutral-500 text-sm">
-                No other students from {form.school} have joined yet.
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Search Results - Profile Rows */}
-        {searchQuery.trim() && (
-          <div className="max-w-4xl mx-auto space-y-4 mb-8">
-            {searchResults.length > 0 ? (
-              searchResults.map((profile) => (
-                <div key={profile.id} className="bg-white border border-neutral-200 rounded-2xl p-6 flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <ProfileAvatar
-                      name={`${profile.first_name} ${profile.last_name}`}
-                      imageUrl={profile.profile_image_url || undefined}
-                      size={64}
-                      editable={false}
-                      className="w-16 h-16 rounded-full flex-shrink-0"
-                    />
-                    <div className="flex-1 text-left min-w-0">
-                      <h3 className="text-lg font-semibold text-neutral-900">
-                        {profile.first_name} {profile.last_name}
-                      </h3>
-                      {profile.bio && (
-                        <p className="text-sm text-neutral-600 line-clamp-2 mt-1 pr-2">
-                          {profile.bio}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex-shrink-0 ml-4">
-                    {(() => {
-                      const status = getConnectionStatus(profile);
-                      if (status === 'connected') {
-                        return (
-                          <Button disabled className="inline-flex items-center gap-2 bg-green-100 text-green-800 border-green-300 whitespace-nowrap">
-                            <UserPlus className="w-4 h-4" />
-                            Connected
-                          </Button>
-                        );
-                      } else if (status === 'pending_sent') {
-                        return (
-                          <Button disabled className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 border-yellow-300 whitespace-nowrap">
-                            <UserPlus className="w-4 h-4" />
-                            Request Sent
-                          </Button>
-                        );
-                      } else {
-                        return (
-                          <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-                            <DialogTrigger asChild>
-                              {status === 'requested' ? (
-                                <Button className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200 whitespace-nowrap" onClick={() => handleConnectClick(profile)}>
-                                  <UserPlus className="w-4 h-4" />
-                                  Accept Request
-                                </Button>
-                              ) : (
-                                <Button className="inline-flex items-center gap-2 whitespace-nowrap" onClick={() => handleConnectClick(profile)}>
-                                  <UserPlus className="w-4 h-4" />
-                                  Add to Verified Network
-                                </Button>
-                              )}
-                            </DialogTrigger>
-                        <DialogContent className="sm:max-w-xl w-full px-12 py-8">
-                        <DialogHeader>
-                          <DialogTitle>
-                            {getConnectionStatus(profile) === 'requested' 
-                              ? `Accept Connection Request from ${profile.first_name}`
-                              : `Connect with ${profile.first_name}`
-                            }
-                          </DialogTitle>
-                          <DialogDescription>
-                            {getConnectionStatus(profile) === 'requested'
-                              ? `${profile.first_name} has sent you a connection request. Rate your connection strength to accept and add them to your network.`
-                              : `To add ${profile.first_name} to your verified network, please rate your connection strength. This helps us maintain network quality and provide better recommendations.`
-                            }
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-6 mt-6">
-                          <ConnectionScale
-                            onSubmit={handleConnectionScale}
-                            isSubmitting={isSubmitting}
-                            personName={profile.first_name}
-                          />
-                          
-                          {/* Status Message Display */}
-                          {verificationStatus !== 'idle' && (
-                            <div className={`mt-6 p-4 rounded-lg text-sm ${
-                              verificationStatus === 'success' 
-                                ? 'bg-green-50 text-green-700 border border-green-200' 
-                                : verificationStatus === 'error'
-                                ? 'bg-red-50 text-red-700 border border-red-200'
-                                : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                            }`}>
-                              {statusMessage}
-                            </div>
-                          )}
-                        </div>
-                        </DialogContent>
-                        </Dialog>
-                      );
-                    }
-                  })()}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-neutral-600">
-                No people found matching {searchQuery}
-              </div>
-            )}
-          </div>
-        )}
-
-          {/* Connection Dialog */}
-          <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-            <DialogContent className="sm:max-w-xl w-full px-12 py-8">
-              <DialogHeader>
-                <DialogTitle>
-                  Connect with {selectedProfile?.first_name}
-                </DialogTitle>
-                <DialogDescription>
-                  To add {selectedProfile?.first_name} to your verified network, please rate your connection strength. This helps us maintain network quality and provide better recommendations.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-6 mt-6">
-                <ConnectionScale
-                  onSubmit={handleConnectionScale}
-                  isSubmitting={isSubmitting}
-                  personName={selectedProfile?.first_name}
-                />
-                
-                {/* Status Message Display */}
-                {verificationStatus !== 'idle' && (
-                  <div className={`mt-6 p-4 rounded-lg text-sm ${
-                    verificationStatus === 'success' 
-                      ? 'bg-green-50 text-green-700 border border-green-200' 
-                      : verificationStatus === 'error'
-                      ? 'bg-red-50 text-red-700 border border-red-200'
-                      : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                  }`}>
-                    {statusMessage}
-                  </div>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-
-           <div className="flex justify-between items-center mt-12">
-            <Button 
-              onClick={() => updateStep(3)}
-              className="bg-neutral-200 hover:bg-neutral-300 text-neutral-900 px-8 py-2"
-            >
-              Back
-            </Button>
-            <Button 
-              onClick={() => { handleFinishSetup() }}
-              disabled={loading}
-              className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2"
-            >
-              {loading ? 'Finishing Setup...' : 'Finish Setup'}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {currentStep === 3 && (
-        <div className="max-w-6xl mx-auto px-8 py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">Personalization: Index on Your Network and Existing Interests</h2>
-          </div>
-
-          {/* {formError && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 text-sm font-medium">{formError}</p>
-            </div>
-          )} */}
-
-          <div className="flex flex-col gap-0">
-            {/* Interests Section */}
-            <div className="py-6">
-              <label htmlFor="interests" className="text-base font-medium">Keywords that describe what you are interested in *</label>
-              <textarea
-                id="interests"
-                value={step4Form.interests}
-                onChange={(e) => setStep4Form((prev: Step4FormState) => ({ ...prev, interests: e.target.value }))}
-                placeholder="Blockchain, Product Engineering, Series A-D Startups, Systems, Quant, ..."
-                className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-lg 
-                          mt-2 min-h-[80px] max-h-[50vh] resize-y 
-                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring 
-                          focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-            <hr />
-
-            <div className="py-6">
-              <label htmlFor="opportunities_looking_for" className="text-base font-medium">What exactly are you looking for? What kinds of opportunities (roles, programs, fellowships) interest you? *</label>
-              <textarea
-                id="opportunities_looking_for"
-                value={step4Form.opportunities_looking_for}
-                onChange={(e) => setStep4Form((prev: Step4FormState) => ({ ...prev, opportunities_looking_for: e.target.value }))}
-                placeholder="I'm extremely interested in startups ranging from Seed to Series B that are operating within the FinTech environment. I'm interested in VC and would love to be a part of a VC fellowship to get more exposure into tech investing and due dilligence. "
-                className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-lg 
-                          mt-2 min-h-[80px] max-h-[50vh] resize-y 
-                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring 
-                          focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-            <hr />
-
-            {/* Network Recommendations Section */}
-            <div className="py-6">
-              <label className="text-base font-medium">Bring Your Network to The Niche</label>
-              <p className="text-sm text-neutral-600 mt-1 mb-4">Bring in 2 people that you would want to bring to your verified network to The Niche.</p>
-              <div className="space-y-4">
-                {step4Form.networkRecommendations.map((rec, index) => (
-                  <div key={index} className="border border-input rounded-md p-6 bg-background">
-                    <h4 className="text-base font-medium text-neutral-800 mb-4">Person {index + 1}</h4>
-                    <div className="space-y-4">
-                      <div>
-                        <label htmlFor={`rec-name-${index}`} className="block text-sm font-medium text-neutral-700 mb-2">
-                          Name *
-                        </label>
-                        <input
-                          id={`rec-name-${index}`}
-                          type="text"
-                          value={rec.name}
-                          onChange={(e) => {
-                            const newRecs = [...step4Form.networkRecommendations]
-                            newRecs[index] = { ...newRecs[index], name: e.target.value }
-                            setStep4Form((prev: Step4FormState) => ({ ...prev, networkRecommendations: newRecs }))
-                          }}
-                          placeholder="Full name"
-                          className="h-12 text-lg px-4 w-full rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor={`rec-email-${index}`} className="block text-sm font-medium text-neutral-700 mb-2">
-                          Email *
-                        </label>
-                        <input
-                          id={`rec-email-${index}`}
-                          type="email"
-                          value={rec.email}
-                          onChange={(e) => {
-                            const newRecs = [...step4Form.networkRecommendations]
-                            newRecs[index] = { ...newRecs[index], email: e.target.value }
-                            setStep4Form((prev: Step4FormState) => ({ ...prev, networkRecommendations: newRecs }))
-                          }}
-                          placeholder="email@example.com"
-                          className="h-12 text-lg px-4 w-full rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor={`rec-email-${index}`} className="block text-sm font-medium text-neutral-700 mb-2">
-                          How Do You Know This Person? *
-                        </label>
-                        <input
-                          id={`rec-connection-${index}`}
-                          type="connection"
-                          value={rec.connection}
-                          onChange={(e) => {
-                            const newRecs = [...step4Form.networkRecommendations]
-                            newRecs[index] = { ...newRecs[index], connection: e.target.value }
-                            setStep4Form((prev: Step4FormState) => ({ ...prev, networkRecommendations: newRecs }))
-                          }}
-                          placeholder="Interned together at xAI..."
-                          className="h-12 text-lg px-4 w-full rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <hr />
-          </div>
-
-          {formError && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 text-sm font-medium">{formError}</p>
-            </div>
-          )}
-
-          <div className="flex justify-between items-center mt-12">
-            <Button 
-              onClick={() => updateStep(2)}
-              className="bg-neutral-200 hover:bg-neutral-300 text-neutral-900 px-8 py-2"
-            >
-              Back
-            </Button>
-            <Button 
-              onClick={() => { handleStep4(); updateStep(4); }}
-              disabled={
-                !step4Form?.interests?.trim() ||
-                !step4Form?.opportunities_looking_for?.trim() ||
-                step4Form?.networkRecommendations?.some(rec => !rec.name?.trim() || !rec.email?.trim())
-              }
-              className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+    )}
+  </div>
 
       {/* Application Confirmation Dialog */}
-      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+      <Dialog open={profileFormComplete}>
         <DialogContent className="sm:max-w-5xl w-full p-8 max-h-[80vh] overflow-y-auto">
           <DialogHeader className="text-center">
             {/* <DialogTitle className="text-xl font-semibold">

@@ -3,10 +3,12 @@
 import { useId, useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Info } from "lucide-react";
+import { Info} from "lucide-react";
 import { CompanyData } from "@/app/types";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import Post from "../components/post";
+import Share from "../components/share";
 
 type CompanyWithImageUrl = CompanyData & {
   imageUrl: string | null;
@@ -90,9 +92,11 @@ export function CompanyCard({ company, showHighMutualInterest = false, potential
         </div>
       </div>
 
-      <div className="shrink-0">
-        <RainbowBookmark company={company.company} /> 
-      </div>
+      <div className="shrink-0 flex gap-2">
+        <RainbowBookmark company={company.company} />
+        <Share company={company.company} />
+        <Post company={company.company} companyData={company} />
+    </div>
 
       </div>
 

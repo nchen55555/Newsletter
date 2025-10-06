@@ -2,6 +2,8 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { useSubscriptionContext } from "./subscription_context";
+import { Bookmark } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function RainbowBookmark({ company }: { company: number }) {
   const { isSubscribed } = useSubscriptionContext();
@@ -51,33 +53,17 @@ export default function RainbowBookmark({ company }: { company: number }) {
   };
 
   return (
-    <div className="flex justify-center lg:justify-start mb-2">
-      <button
-        aria-label={bookmarked ? "Remove bookmark" : "Add bookmark"}
-        onClick={handleBookmark}
-        className="group p-1 rounded transition bg-black hover:bg-black/90 text-white"
-        style={{ outline: "none", border: "none", background: "none" }}
-        type="button"
-        disabled={loading}
-      >
-        <svg
-          width={32}
-          height={32}
-          viewBox="0 0 24 24"
-          fill={bookmarked ? "#000" : "none"}
-          stroke="#000"
-          strokeWidth={2.2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`drop-shadow-sm transition-all duration-300 ${loading ? "opacity-50" : ""}`}
-        >
-          <path
-            d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
-            fill={bookmarked ? "#000" : "none"}
-            stroke="#000"
-          />
-        </svg>
-      </button>
-    </div>
+    <Button
+      variant={bookmarked ? "default" : "outline"}
+      size="icon"
+      aria-label={bookmarked ? "Remove bookmark" : "Add bookmark"}
+      onClick={handleBookmark}
+      disabled={loading}
+      className={`transition-all duration-300 ${loading ? "opacity-50" : ""}`}
+    >
+      <Bookmark 
+        className={`h-4 w-4 transition-all duration-300 ${bookmarked ? "fill-current" : ""}`}
+      />
+    </Button>
   );
 }

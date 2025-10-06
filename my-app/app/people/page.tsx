@@ -2,6 +2,7 @@
 import { Container } from "@/app/components/container";
 import { Navigation } from "@/app/components/header";
 import { ProfileData, ConnectionData } from "@/app/types";
+import { VerificationProtectedContent } from "@/app/components/verification-protected-content";
 import React, { useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -247,7 +248,7 @@ export default function PeoplePage() {
     return fullName.includes(query);
   }) || [];
 
-  // Filter verified connections (must be mutual)
+  // Filter verified connections (must be mutual) - returns array of tuples [profile, rating]
   const verifiedConnectionProfiles = allProfiles?.filter(profile => {
     const hasNames = profile.first_name && 
                     profile.last_name && 
@@ -255,6 +256,11 @@ export default function PeoplePage() {
                     profile.last_name.trim() !== '';
     
     return hasNames && isMutuallyConnected(profile);
+  }).map(profile => {
+    // Find the rating from user's own connections
+    const connection = verifiedConnections.find((conn: ConnectionData) => conn.connect_id === profile.id);
+    const rating = connection?.rating || null;
+    return [profile, rating] as [ProfileData, number | null];
   }) || [];
 
   // Filter profiles based on user's pending_connections array
@@ -271,13 +277,13 @@ export default function PeoplePage() {
 
   // Filter profiles based on user's requested_connections array  
   const userRequestedConnectionProfiles = allProfiles?.filter(profile => {
-    const hasNames = profile.first_name && 
-                    profile.last_name && 
-                    profile.first_name.trim() !== '' && 
+    const hasNames = profile.first_name &&
+                    profile.last_name &&
+                    profile.first_name.trim() !== '' &&
                     profile.last_name.trim() !== '';
-    
+
     const isRequested = requestedConnections.some((conn: ConnectionData) => conn.connect_id === profile.id);
-      
+
     return hasNames && isRequested;
   }) || [];
 
@@ -299,9 +305,7 @@ export default function PeoplePage() {
                             Your Niche Network
                         </h1>
                         <p className="text-lg md:text-xl text-neutral-600 leading-relaxed font-light max-w-5xl mx-auto mb-8">
-                            Curate a personalized and verified professional network on The Niche by connecting and verifying your connection with email and/or phone number. We utilize your network to allow us to better match you with opportunities custom-tailored to not only your interests but the interests of those in your verified, professional network. 
-                            <br></br><br></br>
-                            <strong>Access to The Niche is strictly through referral to create a curated network within this public beta. </strong>
+                            Curate a personalized and verified professional network on The Niche by verifying your degree of connection and customizing how much to index on your connections&apos; interests and opportunities for your own opportunity recommendations.
                         </p>
                         
                         {/* Show content based on application status */}
@@ -406,53 +410,15 @@ export default function PeoplePage() {
                             Peruse Our Entire Network Grid on The Niche
                           </Button>
                         </div>
-                        
-                        {/* Verified Connections Section */}
-                        {verifiedConnectionProfiles.length > 0 && (
-                          <div className="w-full max-w-6xl mx-auto mt-12">
-                            <h2 className="text-2xl font-semibold mb-6 text-center text-neutral-900">
-                              Your Verified Connections
-                            </h2>
-                            <div className="space-y-4">
-                              {verifiedConnectionProfiles.map((profile) => (
-                                <ProfileCard 
-                                  key={profile.id} 
-                                  profile={profile} 
-                                  onClick={() => handleProfileClick(profile)}
-                                  connectionStatus="connected"
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                      
-
-                        {/* User's Pending Connections Section */}
-                        {userPendingConnectionProfiles.length > 0 && (
-                          <div className="w-full max-w-6xl mx-auto mt-12">
-                            <h2 className="text-2xl font-semibold mb-6 text-center text-neutral-900">
-                              Your Pending Requests to Others
-                            </h2>
-                            <div className="space-y-4">
-                              {userPendingConnectionProfiles.map((profile) => (
-                                <ProfileCard 
-                                  key={profile.id} 
-                                  profile={profile} 
-                                  onClick={() => handleProfileClick(profile)}
-                                  connectionStatus="pending_sent"
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
 
                         {/* User's Requested Connections Section */}
-                        {userRequestedConnectionProfiles.length > 0 && (
-                          <div className="w-full max-w-6xl mx-auto mt-12">
-                            <h2 className="text-2xl font-semibold mb-6 text-center text-neutral-900">
-                              People Requesting To Connect with You
-                            </h2>
+                        <VerificationProtectedContent 
+                          sectionTitle="People Requesting To Connect with You"
+                          fallbackTitle="Verification Required for Network Access"
+                          fallbackDescription="Request to join The Niche network to view and respond to connection requests"
+                          className="w-full max-w-6xl mx-auto mt-12"
+                        >
+                          {userRequestedConnectionProfiles.length > 0 ? (
                             <div className="space-y-4">
                               {userRequestedConnectionProfiles.map((profile) => (
                                 <ProfileCard 
@@ -463,8 +429,69 @@ export default function PeoplePage() {
                                 />
                               ))}
                             </div>
-                          </div>
-                        )}
+                          ) : (
+                            <div className="text-center py-8 text-neutral-600">
+                              <UserPlus className="mx-auto h-12 w-12 mb-4 text-neutral-400" />
+                              <p>No incoming connection requests at this time.</p>
+                            </div>
+                          )}
+                        </VerificationProtectedContent>
+                        
+                        {/* Verified Connections Section */}
+                        <VerificationProtectedContent 
+                          sectionTitle="Your Verified Connections"
+                          fallbackTitle="Verification Required for Network Access"
+                          fallbackDescription="Request to join The Niche network to view and manage your professional connections"
+                          className="w-full max-w-6xl mx-auto mt-12"
+                        >
+                          {verifiedConnectionProfiles.length > 0 ? (
+                            <div className="space-y-4">
+                              {verifiedConnectionProfiles.map(([profile, rating]) => (
+                                <ProfileCard 
+                                  key={profile.id} 
+                                  profile={profile} 
+                                  onClick={() => handleProfileClick(profile)}
+                                  connectionStatus="connected"
+                                  connectionRating={rating || undefined}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 text-neutral-600">
+                              <Users className="mx-auto h-12 w-12 mb-4 text-neutral-400" />
+                              <p>No verified connections yet. Start connecting with professionals in your network!</p>
+                            </div>
+                          )}
+                        </VerificationProtectedContent>
+
+                      
+
+                        {/* User's Pending Connections Section */}
+                        <VerificationProtectedContent 
+                          sectionTitle="Your Pending Requests to Others"
+                          fallbackTitle="Verification Required for Network Access"
+                          fallbackDescription="Request to join The Niche network to view and manage your pending connection requests"
+                          className="w-full max-w-6xl mx-auto mt-12"
+                        >
+                          {userPendingConnectionProfiles.length > 0 ? (
+                            <div className="space-y-4">
+                              {userPendingConnectionProfiles.map((profile) => (
+                                <ProfileCard 
+                                  key={profile.id} 
+                                  profile={profile} 
+                                  onClick={() => handleProfileClick(profile)}
+                                  connectionStatus="pending_sent"
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 text-neutral-600">
+                              <AlertCircle className="mx-auto h-12 w-12 mb-4 text-neutral-400" />
+                              <p>No pending requests. Send connection requests to expand your network!</p>
+                            </div>
+                          )}
+                        </VerificationProtectedContent>
+
                                             
                           </>
                         ) : null}

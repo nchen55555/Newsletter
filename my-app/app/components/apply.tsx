@@ -257,12 +257,12 @@ export default function ApplyButton({ company, person }: { company: string; pers
           variant="default"
           className="inline-flex items-center justify-center bg-neutral-900 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-neutral-800 transition-colors text-sm w-full"
           type="button"
-          aria-label="connect"
+          aria-label="request an intro"
           disabled={applied || !appliedToNiche}
           style={applied ? { cursor: "not-allowed" } : {}}
         >
           <Send className="w-4 h-4 mr-2" />
-          connect
+          request an intro
         </Button>
       </span>
     </TooltipTrigger>

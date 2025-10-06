@@ -5,7 +5,9 @@ import Image from "next/image";
 import imageUrlBuilder from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { ArrowRight } from "lucide-react";
-
+import RainbowBookmark from "./rainbow_bookmark";
+import Share from "@/app/components/share";
+// import Post from "@/app/components/post";
 // --- Types --------------------------------------------------------------
 export interface Post extends SanityDocument {
   title: string;
@@ -25,39 +27,6 @@ function urlForImage(source: SanityImageSource) {
 }
 
 // Normalize tags → role labels (title case)
-function getRoleLabels(tags?: Post["tags"]) {
-  if (!tags || !Array.isArray(tags)) {
-    return [];
-  }
-  
-  // de-dup and properly title-case the string tags
-  const seen = new Set<string>();
-  return tags
-    .filter((tag): tag is string => typeof tag === "string" && tag.trim().length > 0)
-    .map((tag) => {
-      // Clean up the tag but preserve original capitalization where appropriate
-      const cleaned = tag
-        .trim()
-        .replace(/[_-]/g, " ")
-        .replace(/\s+/g, " ");
-      
-      // Convert to proper title case, preserving abbreviations
-      return cleaned.replace(/\w\S*/g, (word) => {
-        // If word is already all uppercase (likely an abbreviation), keep it
-        if (word.length > 1 && word === word.toUpperCase()) {
-          return word;
-        }
-        // Otherwise, standard title case
-        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-      });
-    })
-    .filter((tag) => {
-      const normalized = tag.toLowerCase();
-      if (seen.has(normalized)) return false;
-      seen.add(normalized);
-      return true;
-    });
-}
 
 // --- Query --------------------------------------------------------------
 // Tags are simple strings in the Sanity schema
@@ -69,7 +38,6 @@ const POSTS_QUERY = `*[
 
 // --- Feed Row (one per row) ---------------------------------------------
 export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
-  const roles = getRoleLabels(post.tags);
 
   return (
     <article className="group relative overflow-hidden rounded-3xl border border-neutral-200 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
@@ -111,20 +79,11 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
               </p>
             )}
 
-            {/* Roles from tags */}
-            {roles.length > 0 && (
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                {/* {roles.map((role) => (
-                  <span
-                    key={role}
-                    className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
-                  >
-                    {role}
-                  </span>
-                ))} */}
+            <div className="mt-4 flex items-end gap-2">
+                <RainbowBookmark company={index} />
+                <Share company={index} />
+                {/* <Post company={index} companyData={post} /> */}
               </div>
-            )}
-
             <div className="mt-6 inline-flex items-center gap-2 self-start text-base md:text-lg font-medium text-neutral-700 transition-colors duration-200 group-hover:text-neutral-900 dark:text-neutral-200 dark:group-hover:text-white">
               Read more <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
             </div>

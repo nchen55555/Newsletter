@@ -1,31 +1,52 @@
 import { ProfileData } from "@/app/types";
 import ProfileAvatar from "@/app/components/profile_avatar";
+import { connectionLabels } from "./connection-scale";
 
-function ProfileCard({ profile, onClick, connectionStatus = 'none' }: { profile: ProfileData; onClick: () => void; connectionStatus?: 'connected' | 'pending_sent' | 'requested' | 'none' }) {
+function ProfileCard({ profile, onClick, connectionStatus = 'none', connectionRating }: { profile: ProfileData; onClick: () => void; connectionStatus?: 'connected' | 'pending_sent' | 'requested' | 'none'; connectionRating?: number }) {
 
-  const getConnectionBadge = () => {
+  const getConnectionBadges = () => {
+    const badges = [];
+    
+    // Connection status badge
     switch (connectionStatus) {
       case 'connected':
-        return (
-          <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+        badges.push(
+          <div key="status" className="bg-gradient-to-r from-purple-100 via-pink-100 to-yellow-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">
             Connected
           </div>
         );
+        break;
       case 'pending_sent':
-        return (
-          <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+        badges.push(
+          <div key="status" className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
             Request Sent
           </div>
         );
+        break;
       case 'requested':
-        return (
-          <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+        badges.push(
+          <div key="status" className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
             Requested
           </div>
         );
-      default:
-        return null;
+        break;
     }
+    
+    // Rating badge (only if we have a rating and connection)
+    if (connectionRating && connectionStatus !== 'none') {
+      console.log("rating badge", connectionLabels[connectionRating - 1]);
+      badges.push(
+        <div key="rating" className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
+          {connectionLabels[connectionRating - 1]}
+        </div>
+      );
+    }
+    
+    return badges.length > 0 ? (
+      <div className="flex gap-2">
+        {badges}
+      </div>
+    ) : null;
   };
 
   return (
@@ -49,7 +70,7 @@ function ProfileCard({ profile, onClick, connectionStatus = 'none' }: { profile:
             <h3 className="text-xl font-semibold text-neutral-900">
               {profile.first_name} {profile.last_name}
             </h3>
-            {getConnectionBadge()}
+            {getConnectionBadges()}
           </div>
           
           {/* Bio */}

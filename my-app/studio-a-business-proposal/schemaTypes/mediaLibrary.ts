@@ -77,28 +77,11 @@ export const mediaLibrary = defineType({
       title: 'Location',
       type: 'string',
     }),
-    {
-    name: 'people',
-    type: 'array',
-    title: 'Team Members',
-    of: [
-      {
-        type: 'object',
-        fields: [
-          {
-            name: 'name',
-            type: 'string',
-            title: 'Full Name'
-          },
-          {
-            name: 'media_url',
-            type: 'url',
-            title: 'Personal Website Media URL'
-          }
-        ]
-      }
-    ]
-  }
+    defineField({
+      name: 'people',
+      type: 'string',
+      title: 'People',
+    })
   ],
   preview: {
     select: {

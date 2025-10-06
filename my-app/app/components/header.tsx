@@ -2,34 +2,18 @@
 import Link from "next/link"
 import { NavActions } from "./navActions"
 import React, { useEffect, useState } from "react";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { AlertCircleIcon } from "lucide-react";
 import { useSubscriptionContext } from "./subscription_context";
 
 export function Navigation() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isSubscribed, loading: subLoading } = useSubscriptionContext();
 
-  const [profileAlert, setProfileAlert] = useState(false);
-  const [checkingProfile, setCheckingProfile] = useState(true); // ← new
-  const [alertRightAlign, setAlertRightAlign] = useState(false);
   const [requestedConnectionsCount, setRequestedConnectionsCount] = useState(0);
-  const alertRef = React.useRef<HTMLDivElement | null>(null);
-
-  // Measure overflow only when visible
-  useEffect(() => {
-    if (profileAlert && alertRef.current) {
-      const rect = alertRef.current.getBoundingClientRect();
-      setAlertRightAlign(rect.right > window.innerWidth);
-    }
-  }, [profileAlert]);
 
   // Fetch profile only once subscription state is ready & user is subscribed
   useEffect(() => {
     if (subLoading || !isSubscribed) {
       // If not subscribed, don’t show the alert at all
-      setProfileAlert(false);
-      setCheckingProfile(false);
       return;
     }
 
@@ -47,16 +31,12 @@ export function Navigation() {
         const profile = await res.json();
 
         if (!didSet) {
-          setProfileAlert(!profile.applied);
           const requestedConnections = profile.requested_connections_new || [];
           setRequestedConnectionsCount(requestedConnections.length);
         }
       } catch (e) {
-        console.error("Failed to fetch profile:", e);
-        if (!didSet) setProfileAlert(false); // fail-closed
-      } finally {
-        if (!didSet) setCheckingProfile(false);
-      }
+        console.error("Failed to fetch profile:", e);      
+      } 
     })();
 
     return () => {
@@ -89,8 +69,8 @@ export function Navigation() {
           {isSubscribed && (
             <>
             <Link href="/opportunities" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">opportunities</Link>
-            <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">feed</Link>
-            {/* <Link href="/feed" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">your feed</Link> */}
+            <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">articles</Link>
+            {/* <Link href="/feed" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">feed</Link> */}
             <div className="relative inline-block">
               <Link href="/people" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">
                 people
@@ -105,23 +85,7 @@ export function Navigation() {
           )}
 
           <div className="flex items-center gap-4 relative">
-            {/* Only render after check finishes to avoid flashing/lingering */}
-            {isSubscribed && !checkingProfile && profileAlert && (
-              <div
-                ref={alertRef}
-                className={`absolute top-12 z-50 w-80 ${alertRightAlign ? 'right-0 left-auto ml-0' : 'left-full ml-4'}`}
-              >
-                <Alert variant="destructive">
-                  <AlertCircleIcon className="h-5 w-5 text-red-500 mr-2" />
-                  <AlertTitle>Create your profile</AlertTitle>
-                  <AlertDescription>
-                    <ul className="list-inside list-disc text-sm">
-                      <li>Your profile is necessary to use this platform</li>
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              </div>
-            )}
+            
             <NavActions />
           </div>
         </div>
@@ -134,8 +98,9 @@ export function Navigation() {
           {isSubscribed && (
             <>
               <Link href="/opportunities" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>opportunities</Link>
-              <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>company profiles</Link>
+              <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>articlees</Link>
               <Link href="/ats" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>your apps</Link>
+              {/* <Link href="/feed" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">feed</Link> */}
               <div className="relative inline-block">
                 <Link href="/people" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>
                   people

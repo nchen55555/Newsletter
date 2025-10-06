@@ -68,12 +68,31 @@ export async function POST(req: NextRequest) {
     const connectIdNum = parseInt(connect_id);
     const currentUserId = currentProfile?.id;
 
-    // 6. Check if already connected
-    if (connections.some(conn => conn.connect_id === connectIdNum)) {
+    // 6. Check if already connected and update rating if exists
+    const existingConnectionIndex = connections.findIndex(conn => conn.connect_id === connectIdNum);
+    if (existingConnectionIndex !== -1) {
+      // Update the existing connection's rating
+      connections[existingConnectionIndex].rating = rating;
+      
+      // Update the database
+      const { error: updateError } = await supabase
+        .from('subscribers')
+        .update({ connections_new: connections })
+        .eq('email', user.email);
+      
+      if (updateError) {
+        console.error('Error updating connection rating:', updateError);
+        return NextResponse.json({ 
+          error: 'Failed to update connection rating', 
+          details: updateError.message 
+        }, { status: 500 });
+      }
+      
       return NextResponse.json({ 
         success: true, 
-        message: 'Connection already exists',
-        connections: connections
+        message: 'Connection rating updated successfully',
+        connections: connections,
+        type: 'rating_update'
       });
     }
 

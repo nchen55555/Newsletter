@@ -35,6 +35,8 @@ export type ProfileData = {
     application_tracker_confirmed?: boolean,
     bookmarked_companies?: number[];
     needs_visa_sponsorship?: boolean;
+    company_recommendations?: number[];
+    network_recommendations?: NetworkRecommendation[];
   };
 
 export type ProfileFormState = {
@@ -59,6 +61,10 @@ export type ProfileFormState = {
   transcript_file?: File | null;
   applied?: boolean;
   parsed_resume_json?: string;
+  bookmarked_companies?: number[];
+  pending_connections_new?: ConnectionData[];
+  interests?: string;
+  network_recommendations?: NetworkRecommendation[];
 };
 
 // Company-related types
@@ -82,7 +88,7 @@ export interface CompanyData extends SanityDocument {
   partner?: boolean;
   potential_partner?: boolean;
   external_media?: string;
-  people?: { name: string; media_url: string }[];
+  people?: string;
 }
 
 export type CompanyWithImageUrl = CompanyData & {
@@ -103,10 +109,7 @@ export interface MediaLibraryItem extends SanityDocument {
   hiring_tags?: string[];
   external_media?: string;
   location?: string;
-  people?: Array<{
-    name: string;
-    media_url?: string;
-  }>;
+  people?: string;
 }
 
 // lib/resume-types.ts
@@ -180,6 +183,7 @@ export interface Subscriber {
 export interface NetworkRecommendation {
   name: string;
   email: string;
+  connection: string;
 }
 
 export interface Step3UpdateData {
