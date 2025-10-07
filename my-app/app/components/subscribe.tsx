@@ -67,11 +67,11 @@ export function Subscribe() {
       <div className="flex flex-col w-full max-w-sm gap-4">
       { !isSubscribed && ( 
         <>
-            <GoogleLogin buttonText="create my profile" flowType="subscribe" />
+            <GoogleLogin buttonText="build your profile" flowType="subscribe" />
             {formSuccess && (
             <Alert>
                 <CheckCircle2Icon />
-                <AlertTitle>Success! You have made your profile</AlertTitle>
+                <AlertTitle>Success! </AlertTitle>
             </Alert>
             )}
         </>

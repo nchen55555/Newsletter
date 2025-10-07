@@ -16,7 +16,7 @@ export function VerificationRequired({
   const router = useRouter();
 
   const handleRequestAccess = () => {
-    router.push("/access");
+    router.push("/profile");
   };
 
   return (

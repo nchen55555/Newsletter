@@ -291,6 +291,7 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                           fallbackTitle="Verification Required for Opportunity Access"
                           fallbackDescription="Request to join The Niche network to view personalized opportunities and connect with startup founders"
                           className="mb-12"
+                          hideWhenNotVerified={true}
                         >
                           {verifiedToTheNiche && (
                             <>
@@ -320,9 +321,8 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                         {/* Other Opportunities Section */}
                         <VerificationProtectedContent 
                           sectionTitle="Your Bookmarks and Other Opportunities"
-                          fallbackTitle="Verification Required for Opportunity Access"
-                          fallbackDescription="Request to join The Niche network to view and bookmark startup opportunities"
                           className="mb-12"
+                          hideWhenNotVerified={true}
                         >
                           {verifiedToTheNiche && otherOpportunities.length > 0 && (
                             <div className="space-y-4">

@@ -361,6 +361,7 @@ export default function CompanyPageClient({
           <VerificationProtectedContent 
             sectionTitle={`People in Your Network Who We Think Would Be A Good Fit Here (${bookmarkedUsers.length})`}
             className="mt-12 mb-12"
+            hideWhenNotVerified={true}
           >
             <div className="mt-8 mb-8 flex justify-start">
               <Button 

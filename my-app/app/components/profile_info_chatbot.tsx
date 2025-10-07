@@ -135,7 +135,7 @@ const questions: Question[] = [
     id: 'network_recommendations',
     field: 'network_recommendations',
     question: "Can you recommend 2 people from your network?",
-    description: "Help grow your community be recommending 2 of your smartest friends here!",
+    description: "Build your professional network by recommending your 2 smartest friends",
     type: 'network_recommendations',
     required: true
   },
@@ -193,6 +193,8 @@ export default function ProfileInfoChatbot({
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'error' | 'pending'>('idle')
   const [statusMessage, setStatusMessage] = useState('')
   const [isUploadingProfileImage, setIsUploadingProfileImage] = useState(false)
+  const [isUploadingFile, setIsUploadingFile] = useState(false)
+  const [uploadComplete, setUploadComplete] = useState<{[key: string]: boolean}>({})
   const [dialogOpen, setDialogOpen] = useState(false)
   const [currentUserData, setCurrentUserData] = useState<ProfileData | null>(null)
   
@@ -207,7 +209,7 @@ export default function ProfileInfoChatbot({
   const hasProfileImage = form.profile_image || form.profile_image_url
 
   // Shared validation logic for any question
-  const isQuestionValid = (question: typeof questions[0]) => {
+  const isQuestionValid = useCallback((question: typeof questions[0]) => {
     if (!question) return true
     if (!question.required) return true
     
@@ -250,7 +252,7 @@ export default function ProfileInfoChatbot({
     
     // Handle all other fields
     return !!value && value.toString().trim() !== ''
-  }
+  }, [form, currentUserData])
 
   // Validation function to check if current question is satisfied
   const isCurrentQuestionValid = () => {
@@ -262,17 +264,58 @@ export default function ProfileInfoChatbot({
     return isCurrentQuestionValid() 
   }
 
-  // Get the furthest question the user should be able to access
-  const getMaxAccessibleQuestion = useCallback(() => {
-    for (let i = 0; i < questions.length; i++) {
-      const question = questions[i]
+
+  // Function to post individual field updates
+  const postFieldUpdate = async (field: keyof ProfileFormState, value: string | boolean | File | Array<{name: string, email: string, connection: string}> | null) => {
+    try {
+      const formData = new FormData()
+      formData.append('id', form.id.toString())
       
-      if (!isQuestionValid(question)) {
-        return i
+      // Handle different field types
+      if (field === 'profile_image' && value instanceof File) {
+        formData.append('profile_image', value)
+      } else if (field === 'resume_file' && value instanceof File) {
+        formData.append('resume_file', value)
+      } else if (field === 'transcript_file' && value instanceof File) {
+        formData.append('transcript_file', value)
+      } else if (field === 'network_recommendations' && Array.isArray(value)) {
+        formData.append('network_recommendations', JSON.stringify(value))
+      } else if (typeof value === 'boolean') {
+        formData.append(field as string, value.toString())
+      } else if (value !== null && value !== undefined) {
+        formData.append(field as string, value.toString())
       }
+      
+      const response = await fetch('/api/post_profile', {
+        method: 'PATCH',
+        body: formData,
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log(`Successfully updated ${field}:`, result)
+        
+        // Update form with any returned URLs (for file uploads)
+        if (result.profileImageUrl && field === 'profile_image') {
+          setForm(prev => ({ ...prev, profile_image_url: result.profileImageUrl }))
+        }
+        if (result.resumeUrl && field === 'resume_file') {
+          setForm(prev => ({ ...prev, resume_url: result.resumeUrl }))
+        }
+        if (result.transcriptUrl && field === 'transcript_file') {
+          setForm(prev => ({ ...prev, transcript_url: result.transcriptUrl }))
+        }
+        
+        return true
+      } else {
+        console.error(`Failed to update ${field}:`, response.status)
+        return false
+      }
+    } catch (error) {
+      console.error(`Error updating ${field}:`, error)
+      return false
     }
-    return questions.length
-  }, [form, currentUserData, isQuestionValid])
+  }
 
   // Data loading functions
   const loadCompanies = async () => {
@@ -287,7 +330,7 @@ export default function ProfileInfoChatbot({
       const data = await response.json()
       const filteredCompanies = data.filter((company: CompanyWithImageUrl) => company.partner || company.pending_partner)
       const shuffled = filteredCompanies.sort(() => Math.random() - 0.5)
-      setCompanies(shuffled.slice(0, 5))
+      setCompanies(shuffled.slice(0, 10))
     } catch (error) {
       console.error('Error loading companies:', error)
     } finally {
@@ -560,9 +603,20 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
 
   // Initialize current question index based on form data
   useEffect(() => {
-    const maxAccessible = getMaxAccessibleQuestion()
+    // Inline the logic to avoid dependency issues while ensuring it only runs on mount
+    let maxAccessible = 0
+    for (let i = 0; i < questions.length; i++) {
+      const question = questions[i]
+      
+      if (!isQuestionValid(question)) {
+        maxAccessible = i
+        break
+      }
+      maxAccessible = questions.length
+    }
     setCurrentQuestionIndex(Math.min(maxAccessible, questions.length - 1))
-  }, [getMaxAccessibleQuestion]) // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount - intentionally ignoring dependencies to prevent auto-advancement
 
   useEffect(() => {
     if (currentQuestion && !isComplete) {
@@ -597,7 +651,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     }
   }, [currentQuestion, questionComplete, isComplete, currentQuestionIndex, form, hasProfileImage])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!currentQuestion || isComplete) return
@@ -616,16 +670,27 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     // Update form state
     setForm(prev => ({ ...prev, [currentQuestion.field]: trimmedValue }))
     
+    // Post the field update to the server
+    await postFieldUpdate(currentQuestion.field, trimmedValue)
+    
     // Move to next question only if we can proceed
     if (canProceedToNext()) {
       nextQuestion()
     }
   }
 
-  const nextQuestion = () => {
+  const nextQuestion = async () => {
     // Don't proceed if current question isn't valid
     if (!canProceedToNext()) {
       return
+    }
+
+    // Post current field data if it hasn't been posted yet
+    if (currentQuestion) {
+      const currentValue = form[currentQuestion.field]
+      if (currentValue !== null && currentValue !== undefined && currentValue !== '') {
+        await postFieldUpdate(currentQuestion.field, currentValue as string | boolean | File | Array<{name: string, email: string, connection: string}> | null)
+      }
     }
 
     setInputValue('')
@@ -657,11 +722,15 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     }
   }
 
-  const handleToggleResponse = (value: boolean) => {
+  const handleToggleResponse = async (value: boolean) => {
     if (!currentQuestion) return
     
     setForm(prev => ({ ...prev, [currentQuestion.field]: value }))
-    // Always proceed for toggle questions since they're not required or the act of clicking provides a value
+    
+    // Post the field update to the server
+    await postFieldUpdate(currentQuestion.field, value)
+    
+    // For toggle questions, automatically proceed since they're simple yes/no choices
     setTimeout(() => {
       const newIndex = currentQuestionIndex + 1
       setCurrentQuestionIndex(newIndex)
@@ -695,47 +764,34 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     // Update form state immediately
     setForm(prev => ({ ...prev, [currentQuestion.field]: file }))
     
-    // If it's a profile image, upload it immediately
+    // Show uploading state for all file uploads
     if (isProfileImage) {
       setIsUploadingProfileImage(true)
-      try {
-        const formData = new FormData()
-        formData.append('id', form.id.toString())
-        formData.append('profile_image', file)
-        
-        const response = await fetch('/api/post_profile', {
-          method: 'PATCH',
-          body: formData,
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
-          // Update form with the returned profile image URL
-          if (result.profileImageUrl) {
-            setForm(prev => ({ ...prev, profile_image_url: result.profileImageUrl }))
-          }
-        } else {
-          console.error('Failed to upload profile image')
-          alert('Failed to upload profile image. Please try again.')
-          return
-        }
-      } catch (error) {
-        console.error('Error uploading profile image:', error)
-        alert('Error uploading profile image. Please try again.')
+    } else {
+      setIsUploadingFile(true)
+    }
+    
+    try {
+      const success = await postFieldUpdate(currentQuestion.field, file)
+      if (!success) {
+        alert(`Failed to upload ${isProfileImage ? 'profile image' : 'file'}. Please try again.`)
         return
-      } finally {
+      }
+      // Mark upload as complete
+      setUploadComplete(prev => ({ ...prev, [currentQuestion.field]: true }))
+    } catch (error) {
+      console.error(`Error uploading ${isProfileImage ? 'profile image' : 'file'}:`, error)
+      alert(`Error uploading ${isProfileImage ? 'profile image' : 'file'}. Please try again.`)
+      return
+    } finally {
+      if (isProfileImage) {
         setIsUploadingProfileImage(false)
+      } else {
+        setIsUploadingFile(false)
       }
     }
     
-    // Always proceed after successful file upload
-    setTimeout(() => {
-      const newIndex = currentQuestionIndex + 1
-      setCurrentQuestionIndex(newIndex)
-      if (onComplete) {
-        onComplete(newIndex >= questions.length)
-      }
-    }, 200)
+    // Don't automatically proceed - let user click Next when ready
   }
 
   const handleSchoolSearch = (value: string) => {
@@ -901,13 +957,15 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                     />
                     <Button
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploadingProfileImage && currentQuestion.field === 'profile_image'}
+                      disabled={(isUploadingProfileImage && currentQuestion.field === 'profile_image') || (isUploadingFile && currentQuestion.field !== 'profile_image')}
                       className="w-full py-6 text-lg flex items-center justify-center gap-3"
                       variant="outline"
                     >
                       <Upload className="w-5 h-5" />
-                      {isUploadingProfileImage && currentQuestion.field === 'profile_image' 
+                      {(isUploadingProfileImage && currentQuestion.field === 'profile_image') || (isUploadingFile && currentQuestion.field !== 'profile_image')
                         ? 'Uploading...' 
+                        : uploadComplete[currentQuestion.field]
+                        ? 'Upload Complete ✓'
                         : (currentQuestion.field === 'profile_image' ? 'Upload Photo' : 'Choose File')
                       }
                     </Button>
@@ -944,16 +1002,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                       {!currentQuestion.required && (
                         <Button
                           type="button"
-                          onClick={() => {
-                            // Skip non-required questions
-                            setTimeout(() => {
-                              const newIndex = currentQuestionIndex + 1
-                              setCurrentQuestionIndex(newIndex)
-                              if (onComplete) {
-                                onComplete(newIndex >= questions.length)
-                              }
-                            }, 200)
-                          }}
+                          onClick={nextQuestion}
                           variant="ghost"
                           className="text-gray-500 hover:text-gray-700"
                         >
@@ -1329,16 +1378,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                       {!currentQuestion.required && (
                         <Button
                           type="button"
-                          onClick={() => {
-                            // Skip non-required questions
-                            setTimeout(() => {
-                              const newIndex = currentQuestionIndex + 1
-                              setCurrentQuestionIndex(newIndex)
-                              if (onComplete) {
-                                onComplete(newIndex >= questions.length)
-                              }
-                            }, 200)
-                          }}
+                          onClick={nextQuestion}
                           variant="ghost"
                           className="text-gray-500 hover:text-gray-700"
                         >
@@ -1454,13 +1494,15 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                       />
                       <Button
                         onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploadingProfileImage && currentQuestion.field === 'profile_image'}
+                        disabled={(isUploadingProfileImage && currentQuestion.field === 'profile_image') || (isUploadingFile && currentQuestion.field !== 'profile_image')}
                         className="w-full py-6 text-lg flex items-center justify-center gap-3"
                         variant="outline"
                       >
                         <Upload className="w-5 h-5" />
-                        {isUploadingProfileImage && currentQuestion.field === 'profile_image' 
+                        {(isUploadingProfileImage && currentQuestion.field === 'profile_image') || (isUploadingFile && currentQuestion.field !== 'profile_image')
                           ? 'Uploading...' 
+                          : uploadComplete[currentQuestion.field]
+                          ? 'Upload Complete ✓'
                           : (currentQuestion.field === 'profile_image' ? 'Upload Photo' : 'Choose File')
                         }
                       </Button>

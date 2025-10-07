@@ -417,6 +417,7 @@ export default function PeoplePage() {
                           fallbackTitle="Verification Required for Network Access"
                           fallbackDescription="Request to join The Niche network to view and respond to connection requests"
                           className="w-full max-w-6xl mx-auto mt-12"
+                          hideWhenNotVerified={false}
                         >
                           {userRequestedConnectionProfiles.length > 0 ? (
                             <div className="space-y-4">
@@ -443,6 +444,7 @@ export default function PeoplePage() {
                           fallbackTitle="Verification Required for Network Access"
                           fallbackDescription="Request to join The Niche network to view and manage your professional connections"
                           className="w-full max-w-6xl mx-auto mt-12"
+                          hideWhenNotVerified={false}
                         >
                           {verifiedConnectionProfiles.length > 0 ? (
                             <div className="space-y-4">
@@ -472,6 +474,7 @@ export default function PeoplePage() {
                           fallbackTitle="Verification Required for Network Access"
                           fallbackDescription="Request to join The Niche network to view and manage your pending connection requests"
                           className="w-full max-w-6xl mx-auto mt-12"
+                          hideWhenNotVerified={false}
                         >
                           {userPendingConnectionProfiles.length > 0 ? (
                             <div className="space-y-4">

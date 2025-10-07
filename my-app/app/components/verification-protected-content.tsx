@@ -21,6 +21,7 @@ export function VerificationProtectedContent({
 }: VerificationProtectedContentProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasApplied, setHasApplied] = useState<boolean | null>(null);
 
   useEffect(() => {
     const checkVerificationStatus = async () => {
@@ -29,12 +30,15 @@ export function VerificationProtectedContent({
         if (response.ok) {
           const profile = await response.json();
           setIsVerified(profile.verified || false);
+          setHasApplied(profile.applied || false);
         } else {
           setIsVerified(false);
+          setHasApplied(false);
         }
       } catch (error) {
         console.error("Error checking verification status:", error);
         setIsVerified(false);
+        setHasApplied(false);
       } finally {
         setLoading(false);
       }
@@ -61,23 +65,23 @@ export function VerificationProtectedContent({
   }
 
   if (!isVerified) {
-    if (hideWhenNotVerified) {
-      return null; // Completely hide the section
+    if ((hideWhenNotVerified && hasApplied) || (!isVerified && !hasApplied)) {
+      return (
+        <div>
+        <VerificationRequiredSection 
+          title={fallbackTitle}
+          description={fallbackDescription}
+          className={className}
+        >
+          {sectionTitle && (
+            <div>
+              <h2 className="text-2xl font-bold text-neutral-900 mb-2">{sectionTitle}</h2>
+            </div>
+          )}
+        </VerificationRequiredSection>
+        </div>
+      );
     }
-    
-    return (
-      <VerificationRequiredSection 
-        title={fallbackTitle}
-        description={fallbackDescription}
-        className={className}
-      >
-        {sectionTitle && (
-          <div>
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">{sectionTitle}</h2>
-          </div>
-        )}
-      </VerificationRequiredSection>
-    );
   }
 
   return (

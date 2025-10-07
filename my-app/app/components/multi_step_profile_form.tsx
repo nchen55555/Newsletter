@@ -20,7 +20,7 @@ interface MultiStepProfileFormProps extends ProfileData {
 
 export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const router = useRouter();
-  const { isSubscribed } = useSubscriptionContext()
+  const { isSubscribed, loading } = useSubscriptionContext()
   const [, setEmailSent] = useState(false)
 
   
@@ -28,10 +28,10 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
 
 
   useEffect(() => {
-    if (!isSubscribed) {
+    if (!loading && !isSubscribed) {
       router.push("/"); 
     }
-  }, [isSubscribed, router]);
+  }, [isSubscribed, loading, router]);
 
 
   const [form, setForm] = useState<ProfileFormState>({
@@ -100,7 +100,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
 
   const handleConfirmationClose = () => {    
     // Use the hash function to encode the user ID
-    window.location.href = `/opportunities`;
+    window.location.href = `/people`;
   };
 
 
@@ -185,7 +185,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       }
 
       formData.append('applied', 'true')
-      formData.append('verified', 'true');
 
       // Make request (same as original form)
       const response = await fetch('/api/post_profile', {
@@ -243,10 +242,10 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             <DialogDescription className="text-lg mt-2">
               Hi {form.first_name}! 
               <br></br><br></br>
-              Congratulations and welcome to this private beta launch of The Niche. We are thrilled to have you part of this exclusive, referral-based community. We have curated and partnered with an exclusive set of high-talent startups that connect with early talent primarily and exclusively from us. If you are interested in a partner company, please click connect and we fast-track your profile to the founder&#39;s DMs. If there is mutual interest, we will make the introduction.  
+              Congratulations on requesting access to The Niche! We are excited to review your profile for our private beta launch. If we believe there is mutual fit between our network of beta opportunities or if a founder reaches out to specifically connect with you, we will reach back out with an invitation to be officially a part of this network! 
               <br></br>
               <br></br>
-              <strong>In the meantime, to personalize the opportunities that come your way, take a look at your opportunities page and bookmark/connect with startups that interest you! You will also want to curate your network by verifying your connects on The Niche so that we can index on your network to connect you with more relevant opportunities.</strong>
+              <strong>In the meantime, feel free to curate your professional network by connecting to your verified professional community or bringing others on to the platform, sharing your thoughts on our company articles with your network, and more! Interacting more with The Niche allows us to better understand your interests and how our network of beta opportunities might be a good fit for you. </strong>
               <br></br>
               <br></br>
               <div className="p-6 overflow-x-auto">
@@ -373,7 +372,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                     
                     
                 </div>
-              We are just getting started and have a lot of exciting features and partnerships in the works. If you have any feedback or suggestions, please don&#39;t hesitate to reach out to us. We are very open to referrals as well, so if you know anyone who would be a great fit for The Niche, please let us know via email! 
+              We are just getting started and have a lot of exciting features and partnerships in the works. If you have any feedback or suggestions, please don&#39;t hesitate to reach out to us. 
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 pt-4">
@@ -381,7 +380,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
               onClick={handleConfirmationClose}
               className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-2 text-sm w-fit"
             >
-              View Partners
+              The Network
             </Button>
           </div>
         </DialogContent>

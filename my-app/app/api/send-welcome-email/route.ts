@@ -29,7 +29,9 @@ export async function POST(req: NextRequest) {
 
     // Create email content using decoupled data
     const emailContent = {
-      message: `You have made your profile with The Niche. Welcome to the community!`
+      message: `Congratulations on requesting access to The Niche! We are excited to review your profile for our private beta launch. If we believe there is mutual fit between our network of beta opportunities or if a founder reaches out to specifically connect with you, we will reach back out with an invitation to be officially a part of this network! 
+      <br></br>
+      In the meantime, feel free to curate your professional network by connecting to your verified professional community or bringing others on to the platform, sharing your thoughts on our company articles with your network, and more! Interacting more with The Niche allows us to better understand your interests and how our network of beta opportunities might be a good fit for you.`
     };
     // Check if API key exists
     if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {
