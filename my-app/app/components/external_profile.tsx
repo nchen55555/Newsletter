@@ -1,6 +1,7 @@
 import { ProfileData, CompanyWithImageUrl } from "@/app/types";
 import { Button } from "@/components/ui/button";
-import { FileText, Linkedin, Globe } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { FileText, Linkedin, Globe, Edit, Plus } from "lucide-react";
 import { useEffect, useState } from 'react';
 import ProfileAvatar from "./profile_avatar";
 import { CompanyCard } from "./company-card";
@@ -11,6 +12,45 @@ export function ExternalProfile(props: ProfileData) {
   const [bookmarkedCompanies, setBookmarkedCompanies] = useState<CompanyWithImageUrl[]>([]);
   const [loadingBookmarks, setLoadingBookmarks] = useState(false);
   
+  // Editing state
+  const [editingBio, setEditingBio] = useState(false);
+  const [editingInterests, setEditingInterests] = useState(false);
+  const [bioValue, setBioValue] = useState(props.bio || '');
+  const [interestsValue, setInterestsValue] = useState(props.interests || '');
+  const [saving, setSaving] = useState<'bio' | 'interests' | null>(null);
+
+  // Save field function
+  const saveField = async (field: 'bio' | 'interests', value: string) => {
+    setSaving(field);
+    try {
+      const formData = new FormData();
+      formData.append('id', props.id.toString());
+      formData.append(field, value);
+
+      const response = await fetch('/api/post_profile', {
+        method: 'PATCH',
+        body: formData,
+      });
+
+      if (response.ok) {
+        // Update was successful
+        if (field === 'bio') {
+          setEditingBio(false);
+        } else {
+          setEditingInterests(false);
+        }
+      } else {
+        console.error('Failed to update', field);
+        alert(`Failed to update ${field}. Please try again.`);
+      }
+    } catch (error) {
+      console.error('Error updating', field, error);
+      alert(`Error updating ${field}. Please try again.`);
+    } finally {
+      setSaving(null);
+    }
+  };
+
   console.log("ExternalProfile props:", props);
   
     // Fetch bookmarked companies using API
@@ -93,28 +133,110 @@ export function ExternalProfile(props: ProfileData) {
             </div>
           </div>
 
-          {props.bio && props.bio.length > 0 && (
-            <div className="space-y-3">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium text-neutral-900">Bio</h3>
-              <div className="bg-neutral-50 rounded-lg p-4">
-                <div className="text-sm leading-relaxed text-neutral-700 whitespace-pre-line">
-                  {props.bio}
+              {!editingBio && (
+                <Button
+                  onClick={() => setEditingBio(true)}
+                  variant="ghost"
+                  size="sm"
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+            
+            {editingBio ? (
+              <div className="space-y-3">
+                <Textarea
+                  value={bioValue}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBioValue(e.target.value)}
+                  placeholder="Tell us about yourself..."
+                  className="min-h-[120px]"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => saveField('bio', bioValue)}
+                    disabled={saving === 'bio'}
+                    size="sm"
+                    className="bg-neutral-900 hover:bg-neutral-800 text-white"
+                  >
+                    {saving === 'bio' ? 'Saving...' : 'Save'}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setEditingBio(false);
+                      setBioValue(props.bio || '');
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
                 </div>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="bg-neutral-50 rounded-lg p-4">
+                <div className="text-sm leading-relaxed text-neutral-700 whitespace-pre-line">
+                  {bioValue || 'No bio added yet.'}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Interests */}
-          {props.interests && props.interests.length > 0 && (
-            <div className="space-y-3">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium text-neutral-900">Interests</h3>
-              <div className="bg-neutral-50 rounded-lg p-4">
-                <div className="text-sm leading-relaxed text-neutral-700 whitespace-pre-line">
-                  {props.interests}
+              {!editingInterests && (
+                <Button
+                  onClick={() => setEditingInterests(true)}
+                  variant="ghost"
+                  size="sm"
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+            
+            {editingInterests ? (
+              <div className="space-y-3">
+                <Textarea
+                  value={interestsValue}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInterestsValue(e.target.value)}
+                  placeholder="AI/ML, fintech, climate tech, product management, backend engineering..."
+                  className="min-h-[100px]"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => saveField('interests', interestsValue)}
+                    disabled={saving === 'interests'}
+                    size="sm"
+                    className="bg-neutral-900 hover:bg-neutral-800 text-white"
+                  >
+                    {saving === 'interests' ? 'Saving...' : 'Save'}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setEditingInterests(false);
+                      setInterestsValue(props.interests || '');
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
                 </div>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="bg-neutral-50 rounded-lg p-4">
+                <div className="text-sm leading-relaxed text-neutral-700 whitespace-pre-line">
+                  {interestsValue || 'No interests added yet.'}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Analysis from The Niche */}
           {props.generated_interest_profile && props.generated_interest_profile.length > 0 && (
@@ -130,7 +252,17 @@ export function ExternalProfile(props: ProfileData) {
 
           {/* Bookmarked Companies Section */}
             <div className="w-full space-y-6 mt-8 mb-8">
-              <h3 className="text-lg font-medium text-neutral-900">Bookmarked and Recommended</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-neutral-900">Bookmarked and Recommended</h3>
+                <Button
+                  onClick={() => window.location.href = '/opportunities'}
+                  size="sm"
+                  className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Opportunities
+                </Button>
+              </div>
               {loadingBookmarks ? (
                 <div className="space-y-4">
                   <Skeleton className="h-32 w-full rounded-lg" />

@@ -321,6 +321,7 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                         {/* Other Opportunities Section */}
                         <VerificationProtectedContent 
                           sectionTitle="Your Bookmarks and Other Opportunities"
+                          fallbackTitle="Verification Required for Opportunity Access"
                           className="mb-12"
                           hideWhenNotVerified={true}
                         >

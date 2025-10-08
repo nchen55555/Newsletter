@@ -1,5 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useState, useEffect } from 'react'
 import ProfileInfoChatbot from './profile_info_chatbot'
 import { useRouter} from 'next/navigation'
@@ -11,7 +12,7 @@ import {
   DialogDescription,
   DialogHeader,
 } from "@/components/ui/dialog"
-import { FileText, Heart, Users, Handshake, MousePointer } from 'lucide-react'
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface MultiStepProfileFormProps extends ProfileData {
   access_token: string,
@@ -61,6 +62,9 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
 
   const [formError, setFormError] = useState<string | null>(null)
   const [profileFormComplete, setProfileFormComplete] = useState(false)
+  const [accessCode, setAccessCode] = useState('')
+  const [accessCodeError, setAccessCodeError] = useState<string | null>(null)
+  const [accessCodeVerified, setAccessCodeVerified] = useState(false)
 
   // Load companies for step 2 (same query as companies page, limited to 20
 
@@ -101,6 +105,28 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const handleConfirmationClose = () => {    
     // Use the hash function to encode the user ID
     window.location.href = `/people`;
+  };
+
+  const handleAccessCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (accessCode.trim() === 'THENICHELIST') {
+      const formData = new FormData()
+      // Access code correct, show verified state
+      formData.append('verified', 'true')
+
+      // Make request (same as original form)
+      const response = await fetch('/api/post_profile', {
+        method: 'PATCH',
+        body: formData,
+      });
+      if (response.ok){
+        setAccessCodeVerified(true)
+        setAccessCodeError(null)
+      }
+    } else {
+      setAccessCodeError('Invalid access code')
+      setAccessCodeVerified(false)
+    }
   };
 
 
@@ -245,136 +271,60 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
               Congratulations on requesting access to The Niche! We are excited to review your profile for our private beta launch. If we believe there is mutual fit between our network of beta opportunities or if a founder reaches out to specifically connect with you, we will reach back out with an invitation to be officially a part of this network! 
               <br></br>
               <br></br>
-              <strong>In the meantime, feel free to curate your professional network by connecting to your verified professional community or bringing others on to the platform, sharing your thoughts on our company articles with your network, and more! Interacting more with The Niche allows us to better understand your interests and how our network of beta opportunities might be a good fit for you. </strong>
+              In the meantime, feel free to curate your professional network by connecting to your verified professional community or bringing others on to the platform, sharing your thoughts on our company articles with your network, and more! Interacting more with The Niche allows us to better understand your interests and how our network of beta opportunities might be a good fit for you.
               <br></br>
               <br></br>
-              <div className="p-6 overflow-x-auto">
-                    {/* Horizontal Process Flow */}
-                    <div className="flex flex-row items-center justify-center gap-4 min-w-fit">
-                        {/* Circular Data Flow */}
-                        <div className="relative w-64 h-68">
-                            {/* Center - Personalized Recommendations */}
-                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                                <div className="text-center flex flex-col items-center">
-                                    <div className="w-20 h-20 flex items-center justify-center mb-2">
-                                        <p className="text-xs text-neutral-700 font-medium leading-tight">Personalized<br/>Recommendations</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Skills - Top */}
-                            <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
-                                <div className="text-center">
-                                    <div className="w-14 h-14 flex items-center justify-center mb-2">
-                                        <FileText className="w-7 h-7 text-neutral-600" />
-                                    </div>
-                                    <p className="text-xs text-neutral-600 font-medium">Skills</p>
-                                </div>
-                            </div>
-
-                            {/* Interests - Bottom Left */}
-                            <div className="absolute bottom-0 left-0">
-                                <div className="text-center">
-                                    <div className="w-14 h-14 flex items-center justify-center mb-2">
-                                        <Heart className="w-7 h-7 text-neutral-600" />
-                                    </div>
-                                    <p className="text-xs text-neutral-600 font-medium">Interests</p>
-                                </div>
-                            </div>
-
-                            {/* Networks - Bottom Right */}
-                            <div className="absolute bottom-0 right-0">
-                                <div className="text-center">
-                                    <div className="w-14 h-14 flex items-center justify-center mb-2">
-                                        <Users className="w-7 h-7 text-neutral-600" />
-                                    </div>
-                                    <p className="text-xs text-neutral-600 font-medium">Networks</p>
-                                </div>
-                            </div>
-
-                            {/* Small arrows pointing to center */}
-                            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 256 256">
-                                <defs>
-                                    <marker id="small-arrow" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
-                                        <polygon points="0 0, 6 2, 0 4" fill="#a3a3a3" />
-                                    </marker>
-                                </defs>
-                                
-                                {/* Small arrow from Skills */}
-                                <line
-                                    x1="128" y1="80"
-                                    x2="128" y2="95"
-                                    stroke="#a3a3a3"
-                                    strokeWidth="1"
-                                    markerEnd="url(#small-arrow)"
-                                />
-                                
-                                {/* Small arrow from Networks */}
-                                <line
-                                    x1="170" y1="180"
-                                    x2="155" y2="155"
-                                    stroke="#a3a3a3"
-                                    strokeWidth="1"
-                                    markerEnd="url(#small-arrow)"
-                                />
-                                
-                                {/* Small arrow from Interests */}
-                                <line
-                                    x1="86" y1="180"
-                                    x2="101" y2="155"
-                                    stroke="#a3a3a3"
-                                    strokeWidth="1"
-                                    markerEnd="url(#small-arrow)"
-                                />
-                            </svg>
-                        </div>
-
-                        {/* Arrow 1 - from edge of circular diagram to You Connect */}
-                        <div className="flex items-center">
-                            <svg className="w-12 h-6" viewBox="0 0 48 24">
-                                <path d="M 4 12 L 40 12" stroke="#a3a3a3" strokeWidth="2" markerEnd="url(#arrow-flow)" />
-                                <defs>
-                                    <marker id="arrow-flow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                        <polygon points="0 0, 8 3, 0 6" fill="#a3a3a3" />
-                                    </marker>
-                                </defs>
-                            </svg>
-                        </div>
-
-                        {/* Connect */}
-                        <div className="text-center">
-                            <div className="w-16 h-16 flex items-center justify-center mb-3">
-                                <MousePointer className="w-8 h-8 text-neutral-600" />
-                            </div>
-                            <p className="text-sm text-neutral-700 font-medium">You<br/>Connect</p>
-                        </div>
-
-                        {/* Arrow 2 - from You Connect to Direct Founder Connection */}
-                        <div className="flex items-center">
-                            <svg className="w-12 h-6" viewBox="0 0 48 24">
-                                <path d="M 4 12 L 40 12" stroke="#a3a3a3" strokeWidth="2" markerEnd="url(#arrow-flow)" />
-                                <defs>
-                                    <marker id="arrow-flow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                        <polygon points="0 0, 8 3, 0 6" fill="#a3a3a3" />
-                                    </marker>
-                                </defs>
-                            </svg>
-                        </div>
-
-                        {/* Founder Connection */}
-                        <div className="text-center">
-                            <div className="w-16 h-16 flex items-center justify-center mb-3">
-                                <Handshake className="w-8 h-8 text-neutral-600" />
-                            </div>
-                            <p className="text-sm text-neutral-700 font-medium">Founder <br />Introduction</p>
-                        </div>
-                    </div>
-                    
-                    
-                </div>
-              We are just getting started and have a lot of exciting features and partnerships in the works. If you have any feedback or suggestions, please don&#39;t hesitate to reach out to us. 
+              If you have the special access code from a provided referral, please enter it below or in your profile settings. Using this code will bypass our review process as we have already recognized mutual fit and you will be granted access to The Niche network.
+              
             </DialogDescription>
           </DialogHeader>
+          
+          {/* Access Code Form */}
+          <form onSubmit={handleAccessCodeSubmit} className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex flex-col gap-3">
+              <label htmlFor="accessCode" className="text-sm font-medium text-gray-700">
+                Special Access Code
+              </label>
+              {accessCodeVerified ? (
+                <Alert>
+                  <AlertDescription>
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 bg-neutral-900 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">✓</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Access Code Verified!</span>
+                        <span className="text-sm text-gray-600 ml-2">You have been granted access to The Niche network.</span>
+                      </div>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <>
+                  <div className="flex gap-2">
+                    <Input
+                      id="accessCode"
+                      type="text"
+                      value={accessCode}
+                      onChange={(e) => setAccessCode(e.target.value)}
+                      placeholder="Enter access code"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={!accessCode.trim()}
+                    >
+                      Submit
+                    </Button>
+                  </div>
+                  {accessCodeError && (
+                    <p className="text-sm text-red-600">{accessCodeError}</p>
+                  )}
+                </>
+              )}
+            </div>
+          </form>
+
           <div className="flex flex-col gap-4 pt-4">
             <Button 
               onClick={handleConfirmationClose}

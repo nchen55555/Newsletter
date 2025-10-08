@@ -15,7 +15,7 @@ interface Question {
   id: string
   field: keyof ProfileFormState
   question: string
-  type: 'text' | 'textarea' | 'file' | 'toggle' | 'url' | 'tel' | 'companies' | 'networking' | 'network_recommendations'
+  type: 'text' | 'textarea' | 'file' | 'toggle' | 'url' | 'tel' | 'companies' | 'networking' | 'network_recommendations' | 'welcome'
   required: boolean
   placeholder?: string
   options?: string[]
@@ -23,6 +23,14 @@ interface Question {
 }
 
 const questions: Question[] = [
+  {
+    id: 'welcome',
+    field: 'first_name', // Using existing field as placeholder
+    question: "Thank you for your interest in The Niche!",
+    description: "We are excited to get to know you better to help curate a personalized, professional network for you and surface opportunities tailored to your interests and skillsets, verified by the existing networks you operate in. If there is mutual fit, we are also excited to also introduce you to the partner startups we are working directly with to match stellar early talent to in this private beta.",
+    type: 'welcome',
+    required: false
+  },
   {
     id: 'profile_image',
     field: 'profile_image',
@@ -839,10 +847,24 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
 
   if (!currentQuestion) return null
 
+  // Calculate progress percentage
+  const progressPercentage = ((currentQuestionIndex + 1) / questions.length) * 100
+
   return (
     <div className="min-h-[70vh] flex flex-col">
+      {/* Progress Bar */}
+      {showQuestion && (
+        <div className="w-full max-w-6xl mx-auto px-8 mb-8">
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-neutral-900 h-2 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${Math.min(progressPercentage, 100)}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
       {/* Two-column layout when profile image exists */}
-      {hasProfileImage && currentQuestionIndex > 0 ? (
+      {showQuestion && hasProfileImage && currentQuestionIndex > 1 ? (
         <div className="flex-1 flex items-center max-w-6xl mx-auto w-full gap-12">
           {/* Left side - Profile Picture */}
           <div className="w-1/3">
@@ -1338,7 +1360,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                     </div>
                   )}
 
-                {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && (
+                {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && currentQuestion.type !== 'welcome' && (
                   <form onSubmit={handleSubmit}>
                     <div className="relative">
                       <Input
@@ -1394,7 +1416,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
           )}
           </div>
         </div>
-      ) : (
+      ) : showQuestion ? (
         /* Single-column layout for first question (profile picture) or when no image */
         <div className="flex-1 flex flex-col justify-center max-w-2xl mx-auto w-full">
           {showQuestion && (
@@ -1451,6 +1473,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
               {/* Input area - only show after question is fully typed */}
               {questionComplete && (descriptionComplete || !currentQuestion.description) && (
                 <div className="space-y-4">
+                  
                   {currentQuestion.type === 'toggle' && (
                     <div 
                       ref={toggleRef2}
@@ -1597,7 +1620,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                     </div>
                   )}
 
-                  {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && (
+                  {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && currentQuestion.type !== 'welcome' && (
                     <form onSubmit={handleSubmit}>
                       <div className="relative">
                         <Input
@@ -1652,7 +1675,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
             </>
           )}
         </div>
-      )}
+      ) : null}
 
       
     </div>

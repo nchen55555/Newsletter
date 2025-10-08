@@ -4,8 +4,7 @@ import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog, DialogContent, DialogFooter,
-  DialogHeader, DialogTitle, DialogTrigger
+  Dialog, DialogContent, DialogFooter, DialogTrigger
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertTitle } from '@/components/ui/alert'
@@ -67,7 +66,7 @@ export function Subscribe() {
       <div className="flex flex-col w-full max-w-sm gap-4">
       { !isSubscribed && ( 
         <>
-            <GoogleLogin buttonText="build your profile" flowType="subscribe" />
+            <GoogleLogin buttonText="request access" flowType="subscribe" />
             {formSuccess && (
             <Alert>
                 <CheckCircle2Icon />
@@ -82,9 +81,6 @@ export function Subscribe() {
             <span style={{ display: 'none' }} />
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px] p-8" showCloseButton={false}>
-            <DialogHeader className="mb-8">
-              <DialogTitle className="text-2xl font-semibold">Creating Your Profile</DialogTitle>
-            </DialogHeader>
             <form onSubmit={handleFormSubmit}>
               <div className="grid gap-8">
                 <div className="grid gap-4">
@@ -116,7 +112,7 @@ export function Subscribe() {
                 )}
               </div>
               <DialogFooter className="mt-8 gap-4">
-                <Button type="submit" disabled={isSubscribed}className="h-12 px-8 text-lg">access</Button>
+                <Button type="submit" disabled={isSubscribed}className="h-12 px-8 text-lg">request access</Button>
               </DialogFooter>
             </form>
           </DialogContent>
