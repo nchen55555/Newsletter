@@ -37,13 +37,17 @@ export async function POST(req: NextRequest) {
       .eq('email', user.email)
       .single();
 
-    if (!currentProfile?.applied){
-      const formData = new FormData();
-      formData.append('applied', 'true');
-      await fetch('/api/post_profile', {
-        method: 'PATCH',
-        body: formData,
-      });
+    const { error: dbError } = await supabase
+      .from('subscribers')
+      .insert({applied: "true"})
+      .eq('email', user.email)
+    
+    if (dbError) {
+      console.log("error submitting applied to profile", dbError)
+      return NextResponse.json({ 
+        error: 'Failed to fetch current profile', 
+        details: dbError.message 
+      }, { status: 500 });
     }
 
     if (fetchError) {
