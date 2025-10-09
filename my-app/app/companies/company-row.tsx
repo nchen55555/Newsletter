@@ -126,9 +126,13 @@ export function CompanyRow({ company, potential = false }: { company: CompanyWit
           <div className="flex flex-col justify-between items-end flex-shrink-0 h-full">
             <div className="flex flex-col items-end gap-4">
               <div className="flex items-end gap-2">
-                <RainbowBookmark company={company.company} />
-                <Share company={company.company} />
-                <Post company={company.company} companyData={company} />
+                <RainbowBookmark company={company.company}/>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Share company={company.company} />
+                </div>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Post company={company.company} companyData={company} />
+                </div>
               </div>
 
               {company.external_media && (

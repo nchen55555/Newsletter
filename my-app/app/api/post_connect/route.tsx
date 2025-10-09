@@ -33,9 +33,18 @@ export async function POST(req: NextRequest) {
     // 4. Get the current user's profile to retrieve existing connections and pending connections
     const { data: currentProfile, error: fetchError } = await supabase
       .from('subscribers')
-      .select('id, connections_new, pending_connections_new, requested_connections_new, first_name, last_name')
+      .select('id, connections_new, pending_connections_new, requested_connections_new, first_name, last_name, applied')
       .eq('email', user.email)
       .single();
+
+    if (!currentProfile?.applied){
+      const formData = new FormData();
+      formData.append('applied', 'true');
+      await fetch('/api/post_profile', {
+        method: 'PATCH',
+        body: formData,
+      });
+    }
 
     if (fetchError) {
       console.error('Error fetching current profile:', fetchError);
@@ -235,6 +244,8 @@ export async function POST(req: NextRequest) {
 
     }
 
+
+
       
     // Create email content using decoupled data (only for pending requests)
     const senderName = currentProfile?.first_name && currentProfile?.last_name
@@ -285,6 +296,7 @@ export async function POST(req: NextRequest) {
         newConnectionId: connectIdNum,
         type: 'pending'
       });
+  
     
 
   } catch (error) {

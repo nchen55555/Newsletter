@@ -94,8 +94,12 @@ export function CompanyCard({ company, showHighMutualInterest = false, potential
 
       <div className="shrink-0 flex gap-2">
         <RainbowBookmark company={company.company} />
-        <Share company={company.company} />
-        <Post company={company.company} companyData={company} />
+        <div onClick={(e) => e.stopPropagation()}>
+          <Share company={company.company} />
+        </div>
+        <div onClick={(e) => e.stopPropagation()}>
+          <Post company={company.company} companyData={company} />
+        </div>
     </div>
 
       </div>

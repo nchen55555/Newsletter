@@ -5,9 +5,8 @@ import Image from "next/image";
 import imageUrlBuilder from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { ArrowRight } from "lucide-react";
-import RainbowBookmark from "./rainbow_bookmark";
 import Share from "@/app/components/share";
-// import Post from "@/app/components/post";
+import { CombinedFeed } from "./combined-feed";
 // --- Types --------------------------------------------------------------
 export interface Post extends SanityDocument {
   title: string;
@@ -18,6 +17,47 @@ export interface Post extends SanityDocument {
   author?: string;
   // NOTE: tags are simple strings in Sanity schema
   tags?: string[];
+}
+
+export interface FeedItem {
+  id: string;
+  created_at: string;
+  subscriber_id: number;
+  company_id?: number;
+  feed_id?: string;
+  content: string; // HTML content
+  audience_rating: number;
+  // Additional fields for display
+  author_name?: string;
+  author_image?: string;
+  company_name?: string;
+  company_image?: string;
+  // Repost data
+  referenced_feed_content?: string;
+  referenced_feed_author?: string;
+  // Complete company data for CompanyRow
+  company_data?: {
+    _id: string;
+    _rev: string;
+    _type: string;
+    _createdAt: string;
+    _updatedAt: string;
+    publishedAt: string;
+    partner: boolean;
+    company: number;
+    alt: string;
+    caption?: string;
+    description?: string;
+    imageUrl: string;
+    location?: string;
+    hiring_tags?: string[];
+  };
+}
+
+export interface CombinedFeedItem {
+  type: 'post' | 'thread';
+  date: string;
+  data: Post | FeedItem;
 }
 
 // --- Utils --------------------------------------------------------------
@@ -35,6 +75,7 @@ const POSTS_QUERY = `*[
 ]|order(publishedAt desc){
   _id, title, slug, publishedAt, image, excerpt, author, tags
 }`;
+
 
 // --- Feed Row (one per row) ---------------------------------------------
 export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
@@ -80,9 +121,7 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
             )}
 
             <div className="mt-4 flex items-end gap-2">
-                <RainbowBookmark company={index} />
                 <Share company={index} />
-                {/* <Post company={index} companyData={post} /> */}
               </div>
             <div className="mt-6 inline-flex items-center gap-2 self-start text-base md:text-lg font-medium text-neutral-700 transition-colors duration-200 group-hover:text-neutral-900 dark:text-neutral-200 dark:group-hover:text-white">
               Read more <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
@@ -93,6 +132,7 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
     </article>
   );
 }
+
 
 // --- Newsfeed (one per row vibe) ----------------------------------------
 export async function ArticleNewsfeed() {
@@ -105,27 +145,19 @@ export async function ArticleNewsfeed() {
         {/* Welcome Header - Centered */}
         <div className="text-center pt-16 pb-8">
             <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-black">
-                The Latest Company Profiles
+                Your Curated and Verified Feed
             </h1>
-        <p className="text-lg md:text-xl text-neutral-500 leading-relaxed font-light max-w-3xl mx-auto mb-8">
-            Every week, The Niche publishes two to three company profiles on opportunities within our partner circle for you to stay tuned. We interview the founders directly and dive deep into how each sector operates, what teams are looking for, what the market looks right now in each industry, etc. 
+        <p className="text-md md:text-md text-neutral-500 leading-relaxed font-light max-w-3xl mx-auto mb-8">
+            Every week, The Niche publishes company profiles where we interview the founders and dive deep into how each sector operates, what teams are looking for, what the market looks right now in each industry, etc. 
         </p>
+        <p className="text-md md:text-md text-neutral-500 leading-relaxed font-light max-w-3xl mx-auto mb-8">
+            We are also introducing <strong>Thought Threads</strong> where you can thread your opinion and any updates you have on our company profiles, customizing in your professional network who exactly gets to read your thread!
+          </p>
         </div>
         
-        {/* Feed: one post per row - Full width */}
-        <div className="flex flex-col gap-6 sm:gap-7 w-full">
-          {posts.map((post, index) => (
-            <FeedRow key={post._id} post={post} index={index} />
-          ))}
-        </div>
+        {/* Client-side combined feed */}
+        <CombinedFeed posts={posts} />
       </div>
-
-      {/* Empty state */}
-      {posts.length === 0 && (
-        <div className="mx-auto my-24 max-w-xl rounded-3xl border border-dashed p-10 text-center text-neutral-600 dark:border-neutral-800 dark:text-neutral-300">
-          <p className="text-lg">No posts yet. Check back soon for fresh stories.</p>
-        </div>
-      )}
 
       {/* Browse all */}
       <div className="mt-10 text-center">

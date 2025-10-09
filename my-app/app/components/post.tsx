@@ -10,14 +10,15 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import ProfileAvatar from './profile_avatar';
 import { ConnectionScale } from './connection-scale';
+import { FeedPreview } from './feed-preview';
 import { encodeSimple } from "../utils/simple-hash";
 
-export default function Post({ company, companyData }: { company: number; companyData: CompanyWithImageUrl }) {
+export default function Post({ company, companyData, feedId }: { company?: number; companyData?: CompanyWithImageUrl; feedId?: string }) {
   const [loading, setLoading] = useState(false);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [open, setOpen] = useState(false);
   const [audienceScale, setAudienceScale] = useState<number | null>(null);
-  const [userProfile, setUserProfile] = useState<{ first_name: string; last_name: string; profile_image_url?: string } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ id: number, first_name: string; last_name: string; profile_image_url?: string } | null>(null);
   const [connections, setConnections] = useState<ConnectionData[]>([]);
   const [filteredConnections, setFilteredConnections] = useState<ConnectionData[]>([]);
   const [connectionProfiles, setConnectionProfiles] = useState<ProfileData[]>([]);
@@ -45,9 +46,11 @@ export default function Post({ company, companyData }: { company: number; compan
         if (isMounted) {
           setIsVerified(profile.verified || false);
           setUserProfile({
+            id: profile.id,
             first_name: profile.first_name || '',
             last_name: profile.last_name || '',
             profile_image_url: profile.profile_image_url
+
           });
           
           // Combine connections and pending connections
@@ -71,6 +74,8 @@ export default function Post({ company, companyData }: { company: number; compan
   // Handle audience selection and filter connections
   const handleAudienceSelection = async (scale: number) => {
     setAudienceScale(scale);
+
+    console.log("SCALE ", scale)
     
     // Filter connections based on rating that matches the selected scale
     const filtered = connections.filter(connection => connection.rating === scale);
@@ -102,27 +107,32 @@ export default function Post({ company, companyData }: { company: number; compan
     
     setLoading(true);
     try {
-      const content = editor.getJSON();
+      // const content = editor.getJSON();
       const contentHTML = editor.getHTML();
       
-      console.log("Posting thread:", {
-        company,
-        content,
-        contentHTML,
-        audienceScale
+      const response = await fetch('/api/post_thread', {
+        method: 'POST',
+        body: JSON.stringify({
+          subscriber_id: userProfile?.id, 
+          company_id: company,
+          feed_id: feedId,
+          content: contentHTML, 
+          rating: audienceScale
+        })
       });
-      
-      // TODO: Implement Supabase storage
-      // await supabase.from('posts').insert({
-      //   content,
-      //   content_html: contentHTML,
-      //   company_id: company,
-      //   audience_scale: audienceScale
-      // });
-      
-      // Reset form and close dialog
-      editor.commands.setContent('<p>Share your thoughts or updates with this opportunity...</p>');
-      setOpen(false);
+
+      if (response.ok) {
+        // Reset form and close dialog
+        editor.commands.setContent('<p>Share your thoughts or updates with this opportunity...</p>');
+        setOpen(false);
+        
+        // Show success alert and redirect after delay
+        setTimeout(() => {
+          window.location.href = '/articles';
+        }, 2000); // 2 second delay to show the alert
+      } else {
+        throw new Error('Failed to post thread');
+      }
       
     } catch (error) {
       console.error("Error posting thread:", error);
@@ -202,12 +212,24 @@ export default function Post({ company, companyData }: { company: number; compan
             </div>
             
             {/* Company repost preview */}
-            <div className="flex items-center gap-3 pt-2 border-t border-input">
-              <Repeat2 className="h-5 w-5 text-muted-foreground" />
-              <div className="flex-1">
-                <CompanyRow company={companyData} />
+            {companyData && (
+              <div className="flex items-center gap-3 pt-2 border-t border-input">
+                <Repeat2 className="h-5 w-5 text-muted-foreground" />
+                <div className="flex-1">
+                  <CompanyRow company={companyData} />
+                </div>
               </div>
-            </div>
+            )}
+            
+            {/* Feed repost preview */}
+            {feedId && !companyData && (
+              <div className="flex items-center gap-3 pt-2 border-t border-input">
+                <Repeat2 className="h-5 w-5 text-muted-foreground" />
+                <div className="flex-1">
+                  <FeedPreview feedId={feedId} />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Audience selection */}
@@ -218,6 +240,7 @@ export default function Post({ company, companyData }: { company: number; compan
                 personName="connections"
                 initialRating={audienceScale || undefined}
                 mode="audience"
+                showConnectButton={false}
               />
               
               {/* Show filtered connections when audience is selected */}
@@ -278,6 +301,7 @@ export default function Post({ company, companyData }: { company: number; compan
           </Button>
         </DialogFooter>
       </DialogContent>
+    
     </Dialog>
   );
 }
