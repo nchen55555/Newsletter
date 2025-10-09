@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     const { error: dbError } = await supabase
       .from('subscribers')
-      .insert({applied: "true"})
+      .update({applied: "true"})
       .eq('email', user.email)
     
     if (dbError) {
