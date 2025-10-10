@@ -23,6 +23,7 @@ import imageUrlBuilder from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { encodeSimple } from "@/app/utils/simple-hash";
 import { VerificationProtectedContent } from "@/app/components/verification-protected-content";
+import { PaywallContent } from "@/app/components/paywall-content";
 
 const { projectId, dataset } = client.config();
 const urlFor = (source: SanityImageSource) =>
@@ -307,17 +308,17 @@ export default function CompanyPageClient({
             </VerificationProtectedContent>
           </div>
         )}
-
-
-        {/* Company Profile/Article */}
-        <VerificationProtectedContent 
-            sectionTitle={`Our Company Profile`}
-            className="mt-12 mb-12"
-          >
-
+      <div className="mt-12 mb-12">
+      <h2 className="text-2xl font-bold text-neutral-900 mb-6">Our Company Profile</h2>
         {companyPost && companyPost.body && Array.isArray(companyPost.body) && companyPost.body.length > 0 ? (
           <div className="mb-12 border-b">
-            <PortableText value={companyPost.body} components={components} />
+            <PaywallContent wordLimit={300}>
+              <section className="prose prose-neutral max-w-none">
+                {Array.isArray(companyPost.body) && (
+                  <PortableText value={companyPost.body} components={components} />
+                )}
+              </section>
+            </PaywallContent>
           </div>
         ) : (
            <Alert className="cursor-pointer hover:bg-gray-50" onClick={() => router.push('/articles')}>
@@ -327,8 +328,7 @@ export default function CompanyPageClient({
                 </AlertDescription>
               </Alert>
         )}
-        </VerificationProtectedContent>
-
+        </div>
 
         {/* Team Members */}
         {/* {company.people && company.people.length > 0 && (

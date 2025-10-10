@@ -8,15 +8,17 @@ interface VerificationRequiredProps {
   description?: string;
   actionText?: string;
   className?: string;
+  redirectUrl?: string;
 }
 
 export function VerificationRequired({ 
   title = "Request to join The Niche network for access to this content",
+  redirectUrl = "/profile"
 }: VerificationRequiredProps) {
   const router = useRouter();
 
   const handleRequestAccess = () => {
-    router.push("/profile");
+    router.push(redirectUrl);
   };
 
   return (
@@ -33,12 +35,14 @@ export function VerificationRequiredSection({
   children, 
   title,
   description,
-  className = ""
+  className = "",
+  redirectUrl = "/profile"
 }: { 
   children: React.ReactNode;
   title?: string;
   description?: string;
   className?: string;
+  redirectUrl?: string;
 }) {
   return (
     <div className={`space-y-6 ${className}`}>
@@ -46,6 +50,7 @@ export function VerificationRequiredSection({
       <VerificationRequired 
         title={title}
         description={description}
+        redirectUrl={redirectUrl}
       />
     </div>
   );

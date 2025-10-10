@@ -155,7 +155,7 @@ export default function LandingClient({ posts}: { posts: ArticleCardPost[]}) {
   //   margin: "-50%"
   // });
 
-  const fullText = 'Connect, discover, and grow with a personalized and verified professional network of opportunities. Accessible only be referral in this public beta. ';
+  const fullText = 'Connect, discover, and grow with a personalized and verified professional network of opportunities. Read about the latest startups through our company profile drops. Accessible only be referral in this public beta. ';
 
   function urlForImage(source: SanityImageSource) {
     return builder.image(source);

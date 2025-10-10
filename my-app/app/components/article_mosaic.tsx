@@ -4,9 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import imageUrlBuilder from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Megaphone } from "lucide-react";
 import Share from "@/app/components/share";
 import { CombinedFeed } from "./combined-feed";
+import RainbowBookmark from "@/app/components/rainbow_bookmark";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 // --- Types --------------------------------------------------------------
 export interface Post extends SanityDocument {
   title: string;
@@ -121,6 +123,7 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
             )}
 
             <div className="mt-4 flex items-end gap-2">
+                <RainbowBookmark company={index}/>
                 <Share company={index} />
               </div>
             <div className="mt-6 inline-flex items-center gap-2 self-start text-base md:text-lg font-medium text-neutral-700 transition-colors duration-200 group-hover:text-neutral-900 dark:text-neutral-200 dark:group-hover:text-white">
@@ -150,9 +153,14 @@ export async function ArticleNewsfeed() {
         <p className="text-md md:text-md text-neutral-500 leading-relaxed font-light max-w-3xl mx-auto mb-8">
             Every week, The Niche publishes company profiles where we interview the founders and dive deep into how each sector operates, what teams are looking for, what the market looks right now in each industry, etc. 
         </p>
-        <p className="text-md md:text-md text-neutral-500 leading-relaxed font-light max-w-3xl mx-auto mb-8">
-            We are also introducing <strong>Thought Threads</strong> where you can thread your opinion and any updates you have on our company profiles, customizing in your professional network who exactly gets to read your thread!
-          </p>
+        <Alert className="max-w-3xl mx-auto mb-8 bg-gradient-to-r from-yellow-50 via-orange-50 to-pink-50 border border-yellow-200">
+          <Megaphone className="h-5 w-5 text-orange-600" />
+          <AlertDescription>
+            <span className="text-neutral-700">
+              We are now introducing <strong>Thought Threads</strong> where you can thread your opinion and any updates you have on our company profiles, customizing in your professional network who exactly gets to read your thread!
+            </span>
+          </AlertDescription>
+        </Alert>
         </div>
         
         {/* Client-side combined feed */}

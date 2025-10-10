@@ -8,6 +8,7 @@ import Image from "next/image";
 import { type SanityDocument } from "next-sanity";
 import ApplyButton from "@/app/components/apply";
 import { TableOfContents } from "@/app/components/table-of-contents";
+import { PaywallContent } from "@/app/components/paywall-content";
 
 const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]`;
 
@@ -160,11 +161,13 @@ export default async function PostPage({
                 </header>
 
                 {/* Company profile/body */}
-                <section className="prose prose-neutral max-w-none">
-                  {Array.isArray(post.body) && (
-                    <PortableText value={post.body} components={components} />
-                  )}
-                </section>
+                <PaywallContent wordLimit={300}>
+                  <section className="prose prose-neutral max-w-none">
+                    {Array.isArray(post.body) && (
+                      <PortableText value={post.body} components={components} />
+                    )}
+                  </section>
+                
 
                 {/* Open roles — minimalist rows at bottom */}
                 {roles.length > 0 && (
@@ -184,6 +187,7 @@ export default async function PostPage({
                     </ul>
                   </section>
                 )}
+                </PaywallContent>
               </main>
             </div>
         </div>

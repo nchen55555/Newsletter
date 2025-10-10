@@ -217,6 +217,47 @@ export async function POST(req: NextRequest) {
       console.log('Rows affected - Current user:', updateResults[0].count);
       console.log('Rows affected - Target user:', updateResults[1].count);
 
+      const senderName = currentProfile?.first_name && currentProfile?.last_name
+      ? `${currentProfile.first_name} ${currentProfile.last_name}`
+      : user.email;
+      
+    const emailContent = {
+      message: `${senderName} just accepted your request to join their verified professional network on The Niche.`
+    };
+    // Check if API key exists
+    if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {
+      console.error('NEXT_PUBLIC_RESEND_API_KEY is not set in environment variables');
+      return NextResponse.json({ 
+        error: 'Email service not configured - missing API key' 
+      }, { status: 500 });
+    }
+
+    const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
+
+    const { data, error } = await resend.emails.send({
+      from: 'Nicole <nicole@theniche.tech>',
+      to: [targetProfile.email],
+      subject: `${senderName} accepted your request to join their network on The Niche`,
+      bcc: [`${user.email}`],
+      html: `
+        <p>Hi ${targetProfile.first_name},</p>
+        <p>${emailContent.message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
+        <p><a href="https://theniche.tech/people/${encodeSimple(currentUserId)}" style="color: #0066cc; text-decoration: none;">Visit your network on The Niche</a></p>
+        <p>Best,<br><br>The Niche Team</p>
+      `,
+    });
+
+    if (error) {
+      console.error('Resend email error:', error);
+      return NextResponse.json({ 
+        error: 'Failed to send welcome email', 
+        details: error.message 
+      }, { status: 500 });
+    }
+
+    console.log('Email sent successfully:', data);
+
+
       return NextResponse.json({ 
         success: true,
         message: 'Mutual connection created successfully',
@@ -247,9 +288,6 @@ export async function POST(req: NextRequest) {
         
 
     }
-
-
-
       
     // Create email content using decoupled data (only for pending requests)
     const senderName = currentProfile?.first_name && currentProfile?.last_name

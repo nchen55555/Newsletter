@@ -158,8 +158,8 @@ const questions: Question[] = [
   {
     id: 'newsletter',
     field: 'newsletter_opt_in',
-    question: "Stay updated with new companies?",
-    description: "Get notified when new company profiles are added",
+    question: "Stay updated with new companie profiles?",
+    description: "Get an email when we cover a new company. We drop a maximum of two company profiles each week.",
     type: 'toggle',
     required: true
   },

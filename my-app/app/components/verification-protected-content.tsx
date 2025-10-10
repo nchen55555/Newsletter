@@ -9,6 +9,7 @@ interface VerificationProtectedContentProps {
   fallbackDescription?: string;
   className?: string;
   hideWhenNotVerified?: boolean;
+  redirectUrl?: string;
 }
 
 export function VerificationProtectedContent({ 
@@ -17,7 +18,8 @@ export function VerificationProtectedContent({
   fallbackTitle = "Request to join The Niche network for access to this content",
   fallbackDescription = "Request to join The Niche network for access to this content",
   className = "",
-  hideWhenNotVerified = false
+  hideWhenNotVerified = false,
+  redirectUrl = "/profile"
 }: VerificationProtectedContentProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,6 +74,7 @@ export function VerificationProtectedContent({
           title={fallbackTitle}
           description={fallbackDescription}
           className={className}
+          redirectUrl={redirectUrl}
         >
           {sectionTitle && (
             <div>
