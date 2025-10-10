@@ -274,7 +274,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
               In the meantime, feel free to curate your professional network by connecting to your verified professional community or bringing others on to the platform, sharing your thoughts on our company articles with your network, and more! Interacting more with The Niche allows us to better understand your interests and how our network of beta opportunities might be a good fit for you.
               <br></br>
               <br></br>
-              If you have the special access code from a provided referral, please enter it below or in your profile settings. Using this code will bypass our review process as we have already recognized mutual fit and you will be granted access to The Niche network.
+              If you have the special access code that was included on top of your referral, please enter it below or in your profile settings. Using this code will bypass our review process as we have already recognized mutual fit and you will be granted access to The Niche network.
               
             </DialogDescription>
           </DialogHeader>
