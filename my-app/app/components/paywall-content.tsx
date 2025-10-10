@@ -4,6 +4,32 @@ import { useSubscriptionContext } from './subscription_context';
 import { useState } from 'react';
 import { VerificationProtectedContent } from './verification-protected-content';
 
+// Types for PortableText blocks
+interface PortableTextSpan {
+  _type: 'span';
+  text: string;
+  marks?: string[];
+}
+
+interface PortableTextBlock {
+  _type: 'block';
+  _key: string;
+  style?: string;
+  children: PortableTextSpan[];
+}
+
+interface PortableTextImageBlock {
+  _type: 'image';
+  _key: string;
+  asset: {
+    _ref: string;
+  };
+  alt?: string;
+  caption?: string;
+}
+
+type PortableTextContent = PortableTextBlock | PortableTextImageBlock | Record<string, unknown>;
+
 interface PaywallContentProps {
   children: React.ReactNode;
   wordLimit?: number;
@@ -35,7 +61,7 @@ export function PaywallContent({
     
     if (children && typeof children === 'object' && 'props' in children) {
       const element = children as React.ReactElement;
-      const props = element.props as { value?: any; children?: React.ReactNode };
+      const props = element.props as { value?: PortableTextContent[]; children?: React.ReactNode };
       
       // Handle PortableText component specifically
       if (props.value && Array.isArray(props.value)) {
@@ -51,12 +77,13 @@ export function PaywallContent({
   };
 
   // Extract text from PortableText blocks directly
-  const extractTextFromPortableTextBlocks = (blocks: any[]): string => {
+  const extractTextFromPortableTextBlocks = (blocks: PortableTextContent[]): string => {
     return blocks
       .map(block => {
-        if (block._type === 'block' && block.children) {
-          return block.children
-            .map((child: any) => child.text || '')
+        if (block._type === 'block' && 'children' in block) {
+          const textBlock = block as PortableTextBlock;
+          return textBlock.children
+            .map((child: PortableTextSpan) => child.text || '')
             .join('');
         }
         return '';
@@ -91,7 +118,7 @@ export function PaywallContent({
       
       if (node && typeof node === 'object' && 'props' in node) {
         const element = node as React.ReactElement;
-        const props = element.props as { value?: any; children?: React.ReactNode; [key: string]: any };
+        const props = element.props as { value?: PortableTextContent[]; children?: React.ReactNode; [key: string]: unknown };
         
         // Special handling for PortableText component - truncate the blocks directly
         if (props.value && Array.isArray(props.value)) {
@@ -125,16 +152,17 @@ export function PaywallContent({
   };
 
   // Truncate PortableText blocks at the block level
-  const truncatePortableTextBlocks = (blocks: any[], wordCount: number): any[] => {
+  const truncatePortableTextBlocks = (blocks: PortableTextContent[], wordCount: number): PortableTextContent[] => {
     let currentWordCount = 0;
-    const truncatedBlocks: any[] = [];
+    const truncatedBlocks: PortableTextContent[] = [];
     
     for (const block of blocks) {
       if (currentWordCount >= wordCount) break;
       
-      if (block._type === 'block' && block.children) {
-        const blockText = block.children
-          .map((child: any) => child.text || '')
+      if (block._type === 'block' && 'children' in block) {
+        const textBlock = block as PortableTextBlock;
+        const blockText = textBlock.children
+          .map((child: PortableTextSpan) => child.text || '')
           .join('');
         const blockWords = blockText.split(/\s+/).filter((word: string) => word.length > 0);
         
