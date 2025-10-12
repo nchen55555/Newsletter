@@ -187,7 +187,7 @@ export default function ExternalProfilePage({ params }: { params: Promise<{ id: 
                 )}
                 {data.personal_website && (
                   <Button asChild variant="outline" size="sm">
-                    <a href={data.personal_website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
+                    <a href={data.personal_website.startsWith('http') ? data.personal_website : `https://${data.personal_website}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
                       <Globe className="w-4 h-4 mr-2" />
                       Website
                     </a>

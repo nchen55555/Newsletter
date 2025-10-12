@@ -295,7 +295,7 @@ export function ExternalProfile(props: ProfileData) {
               )}
               {props.personal_website && (
                 <Button asChild variant="outline" size="sm">
-                  <a href={props.personal_website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
+                  <a href={props.personal_website.startsWith('http') ? props.personal_website : `https://${props.personal_website}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
                     <Globe className="w-4 h-4 mr-2" />
                     Website
                   </a>
