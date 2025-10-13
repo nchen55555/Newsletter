@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import imageUrlBuilder from '@sanity/image-url';
+import type { ImageUrlBuilder } from '@sanity/image-url/lib/types/builder';
 import { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { client } from "@/lib/sanity/client";
 import { motion } from 'framer-motion';
@@ -9,6 +10,108 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import type { ArticleCardPost } from "./article_issues";
 import {Subscribe} from "@/app/components/subscribe";
+
+// Vertical Article Carousel Component
+function VerticalArticleCarousel({ posts, urlForImage }: { 
+  posts: ArticleCardPost[], 
+  urlForImage: (source: SanityImageSource) => ImageUrlBuilder 
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  // Auto-scroll functionality
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+   
+    if (posts.length > 1) {
+      interval = setInterval(() => {
+        setCurrentIndex((prev) => (prev + 1) % posts.length);
+      }, 4000); // Change slide every 4 seconds
+    }
+   
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [posts.length]);
+
+  if (posts.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-neutral-600">No articles available at the moment.</p>
+      </div>
+    );
+  }
+
+  const currentPost = posts[currentIndex];
+
+  return (
+    <div className="hidden lg:block relative max-w-md mx-auto">
+      {/* Card Container */}
+      <motion.div 
+        key={currentIndex}
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: -20 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="group cursor-pointer"
+      >
+        <Link href={`/articles/${currentPost.slug.current}`} className="block h-full">
+          <div className="aspect-[4/3] rounded-2xl overflow-hidden relative shadow-2xl">
+            {currentPost.image ? (
+              <Image
+                src={urlForImage(currentPost.image).url()}
+                alt={currentPost.title}
+                width={400}
+                height={300}
+                className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 group-hover:scale-110 transition-all duration-500 flex items-center justify-center">
+                <span className="text-neutral-500 text-lg font-medium">Article {currentPost._id.slice(-3)}</span>
+              </div>
+            )}
+            
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-60 group-hover:opacity-80 transition-all duration-500" />
+            
+            {/* Content overlay */}
+            <div className="absolute inset-0 p-6 flex flex-col justify-end">
+              <p className="text-sm text-white/60 mb-3">issue #{currentPost._id.slice(-3)} — {new Date(currentPost.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+              <h3 className="text-xl font-semibold text-white mb-1 mt-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                {currentPost.title}
+              </h3>
+              <p className="text-white/90 text-sm transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 line-clamp-2">
+                {new Date(currentPost.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+            </div>
+          </div>
+        </Link>
+      </motion.div>
+
+      {/* Progress dots indicator */}
+      {posts.length > 1 && (
+        <div className="flex justify-center mt-4 gap-2">
+          {posts.map((_, index) => (
+            <div
+              key={index}
+              className={`h-1 rounded-full transition-all duration-300 ${
+                index === currentIndex ? 'bg-neutral-900 w-8' : 'bg-neutral-400 w-2'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Article counter */}
+      {posts.length > 1 && (
+        <div className="text-center mt-2 text-sm text-neutral-600">
+          {currentIndex + 1} of {posts.length} articles
+        </div>
+      )}
+    </div>
+  );
+}
 
 // // Automatic Rolling Company Carousel Component
 // function CompanyCarousel({ items }: { items: MediaLibraryItem[] }) {
@@ -241,7 +344,7 @@ export default function LandingClient({ posts}: { posts: ArticleCardPost[]}) {
             {/* Mobile layout - horizontal scroll */}
             <div className="block lg:hidden">
               <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory px-4" style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
-                {posts.slice(0, 3).map((post, index) => (
+                {posts.map((post, index) => (
                   <motion.div
                     key={post._id}
                     className="flex-shrink-0 w-72 h-80 group cursor-pointer snap-start first:ml-0 last:mr-4"
@@ -278,63 +381,8 @@ export default function LandingClient({ posts}: { posts: ArticleCardPost[]}) {
               </div>
             </div>
 
-            {/* Desktop layout - overlapping cards */}
-            <div className="hidden lg:block relative h-[600px] w-full">
-              {posts.slice(0, 3).map((post, index) => (
-                <motion.div
-                  key={post._id}
-                  className="absolute w-80 h-96 group cursor-pointer"
-                  initial={{ 
-                    x: -50, 
-                    y: 100,
-                    rotate: -10,
-                    opacity: 0 
-                  }}
-                  animate={{ 
-                    x: 60 + index * 120,
-                    y: index * 80,
-                    rotate: index * 20 - 20,
-                    opacity: 1
-                  }}
-                  transition={{ 
-                    duration: 0.8,
-                    delay: index * 0.2,
-                    ease: "easeOut"
-                  }}
-                  whileHover={{ 
-                    scale: 1.05,
-                    rotate: 0,
-                    zIndex: 10,
-                    transition: { duration: 0.3 }
-                  }}
-                  style={{ zIndex: posts.length - index }}
-                >
-                  <Link href={`/articles/${post.slug.current}`} className="block h-full">
-                    <div className="w-full h-full rounded-2xl overflow-hidden relative shadow-2xl">
-                      {post.image ? (
-                        <Image
-                          src={urlForImage(post.image).url()}
-                          alt={post.title}
-                          width={320}
-                          height={384}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-neutral-200 group-hover:scale-110 transition-all duration-500" />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-60 group-hover:opacity-80 transition-all duration-500" />
-                      <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                        <p className="text-sm text-white/60 mb-3">issue #{post._id.slice(-3)} — {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                        <h3 className="text-xl font-medium text-white mb-2 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">{post.title}</h3>
-                        <p className="text-white/75 text-sm transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                          {new Date(post.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
+            {/* Desktop layout - vertical carousel */}
+            <VerticalArticleCarousel posts={posts} urlForImage={urlForImage} />
           </div>
         </div>
         

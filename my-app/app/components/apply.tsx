@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2Icon, Terminal, Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import CalendarAuthGate from "./calendar_auth_gate";
 
 
 export default function ApplyButton({ company, person }: { company: string; person?: string }) {
@@ -23,6 +24,7 @@ export default function ApplyButton({ company, person }: { company: string; pers
   const [appError, setAppError] = useState<string | null>(null)
   const [appSuccess, setAppSuccess] = useState(false)
   const [loadingApplied, setLoadingApplied] = useState(false)
+  const [isCalendarAuthFlow, setIsCalendarAuthFlow] = useState(false)
   const [profileSectionExpanded, setProfileSectionExpanded] = useState(false)
   const [appliedToNiche, setAppliedToNiche] = useState(false)
   const [form, setForm] = useState<ProfileFormState>({
@@ -118,6 +120,28 @@ export default function ApplyButton({ company, person }: { company: string; pers
         setApplied(exists);
       });     
   }, [form.id, company]);
+
+  // Check if we should reopen dialog after calendar auth
+  useEffect(() => {
+    const dialogInfo = localStorage.getItem('calendarAuthDialogInfo');
+    if (dialogInfo) {
+      try {
+        const { dialogType, company: storedCompany, person: storedPerson } = JSON.parse(dialogInfo);
+        if (dialogType === 'apply' && storedCompany === company && storedPerson === person) {
+          setIsCalendarAuthFlow(true);
+          localStorage.removeItem('calendarAuthDialogInfo');
+          // Small delay to ensure component is ready
+          setTimeout(() => {
+            setDialogOpen(true);
+            setIsCalendarAuthFlow(false);
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Failed to parse calendar auth dialog info:', error);
+        localStorage.removeItem('calendarAuthDialogInfo');
+      }
+    }
+  }, [company, person]);
   
 
 
@@ -243,7 +267,7 @@ export default function ApplyButton({ company, person }: { company: string; pers
   
 
 
-  if (!data) return <Skeleton className="h-12 w-full" />; // or customize size;
+  if (!data || isCalendarAuthFlow) return <Skeleton className="h-12 w-full" />; // or customize size;
 
 
   return (
@@ -313,39 +337,55 @@ export default function ApplyButton({ company, person }: { company: string; pers
                 )}
               </div>
             </div>
-            <div className="mb-10">
-            <Label htmlFor="add_info" className="text-base font-medium">Intro Blurb</Label>
-              <textarea 
-                id="add_info" 
-                name="add_info" 
-                value={additionalInfo} 
-                onChange={(e) => setAdditionalInfo(e.target.value)} 
-                required 
-                placeholder="Tell us why you're interested in connecting and what draws you to this opportunity." 
-                className="w-full min-h-[120px] text-lg px-4 py-3 mt-2 border border-neutral-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              {appSuccess && (
-                <Alert className="mt-6">
-                  <CheckCircle2Icon />
-                  <AlertTitle>Request to the company submitted!</AlertTitle>
-                </Alert>
+            
+            <CalendarAuthGate 
+              onAuthRequired={() => {
+                setLoadingApplied(true);
+                setIsCalendarAuthFlow(true);
+              }}
+              dialogType="apply"
+              company={company}
+              person={person}
+            >
+              {(hasCalendarAccess, isCheckingCalendar) => (
+                <>
+                <div className="mb-10">
+                <Label htmlFor="add_info" className="text-base font-medium">Intro Blurb</Label>
+                  <textarea 
+                    id="add_info" 
+                    name="add_info" 
+                    value={additionalInfo} 
+                    onChange={(e) => setAdditionalInfo(e.target.value)} 
+                    required 
+                    placeholder="Tell us why you're interested in connecting and what draws you to this opportunity." 
+                    className="w-full min-h-[120px] text-lg px-4 py-3 mt-2 border border-neutral-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  {appSuccess && (
+                    <Alert className="mt-6">
+                      <CheckCircle2Icon />
+                      <AlertTitle>Request to the company submitted!</AlertTitle>
+                    </Alert>
+                  )}
+                  {appError && (
+                    <Alert variant="destructive" className="mt-6">
+                      <Terminal className="h-4 w-4" />
+                      <AlertTitle>{appError}</AlertTitle>s
+                    </Alert>
+                  )}
+                </div>
+                
+                <div className="flex justify-end mt-8 gap-4">
+                  <Button 
+                    type="submit" 
+                    className="h-12 px-8 text-lg"
+                    disabled={applied || loadingApplied || !hasCalendarAccess || isCheckingCalendar}
+                  >
+                    {applied ? "Already Submitted" : loadingApplied ? "Submitting..." : isCheckingCalendar ? "Checking..." : !hasCalendarAccess ? "Calendar Integration Required" : "Submit"}
+                  </Button>
+                </div>
+                </>
               )}
-              {appError && (
-                <Alert variant="destructive" className="mt-6">
-                  <Terminal className="h-4 w-4" />
-                  <AlertTitle>{appError}</AlertTitle>s
-                </Alert>
-              )}
-            <div className="flex justify-end mt-8 gap-4">
-              <Button 
-                type="submit" 
-                className="h-12 px-8 text-lg"
-                disabled={applied || loadingApplied}
-              >
-                {applied ? "Already Submitted" : loadingApplied ? "Submitting..." : "Submit"}
-              </Button>
-            </div>
-            </div>
+            </CalendarAuthGate>
             </form>
           </DialogContent>
         </Dialog>

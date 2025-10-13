@@ -70,6 +70,7 @@ export type ProfileFormState = {
 // Company-related types
 import { SanityDocument } from "next-sanity"
 import { SanityImageSource } from "@sanity/image-url/lib/types/types"
+import type { Session } from '@supabase/supabase-js'
 
 export interface CompanyData extends SanityDocument {
   company: number;
@@ -192,6 +193,42 @@ export interface Step3UpdateData {
   network_recommendations?: NetworkRecommendation[];
   applied?: boolean;
   verified?: boolean;
+}
+
+// Google Calendar API types
+export interface CalendarAttendee {
+  email?: string;
+  [key: string]: unknown;
+}
+
+export interface CalendarEvent {
+  id?: string;
+  htmlLink?: string;
+  summary?: string;
+  start?: { dateTime?: string; date?: string };
+  end?: { dateTime?: string; date?: string };
+  attendees?: CalendarAttendee[];
+  organizer?: { email?: string; [key: string]: unknown };
+  location?: string;
+  hangoutLink?: string;
+}
+
+export interface CalendarEventMatch {
+  id?: string;
+  htmlLink?: string;
+  summary?: string;
+  start?: { dateTime?: string; date?: string };
+  end?: { dateTime?: string; date?: string };
+  attendees?: CalendarAttendee[];
+  organizer?: { email?: string; [key: string]: unknown };
+  location?: string;
+  hangoutLink?: string;
+}
+
+// Extended Supabase session type that includes OAuth provider tokens
+export interface ExtendedSession extends Session {
+  provider_token?: string;
+  provider_refresh_token?: string;
 }
 
 

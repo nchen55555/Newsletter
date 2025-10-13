@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2Icon, Terminal, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import CalendarAuthGate from "./calendar_auth_gate";
 
 
 export default function EarlyInterestButton({ company }: { company: string }) {
@@ -23,6 +24,7 @@ export default function EarlyInterestButton({ company }: { company: string }) {
   const [appError, setAppError] = useState<string | null>(null)
   const [appSuccess, setAppSuccess] = useState(false)
   const [loadingApplied, setLoadingApplied] = useState(false)
+  const [isCalendarAuthFlow, setIsCalendarAuthFlow] = useState(false)
   const [profileSectionExpanded, setProfileSectionExpanded] = useState(false)
   const [appliedToNiche, setAppliedToNiche] = useState(false)
   const [form, setForm] = useState<ProfileFormState>({
@@ -113,6 +115,28 @@ export default function EarlyInterestButton({ company }: { company: string }) {
         setApplied(exists);
       });     
   }, [form.id, company]);
+
+  // Check if we should reopen dialog after calendar auth
+  useEffect(() => {
+    const dialogInfo = localStorage.getItem('calendarAuthDialogInfo');
+    if (dialogInfo) {
+      try {
+        const { dialogType, company: storedCompany } = JSON.parse(dialogInfo);
+        if (dialogType === 'early_interest' && storedCompany === company) {
+          setIsCalendarAuthFlow(true);
+          localStorage.removeItem('calendarAuthDialogInfo');
+          // Small delay to ensure component is ready
+          setTimeout(() => {
+            setDialogOpen(true);
+            setIsCalendarAuthFlow(false);
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Failed to parse calendar auth dialog info:', error);
+        localStorage.removeItem('calendarAuthDialogInfo');
+      }
+    }
+  }, [company]);
   
 
   if (!isSubscribed) return null;
@@ -233,7 +257,7 @@ export default function EarlyInterestButton({ company }: { company: string }) {
   }
   
 
-  if (!data) return <Skeleton className="h-12 w-full" />; // or customize size;
+  if (!data || isCalendarAuthFlow) return <Skeleton className="h-12 w-full" />; // or customize size;
 
   return (
     <div className="flex justify-center lg:justify-start mb-2">
@@ -302,39 +326,54 @@ export default function EarlyInterestButton({ company }: { company: string }) {
                 )}
               </div>
             </div>
-            <div className="mb-10">
-            <Label htmlFor="add_info" className="text-base font-medium">Why are you interested?</Label>
-              <textarea 
-                id="add_info" 
-                name="add_info" 
-                value={additionalInfo} 
-                onChange={(e) => setAdditionalInfo(e.target.value)} 
-                required 
-                placeholder="Tell us why you're interested and what draws you to the company. If you are extremely interested in this company, say that! Each message should be customized to the opportunity." 
-                className="w-full min-h-[120px] text-lg px-4 py-3 mt-2 border border-neutral-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              {appSuccess && (
-                <Alert className="mt-6">
-                  <CheckCircle2Icon />
-                  <AlertTitle>Early interest submitted successfully! We&apos;ll notify you when this company becomes a partner and if there is mutual interest.</AlertTitle>
-                </Alert>
+            
+            <CalendarAuthGate 
+              onAuthRequired={() => {
+                setLoadingApplied(true);
+                setIsCalendarAuthFlow(true);
+              }}
+              dialogType="early_interest"
+              company={company}
+            >
+              {(hasCalendarAccess, isCheckingCalendar) => (
+                <>
+                <div className="mb-10">
+                <Label htmlFor="add_info" className="text-base font-medium">Why are you interested?</Label>
+                  <textarea 
+                    id="add_info" 
+                    name="add_info" 
+                    value={additionalInfo} 
+                    onChange={(e) => setAdditionalInfo(e.target.value)} 
+                    required 
+                    placeholder="Tell us why you're interested and what draws you to the company. If you are extremely interested in this company, say that! Each message should be customized to the opportunity." 
+                    className="w-full min-h-[120px] text-lg px-4 py-3 mt-2 border border-neutral-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  {appSuccess && (
+                    <Alert className="mt-6">
+                      <CheckCircle2Icon />
+                      <AlertTitle>Early interest submitted successfully! We&apos;ll notify you when this company becomes a partner and if there is mutual interest.</AlertTitle>
+                    </Alert>
+                  )}
+                  {appError && (
+                    <Alert variant="destructive" className="mt-6">
+                      <Terminal className="h-4 w-4" />
+                      <AlertTitle>{appError}</AlertTitle>
+                    </Alert>
+                  )}
+                </div>
+                
+                <div className="flex justify-end mt-8 gap-4">
+                  <Button 
+                    type="submit" 
+                    className="h-12 px-8 text-lg text-white"
+                    disabled={applied || loadingApplied || !hasCalendarAccess || isCheckingCalendar}
+                  >
+                    {applied ? "Already Submitted" : loadingApplied ? "Submitting..." : isCheckingCalendar ? "Checking..." : !hasCalendarAccess ? "Calendar Integration Required" : "Submit Early Interest"}
+                  </Button>
+                </div>
+                </>
               )}
-              {appError && (
-                <Alert variant="destructive" className="mt-6">
-                  <Terminal className="h-4 w-4" />
-                  <AlertTitle>{appError}</AlertTitle>
-                </Alert>
-              )}
-            <div className="flex justify-end mt-8 gap-4">
-              <Button 
-                type="submit" 
-                className="h-12 px-8 text-lg text-white"
-                disabled={applied || loadingApplied}
-              >
-                {applied ? "Already Submitted" : loadingApplied ? "Submitting..." : "Submit Early Interest"}
-              </Button>
-            </div>
-            </div>
+            </CalendarAuthGate>
             </form>
           </DialogContent>
         </Dialog>

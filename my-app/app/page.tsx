@@ -7,7 +7,7 @@ export default async function Home() {
   const POSTS_QUERY = `*[_type == "post" 
   && defined(slug.current)
   && !(slug.current match "*-beta*")
-  ]|order(publishedAt desc)[0...3]{_id, title, slug, publishedAt, image}`;
+  ]|order(publishedAt desc){_id, title, slug, publishedAt, image}`;
   
   
   const options = { next: { revalidate: 30 } };
