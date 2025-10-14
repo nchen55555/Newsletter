@@ -338,7 +338,7 @@ export default function ApplyButton({ company, person }: { company: string; pers
               </div>
             </div>
             
-            <CalendarAuthGate 
+            {/* <CalendarAuthGate 
               onAuthRequired={() => {
                 setLoadingApplied(true);
                 setIsCalendarAuthFlow(true);
@@ -347,7 +347,7 @@ export default function ApplyButton({ company, person }: { company: string; pers
               company={company}
               person={person}
             >
-              {(hasCalendarAccess, isCheckingCalendar) => (
+              {(hasCalendarAccess, isCheckingCalendar) => ( */}
                 <>
                 <div className="mb-10">
                 <Label htmlFor="add_info" className="text-base font-medium">Intro Blurb</Label>
@@ -378,14 +378,14 @@ export default function ApplyButton({ company, person }: { company: string; pers
                   <Button 
                     type="submit" 
                     className="h-12 px-8 text-lg"
-                    disabled={applied || loadingApplied || !hasCalendarAccess || isCheckingCalendar}
+                    disabled={applied || loadingApplied} // || !hasCalendarAccess || isCheckingCalendar}
                   >
-                    {applied ? "Already Submitted" : loadingApplied ? "Submitting..." : isCheckingCalendar ? "Checking..." : !hasCalendarAccess ? "Calendar Integration Required" : "Submit"}
+                    {applied ? "Already Submitted" : loadingApplied ? "Submitting..." /*: isCheckingCalendar ? "Checking..." : !hasCalendarAccess ? "Calendar Integration Required"*/ : "Submit"}
                   </Button>
                 </div>
                 </>
-              )}
-            </CalendarAuthGate>
+              {/* )}
+            </CalendarAuthGate> */}
             </form>
           </DialogContent>
         </Dialog>

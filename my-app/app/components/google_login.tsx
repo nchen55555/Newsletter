@@ -25,9 +25,9 @@ export function GoogleLogin({
             provider: 'google',
             options: {
                 redirectTo:  flowType === 'subscribe' ? `${location.origin+"/access"}` : `${location.origin}`,
-                scopes: 'openid email profile https://www.googleapis.com/auth/calendar.readonly',
+                // scopes: 'openid email profile https://www.googleapis.com/auth/calendar.readonly',
                 queryParams: {
-                    access_type: 'offline',
+                    // access_type: 'offline',
                     prompt: 'consent',
                 },
             },

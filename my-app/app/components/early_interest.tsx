@@ -327,7 +327,7 @@ export default function EarlyInterestButton({ company }: { company: string }) {
               </div>
             </div>
             
-            <CalendarAuthGate 
+            {/* <CalendarAuthGate 
               onAuthRequired={() => {
                 setLoadingApplied(true);
                 setIsCalendarAuthFlow(true);
@@ -335,7 +335,7 @@ export default function EarlyInterestButton({ company }: { company: string }) {
               dialogType="early_interest"
               company={company}
             >
-              {(hasCalendarAccess, isCheckingCalendar) => (
+              {(hasCalendarAccess, isCheckingCalendar) => ( */}
                 <>
                 <div className="mb-10">
                 <Label htmlFor="add_info" className="text-base font-medium">Why are you interested?</Label>
@@ -366,14 +366,14 @@ export default function EarlyInterestButton({ company }: { company: string }) {
                   <Button 
                     type="submit" 
                     className="h-12 px-8 text-lg text-white"
-                    disabled={applied || loadingApplied || !hasCalendarAccess || isCheckingCalendar}
+                    disabled={applied || loadingApplied } // || !hasCalendarAccess || isCheckingCalendar}
                   >
-                    {applied ? "Already Submitted" : loadingApplied ? "Submitting..." : isCheckingCalendar ? "Checking..." : !hasCalendarAccess ? "Calendar Integration Required" : "Submit Early Interest"}
+                    {applied ? "Already Submitted" : loadingApplied ? "Submitting..." : /*isCheckingCalendar ? "Checking..." : !hasCalendarAccess ? "Calendar Integration Required" :*/ "Submit Early Interest"}
                   </Button>
                 </div>
                 </>
-              )}
-            </CalendarAuthGate>
+             {/* )}
+            </CalendarAuthGate> */}
             </form>
           </DialogContent>
         </Dialog>
