@@ -11,6 +11,9 @@ const sans = Nunito_Sans({
 export const metadata: Metadata = {
   title: "the niche",
   description: "shop all startups",
+  verification: {
+    google: "jxmmAeRyvNEjyrdI422yt7IrqdDA2XiQaOk0YDt_1wQ"
+  }
 };
 
 export default function RootLayout({
