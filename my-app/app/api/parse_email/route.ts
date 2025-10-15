@@ -153,13 +153,17 @@
       }
       
       // If confidence is high enough and domain verified, update application automatically
-      if (parsedData.confidence_score >= 0.6 && parsedData.company_name && domainVerified) {
+      if (parsedData.confidence_score >= 0.2 && parsedData.company_name && domainVerified) {
         try {
+          console.log('Calling updateApplicationFromEmail...')
           await updateApplicationFromEmail(parsedData, finalUserEmail)
+          console.log('Application updated successfully')
         } catch (updateError) {
           console.error('Failed to update application:', updateError)
           // Continue processing even if update fails
         }
+      } else {
+        console.log('Skipping application update due to failed conditions')
       }
 
       // Store the email event for tracking

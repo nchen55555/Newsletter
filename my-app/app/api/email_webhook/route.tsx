@@ -11,13 +11,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("=== WEBHOOK HIT ===")
-    console.log("URL:", request.url)
-    console.log("Method:", request.method)
-    console.log("Headers:", Object.fromEntries(request.headers.entries()))
     
     const formData = await request.formData()
-    console.log("Form Data entries:", Array.from(formData.entries()))
     
     const emailData = {
       from: formData.get('from') as string,
