@@ -14,11 +14,13 @@ import { Alert, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2Icon, Terminal, Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import CalendarAuthGate from "./calendar_auth_gate";
+import { useRouter } from "next/navigation";
 
 
 export default function ApplyButton({ company, person }: { company: string; person?: string }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { isSubscribed } = useSubscriptionContext();
+  const router = useRouter();
   const [data, setData] = useState<ProfileData | null>(null);
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [appError, setAppError] = useState<string | null>(null)
@@ -257,8 +259,10 @@ export default function ApplyButton({ company, person }: { company: string; pers
     })
     
     if (res2.ok) {
-      setAppSuccess(true)
+      // Close dialog immediately and redirect to success screen
+      setDialogOpen(false)
       setLoadingApplied(false)
+      router.push('/ats?loading=true')
     } else {
       setAppError("Application submission failed")
       setLoadingApplied(false)

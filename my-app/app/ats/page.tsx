@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -18,6 +19,9 @@ import {
   AlertCircle,
   Forward,
 } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { useRouter } from "next/navigation"
 import { Navigation } from "@/app/components/header";
 import { debounce } from "@/app/utils/debounce"
 
@@ -75,16 +79,15 @@ function EmailForwardingSetup({
         <Alert className="border-blue-200 bg-blue-50">
           <AlertCircle className="h-4 w-4 text-blue-600" />
           <AlertDescription>
-            <strong>Simple setup:</strong> Forward or bcc interview emails to the address below and this tracker will automatically update, allowing you to keep track of all of your processes seamlessly!
+            <strong>Track All Your Applications</strong> Forward, CC, or BCC interview emails to the address below to automatically track and update your applications&apos; status and progress.
           </AlertDescription>
         </Alert>
 
         {/* Consent alert */}
         {!acknowledged && (
           <Alert className="border-yellow-300 bg-yellow-50">
-            <AlertCircle className="h-4 w-4 text-yellow-600" />
             <AlertDescription className="flex flex-col gap-2">
-              We use your application tracker to better understand your interests and produce better matches.
+              CC your Niche-specific email for processes both on and off The Niche to get better recommendations!
               <Button 
                 size="sm" 
                 onClick={onAcknowledge} 
@@ -119,22 +122,15 @@ function EmailForwardingSetup({
           </div>
         </div>
 
-        {/* Instructions */}
-        <div className={`bg-blue-50 p-4 rounded-lg ${!acknowledged ? 'opacity-50 pointer-events-none select-none' : ''}`}>
-          <div className="text-center">
-            <p className="text-sm text-blue-700">
-              Forward interview emails → Auto-update tracker
-            </p>
-          </div>
-        </div>
-
       </CardContent>
     </Card>
   )
 }
 
 // Main ATS Component
-export default function EmailForwardingATS() {
+function EmailForwardingATSContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [applications, setApplications] = useState<Application[]>([])
   const [actionFilter, setActionFilter] = useState<'All' | 'Yes' | 'No' | 'TBD'>('All')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -142,18 +138,28 @@ export default function EmailForwardingATS() {
   const [trackingEmail, setTrackingEmail] = useState<string>('')
   const [acknowledged, setAcknowledged] = useState(false)
   const [profileLoaded, setProfileLoaded] = useState(false)
+  const [showLoadingMessage, setShowLoadingMessage] = useState(false)
   
   const [newApplication, setNewApplication] = useState({
     company: '',
     stage: 'Applied',
     actionRequired: 'No' as const,
-    actionDetails: ''
+    actionDetails: '',
+    isOnTheNiche: false
   })
 
   const abortControllersRef = useRef<Record<string, AbortController>>({})
 
-  const addApplication = () => {
+  const addApplication = () => {    
+    // If it's on The Niche, redirect to opportunities page
+    if (newApplication.isOnTheNiche) {
+      setIsAddDialogOpen(false)
+      router.push('/opportunities')
+      return
+    }
+
     if (!newApplication.company.trim()) return
+
   
     const tempId = `tmp_${Date.now()}`
     const optimistic: Application = {
@@ -165,7 +171,7 @@ export default function EmailForwardingATS() {
       dateAdded: new Date(),
     }
     setApplications(prev => [optimistic, ...prev])
-    setNewApplication({ company: '', stage: 'Applied', actionRequired: 'No', actionDetails: '' })
+    setNewApplication({ company: '', stage: 'Applied', actionRequired: 'No', actionDetails: '', isOnTheNiche: false })
     setIsAddDialogOpen(false)
   
     autosave(optimistic)
@@ -241,6 +247,19 @@ export default function EmailForwardingATS() {
     return acc
   }, {} as Record<string, number>)
 
+  // Check for loading parameter from apply redirect
+  useEffect(() => {
+    const loading = searchParams.get('loading')
+    if (loading === 'true') {
+      setShowLoadingMessage(true)
+      // Hide loading message after 3 seconds and transition to ATS
+      const timer = setTimeout(() => {
+        setShowLoadingMessage(false)
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [searchParams])
+
   // Check if user has already confirmed application tracker setup
   useEffect(() => {
     const checkProfileConfirmation = async () => {
@@ -300,6 +319,26 @@ export default function EmailForwardingATS() {
     }
   }, [trackingEmail, acknowledged, profileLoaded])
 
+  // Show loading message like opportunities page
+  if (showLoadingMessage) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
+        <Navigation />
+        <div className="pt-12 pb-8 px-6 relative">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.02),transparent)] pointer-events-none"></div>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="animate-in fade-in-50 duration-700">
+              <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                <p className="text-sm font-medium text-neutral-700">Loading your application(s)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
       <Navigation />
@@ -310,10 +349,10 @@ export default function EmailForwardingATS() {
               {/* Welcome Header */}
               <div className="text-center pt-16 pb-8">
                 <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-black">
-                  Personalized Tracking System
+                  Your Application Tracker
                 </h1>
                 <p className="text-lg md:text-xl text-neutral-500 leading-relaxed font-light max-w-3xl mx-auto mb-8">
-                  Track any processes with AI-powered email parsing. Forward, BCC, or CC interview emails to automatically update your progress for processes both on and off The Niche.
+                  Track any application process. Forward, BCC, or CC interview emails to update your progress for processes both on and off The Niche. Every introduction with a Niche company will have your Niche-specific email already CC&apos;d on the email exchange. 
                 </p>
                 <Button 
                   variant="outline" 
@@ -368,44 +407,46 @@ export default function EmailForwardingATS() {
 
               {/* Stats Cards */}
               {acknowledged && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 w-full max-w-6xl mx-auto">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <Building2 className="w-8 h-8 text-blue-600" />
-                        <div>
-                          <p className="text-sm text-neutral-600">Total Applications</p>
-                          <p className="text-2xl font-bold">{applications.length}</p>
+                <div className="flex justify-center mb-8 w-full">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <Building2 className="w-8 h-8 text-blue-600" />
+                          <div>
+                            <p className="text-sm text-neutral-600">Total Applications</p>
+                            <p className="text-2xl font-bold">{applications.length}</p>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <Target className="w-8 h-8 text-orange-600" />
-                        <div>
-                          <p className="text-sm text-neutral-600">In Progress</p>
-                          <p className="text-2xl font-bold">
-                            {applications.filter(app => !['Rejected', 'Withdrawn', 'Offer Received'].includes(app.stage)).length}
-                          </p>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <Target className="w-8 h-8 text-orange-600" />
+                          <div>
+                            <p className="text-sm text-neutral-600">In Progress</p>
+                            <p className="text-2xl font-bold">
+                              {applications.filter(app => !['Rejected', 'Withdrawn', 'Offer Received'].includes(app.stage)).length}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
 
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle className="w-8 h-8 text-green-600" />
-                        <div>
-                          <p className="text-sm text-neutral-600">Offers</p>
-                          <p className="text-2xl font-bold">{stats['Offer Received'] || 0}</p>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="w-8 h-8 text-green-600" />
+                          <div>
+                            <p className="text-sm text-neutral-600">Offers</p>
+                            <p className="text-2xl font-bold">{stats['Offer Received'] || 0}</p>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               )}
 
@@ -445,29 +486,58 @@ export default function EmailForwardingATS() {
                                 value={newApplication.company}
                                 onChange={(e) => setNewApplication({...newApplication, company: e.target.value})}
                               />
-                              <Select
-                                value={newApplication.stage}
-                                onValueChange={(value) => setNewApplication({...newApplication, stage: value})}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {STAGES.map(stage => (
-                                    <SelectItem key={stage} value={stage}>{stage}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <Input
-                                placeholder="Action details (optional)"
-                                value={newApplication.actionDetails}
-                                onChange={(e) => setNewApplication({...newApplication, actionDetails: e.target.value})}
-                              />
+                              
+                              {/* Toggle for Application on/off The Niche */}
+                              <div className="flex items-center space-x-2">
+                                <Switch
+                                  id="niche-toggle"
+                                  checked={newApplication.isOnTheNiche}
+                                  onCheckedChange={(checked) => setNewApplication({...newApplication, isOnTheNiche: checked})}
+                                />
+                                <Label htmlFor="niche-toggle" className="text-sm font-medium">
+                                  Application on The Niche
+                                </Label>
+                              </div>
+                              
+                              {newApplication.isOnTheNiche && (
+                                <Alert className="border-blue-200 bg-blue-50">
+                                  <AlertCircle className="h-4 w-4 text-blue-600" />
+                                  <AlertDescription className="text-blue-700">
+                                    You&apos;ll be redirected to the opportunities page to find and apply to this company.
+                                  </AlertDescription>
+                                </Alert>
+                              )}
+                              
+                              {!newApplication.isOnTheNiche && (
+                                <>
+                                  <Select
+                                    value={newApplication.stage}
+                                    onValueChange={(value) => setNewApplication({...newApplication, stage: value})}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {STAGES.map(stage => (
+                                        <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Input
+                                    placeholder="Action details (optional)"
+                                    value={newApplication.actionDetails}
+                                    onChange={(e) => setNewApplication({...newApplication, actionDetails: e.target.value})}
+                                  />
+                                </>
+                              )}
+                              
                               <div className="flex justify-end gap-2">
                                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                                   Cancel
                                 </Button>
-                                <Button onClick={addApplication}>Add Application</Button>
+                                <Button onClick={addApplication}>
+                                  {newApplication.isOnTheNiche ? 'Go to Opportunities' : 'Add Application'}
+                                </Button>
                               </div>
                             </div>
                           </DialogContent>
@@ -597,5 +667,29 @@ export default function EmailForwardingATS() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Wrapper component with Suspense boundary
+export default function EmailForwardingATS() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
+        <Navigation />
+        <div className="pt-12 pb-8 px-6 relative">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.02),transparent)] pointer-events-none"></div>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="animate-in fade-in-50 duration-700">
+              <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                <p className="text-sm font-medium text-neutral-700">Loading...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <EmailForwardingATSContent />
+    </Suspense>
   )
 }

@@ -2,9 +2,22 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from '@/lib/supabase'
 
+export async function GET() {
+  return NextResponse.json({ 
+    status: 'Webhook endpoint is accessible',
+    timestamp: new Date().toISOString()
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
+    console.log("=== WEBHOOK HIT ===")
+    console.log("URL:", request.url)
+    console.log("Method:", request.method)
+    console.log("Headers:", Object.fromEntries(request.headers.entries()))
+    
     const formData = await request.formData()
+    console.log("Form Data entries:", Array.from(formData.entries()))
     
     const emailData = {
       from: formData.get('from') as string,
@@ -35,6 +48,9 @@ export async function POST(request: NextRequest) {
       .select('email')
       .eq('webhook_email', recipientEmail)
       .single()
+
+    console.log("User data ", user)
+
     
     if (error || !user.email) {
       console.error('User lookup failed:', error)
