@@ -27,12 +27,14 @@ export async function POST(request: NextRequest) {
     
     // If BCC field is empty, try to extract any @theniche.fyi address from email headers
     if (!recipientEmail && emailData.email) {
+      console.log('Searching for @theniche.fyi in email content...')
       const theNicheMatch = emailData.email.match(/([^\s<]+@theniche\.fyi)/m)
+      console.log('Regex match result:', theNicheMatch)
       if (theNicheMatch) {
         recipientEmail = theNicheMatch[1]
       }
     }
-    
+        
     if (!recipientEmail?.includes('@theniche.fyi')) {
       return NextResponse.json({ error: 'Invalid recipient domain' }, { status: 400 })
     }
@@ -40,12 +42,11 @@ export async function POST(request: NextRequest) {
     // Look up user in Supabase by matching the identifier
     const { data: user, error } = await supabase
       .from('subscribers')
-      .select('email')
+      .select('email, webhook_email')
       .eq('webhook_email', recipientEmail)
       .single()
-
-    console.log("User data ", user)
-
+    
+        
     
     if (error || !user.email) {
       console.error('User lookup failed:', error)

@@ -52,6 +52,10 @@ export async function updateApplicationFromEmail(
       .eq('company_id', company.id)
       .single()
     
+    if (findError){
+      console.error("Finding existing application ", findError)
+    }
+    
     let applicationId: string
 
     // Update action required based on event type
@@ -111,7 +115,7 @@ export async function updateApplicationFromEmail(
         .eq('id', applicationId)
       
       if (updateError) {
-        throw updateError
+        console.log("Updating applications error ", updateError)
       }
     }
 
@@ -189,42 +193,75 @@ export async function storeEmailEvent(
 }
 export async function findOrCreateCompany(
   supabase: SupabaseClient, 
-  companyName: string
+  domainName: string  // Now expecting domain name (e.g., "google.com")
 ): Promise<Company> {
-  if (!companyName) throw new Error('Company name is required')
+  if (!domainName) throw new Error('Domain name is required')
   
+  console.log('Looking for company with domain:', domainName)
   
-  // Try to find existing company (case-insensitive)
-  const { data: existingCompany, error: findError } = await supabase
+  // First try to find company by domain
+  const { data: existingCompany, error: domainFindError } = await supabase
     .from('companies')
-    .select('id, company_name')
-    .ilike('company_name', companyName)
+    .select('id, company_name, domain')
+    .eq('domain', domainName)
     .single()
   
-  if (!findError && existingCompany) {
+  if (!domainFindError && existingCompany) {
+    console.log('Found existing company by domain:', existingCompany)
     return existingCompany as Company
   }
   
-  // Create new company if not found
+  // Fallback: try to find by company name (case-insensitive) in case domain is in company_name field
+  const { data: existingCompanyByName, error: findError } = await supabase
+    .from('companies')
+    .select('id, company_name, domain')
+    .ilike('company_name', domainName)
+    .single()
+  
+  if (!findError && existingCompanyByName) {
+    console.log('Found existing company by name:', existingCompanyByName)
+    return existingCompanyByName as Company
+  }
+  
+  // Create new company if not found - use domain for both company_name and domain
+  const newCompanyData = {
+    company_name: domainName,  // Store domain as company name
+    domain: domainName         // Also store in domain field
+  }
+  
+  console.log('Creating new company with data:', newCompanyData)
+  
   const { data: newCompany, error: createError } = await supabase
     .from('companies')
-    .insert({
-      company_name: companyName
-    })
-    .select('id, company_name')
+    .insert(newCompanyData)
+    .select('id, company_name, domain')
     .single()
   
   if (createError) {
     // If it's a duplicate key error, try to find the existing company again
     if (createError.code === '23505') {
-      const { data: existingCompany, error: findError } = await supabase
+      console.log('Duplicate error, trying to find existing company...')
+      
+      // Try domain first
+      const { data: existingCompany, error: domainFindError } = await supabase
         .from('companies')
-        .select('id, company_name')
-        .ilike('company_name', companyName)
+        .select('id, company_name, domain')
+        .eq('domain', domainName)
         .single()
       
-      if (!findError && existingCompany) {
+      if (!domainFindError && existingCompany) {
         return existingCompany as Company
+      }
+      
+      // Try by name
+      const { data: existingCompanyByName, error: nameFindError } = await supabase
+        .from('companies')
+        .select('id, company_name, domain')
+        .ilike('company_name', domainName)
+        .single()
+      
+      if (!nameFindError && existingCompanyByName) {
+        return existingCompanyByName as Company
       }
     }
     
@@ -232,6 +269,7 @@ export async function findOrCreateCompany(
     throw createError
   }
   
+  console.log('Created new company:', newCompany)
   return newCompany as Company
 }
 

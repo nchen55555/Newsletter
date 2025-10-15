@@ -6,36 +6,37 @@
   import { 
     updateApplicationFromEmail, 
     storeEmailEvent, 
-    validateParsedEmailData
+    validateParsedEmailData,
+    ParsedEmailData
   } from "@/app/utils/email_helpers"
   import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
   import { cookies } from 'next/headers'
 
   // Helper function to verify if company name matches sender domain
-  function verifyCompanyDomain(companyName: string, emailContent: string, fromEmail: string | null, toEmail: string | null): boolean {
-    if (!companyName || (!fromEmail && !toEmail)) return false
+  // function verifyCompanyDomain(companyName: string, emailContent: string, fromEmail: string | null, toEmail: string | null): boolean {
+  //   if (!companyName || (!fromEmail && !toEmail)) return false
     
-    // Normalize company name for comparison
-    const slug = companyName.toLowerCase().replace(/[^a-z0-9]/g, '')
+  //   // Normalize company name for comparison
+  //   const slug = companyName.toLowerCase().replace(/[^a-z0-9]/g, '')
     
-    const emailMatches =
-  (emailContent || '').match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) || [];
+  //   const emailMatches =
+  // (emailContent || '').match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) || [];
   
-    const allEmails = [fromEmail, toEmail, ...emailMatches]
-  .filter(Boolean)
-  .map(e => String(e).toLowerCase());
+  //   const allEmails = [fromEmail, toEmail, ...emailMatches]
+  // .filter(Boolean)
+  // .map(e => String(e).toLowerCase());
     
-  const domainVerified = !!slug && allEmails.some(email => {
-  const at = email.indexOf('@');
-    if (at < 0) return false;
-    const domain = email.slice(at + 1);
-    const parts = domain.split('.');
-    const registered = parts.length >= 2 ? parts.slice(-2).join('.') : domain; // e.g. sub.mail.example.com -> example.com
-    return registered.includes(slug);
-  });
+  // const domainVerified = !!slug && allEmails.some(email => {
+  // const at = email.indexOf('@');
+  //   if (at < 0) return false;
+  //   const domain = email.slice(at + 1);
+  //   const parts = domain.split('.');
+  //   const registered = parts.length >= 2 ? parts.slice(-2).join('.') : domain; // e.g. sub.mail.example.com -> example.com
+  //   return registered.includes(slug);
+  // });
       
-   return domainVerified
-  }
+  //  return domainVerified
+  // }
   
   
   const SYSTEM_INSTRUCTIONS = `
@@ -44,7 +45,7 @@
   For each email, return a JSON object with the following structure:
   {
     "event_type": "scheduled" | "completed" | "feedback" | "progression" | "offer" | "rejection" | "unknown",
-    "company_name": "string (extract from email domain or signature)",
+    "company_name": "string (MUST be the email domain of the company sender)",
     "interview_stage": "Applied" | "Phone Screen" | "Technical Interview" | "Onsite Interview" | "Final Round" | "Offer Received" | "Offer Accepted" | "Offer Declined" | "Rejected" | "Withdrawn" | "unknown",
     "interview_date": "YYYY-MM-DD HH:MM or null if not mentioned",
     "key_details": "string (brief summary of important info)",
@@ -55,7 +56,9 @@
   
   Key guidelines:
   - Be conservative with confidence scores - only high confidence (0.8+) for very clear signals
-  - Extract company name from email domain, signature, or explicit mentions
+  - CRITICAL: company_name MUST be the email domain (e.g., if email is from "john@google.com", company_name should be "google.com")
+  - Extract the domain from the sender's email address, NOT the company display name
+  - Examples: "recruiter@microsoft.com" → company_name: "microsoft.com", "hr@apple.com" → company_name: "apple.com"
   - Identify interview stages from context clues (technical challenge, culture fit, final round, etc.)
   - Recognize scheduling vs confirmation vs feedback vs outcome emails
   - Handle rejection and offer emails with high confidence
@@ -64,7 +67,7 @@
   
   export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
-      const { emailContent, userEmail, fromEmail, toEmail } = await request.json()
+      const { emailContent, userEmail } = await request.json()
   
       if (!emailContent || typeof emailContent !== 'string') {
         return NextResponse.json(
@@ -104,33 +107,54 @@
   Return only valid JSON with the specified structure.
   `
   
-      const result = await model.generateContent(prompt)
+      // Retry logic for API failures
+      let result
+      const retries = 3
+      for (let i = 0; i < retries; i++) {
+        try {
+          result = await model.generateContent(prompt)
+          break
+        } catch (error: unknown) {
+          console.log(`Gemini API attempt ${i + 1} failed:`, error instanceof Error ? error.message : 'Unknown error')
+          if (i === retries - 1) throw error // Last attempt, throw the error
+          
+          // Wait before retrying (exponential backoff)
+          const waitTime = Math.pow(2, i) * 1000 // 1s, 2s, 4s
+          console.log(`Waiting ${waitTime}ms before retry...`)
+          await new Promise(resolve => setTimeout(resolve, waitTime))
+        }
+      }
 
-      const response = await result.response
-      const text = response.text()
+      const response = await result?.response
+      const text = response?.text()
             
       // Continue from where your code left off...
 
       // Parse the JSON response
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let parsedData: any
-      try {
-        // Clean the text by removing markdown code blocks
-        let cleanedText = text.trim()
-        if (cleanedText.startsWith('```json')) {
-          cleanedText = cleanedText.replace(/```json\s*/, '').replace(/```\s*$/, '')
-        } else if (cleanedText.startsWith('```')) {
-          cleanedText = cleanedText.replace(/```\s*/, '').replace(/```\s*$/, '')
+      let parsedData: ParsedEmailData
+      if (text){
+        try {
+          // Clean the text by removing markdown code blocks
+          let cleanedText = text.trim()
+          if (cleanedText.startsWith('```json')) {
+            cleanedText = cleanedText.replace(/```json\s*/, '').replace(/```\s*$/, '')
+          } else if (cleanedText.startsWith('```')) {
+            cleanedText = cleanedText.replace(/```\s*/, '').replace(/```\s*$/, '')
+          }
+          
+          parsedData = JSON.parse(cleanedText.trim())
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError)
+          return NextResponse.json(
+            { error: 'Invalid JSON response from AI parser' },
+            { status: 500 }
+          )
         }
-        
-        parsedData = JSON.parse(cleanedText.trim())
-      } catch (parseError) {
-        console.error('JSON parse error:', parseError)
-        return NextResponse.json(
-          { error: 'Invalid JSON response from AI parser' },
-          { status: 500 }
-        )
       }
+      else{
+        console.error("Gemini API did not populate call")
+        throw Error("Gemini API did not populate call")
+      } 
       
       // Validate the parsed data structure
       if (!validateParsedEmailData(parsedData)) {
@@ -145,15 +169,17 @@
       parsedData.parsed_at = new Date().toISOString()
             
       // Verify domain matches company name
-      const domainVerified = verifyCompanyDomain(parsedData.company_name, emailContent, fromEmail, toEmail)
+      // const domainVerified = verifyCompanyDomain(parsedData.company_name, emailContent, fromEmail, toEmail)
       
       // Adjust confidence score based on domain verification
-      if (!domainVerified) {
-        parsedData.confidence_score = Math.min(parsedData.confidence_score, 0.3) // Cap at low confidence
-      }
+      // if (!domainVerified) {
+      //   parsedData.confidence_score = Math.min(parsedData.confidence_score, 0.3) // Cap at low confidence
+      // }
+
+      // console.log(" failure", parsedData.confidence_score >= 0.2, parsedData.company_name, domainVerified)
       
       // If confidence is high enough and domain verified, update application automatically
-      if (parsedData.confidence_score >= 0.2 && parsedData.company_name && domainVerified) {
+      if (parsedData.confidence_score >= 0.2 && parsedData.company_name) {
         try {
           console.log('Calling updateApplicationFromEmail...')
           await updateApplicationFromEmail(parsedData, finalUserEmail)
@@ -177,8 +203,8 @@
       return NextResponse.json({
         success: true,
         parsed: parsedData,
-        updated: parsedData.confidence_score >= 0.6 && parsedData.company_name && domainVerified,
-        domain_verified: domainVerified,
+        updated: parsedData.confidence_score >= 0.2 && parsedData.company_name, //&& domainVerified,
+        // domain_verified: domainVerified,
         confidence_score: parsedData.confidence_score,
         company_name: parsedData.company_name,
         interview_stage: parsedData.interview_stage,
