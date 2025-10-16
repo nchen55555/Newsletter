@@ -1,6 +1,5 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { useState, useEffect } from 'react'
 import ProfileInfoChatbot from './profile_info_chatbot'
 import { useRouter} from 'next/navigation'
@@ -12,7 +11,6 @@ import {
   DialogDescription,
   DialogHeader,
 } from "@/components/ui/dialog"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface MultiStepProfileFormProps extends ProfileData {
   access_token: string,
@@ -23,10 +21,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const router = useRouter();
   const { isSubscribed, loading } = useSubscriptionContext()
   const [, setEmailSent] = useState(false)
-
-  
-
-
 
   useEffect(() => {
     if (!loading && !isSubscribed) {
@@ -63,9 +57,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
 
   const [formError, setFormError] = useState<string | null>(null)
   const [profileFormComplete, setProfileFormComplete] = useState(false)
-  const [accessCode, setAccessCode] = useState('')
-  const [accessCodeError, setAccessCodeError] = useState<string | null>(null)
-  const [accessCodeVerified, setAccessCodeVerified] = useState(false)
 
   // Load companies for step 2 (same query as companies page, limited to 20
 

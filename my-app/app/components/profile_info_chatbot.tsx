@@ -1417,7 +1417,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                             Special Access Code
                           </label>
                           <p className="text-sm">
-                            Enter your special access code if you have one, or type &quot;NA&quot; if you don't have one.
+                            Enter your special access code if you have one, or type &quot;NA&quot; if you don&apos;t have one.
                           </p>
                           {accessCodeVerified ? (
                             <Alert>
