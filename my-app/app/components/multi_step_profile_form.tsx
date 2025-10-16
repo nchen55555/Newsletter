@@ -58,6 +58,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     needs_visa_sponsorship: props.needs_visa_sponsorship || false,
     interests: props.interests || "",
     network_recommendations: props.network_recommendations || [],
+    verified: props.verified || false,
   });
 
   const [formError, setFormError] = useState<string | null>(null)
@@ -105,28 +106,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const handleConfirmationClose = () => {    
     // Use the hash function to encode the user ID
     window.location.href = `/people`;
-  };
-
-  const handleAccessCodeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (accessCode.trim() === 'THENICHELIST') {
-      const formData = new FormData()
-      // Access code correct, show verified state
-      formData.append('verified', 'true')
-
-      // Make request (same as original form)
-      const response = await fetch('/api/post_profile', {
-        method: 'PATCH',
-        body: formData,
-      });
-      if (response.ok){
-        setAccessCodeVerified(true)
-        setAccessCodeError(null)
-      }
-    } else {
-      setAccessCodeError('Invalid access code')
-      setAccessCodeVerified(false)
-    }
   };
 
 
@@ -268,62 +247,25 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             <DialogDescription className="text-lg mt-2">
               Hi {form.first_name}! 
               <br></br><br></br>
-              Congratulations on requesting access to The Niche! We are excited to review your profile for our private beta launch. If we believe there is mutual fit between our network of beta opportunities or if a founder reaches out to specifically connect with you, we will reach back out with an invitation to be officially a part of this network! 
+              {form.verified ? (
+                <>
+                  Congratulations on gaining access to The Niche! We are so excited to build your verified professional network of opportunities personalized to your interests and skills.
+                  <br></br>
+                  <br></br>
+                  Feel free to curate your professional network by connecting to your verified professional community or bringing others on to the platform, sharing your thoughts on our company articles with your network, and more! Interacting more with The Niche allows us to better understand your interests and how our network of beta opportunities might be a good fit for you.
+                </>
+              ) : (
+                <>
+                  Congratulations on requesting access to The Niche! We are excited to review your profile for our private beta launch. If we believe there is mutual fit between our network of beta opportunities or if a founder reaches out to specifically connect with you, we will reach back out with an invitation to be officially a part of this network! 
+                  <br></br>
+                  <br></br>
+                  In the meantime, feel free to curate your professional network by connecting to your verified professional community or bringing others on to the platform, sharing your thoughts on our company articles with your network, and more! Interacting more with The Niche allows us to better understand your interests and how our network of beta opportunities might be a good fit for you.
+                </>
+              )}
               <br></br>
-              <br></br>
-              In the meantime, feel free to curate your professional network by connecting to your verified professional community or bringing others on to the platform, sharing your thoughts on our company articles with your network, and more! Interacting more with The Niche allows us to better understand your interests and how our network of beta opportunities might be a good fit for you.
-              <br></br>
-              <br></br>
-              If you have the special access code that was included on top of your referral, please enter it below or in your profile settings. Using this code will bypass our review process as we have already recognized mutual fit and you will be granted access to The Niche network.
               
             </DialogDescription>
           </DialogHeader>
-          
-          {/* Access Code Form */}
-          <form onSubmit={handleAccessCodeSubmit} className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <div className="flex flex-col gap-3">
-              <label htmlFor="accessCode" className="text-sm font-medium text-gray-700">
-                Special Access Code
-              </label>
-              {accessCodeVerified ? (
-                <Alert>
-                  <AlertDescription>
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 bg-neutral-900 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs">✓</span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Access Code Verified!</span>
-                        <span className="text-sm text-gray-600 ml-2">You have been granted access to The Niche network.</span>
-                      </div>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <>
-                  <div className="flex gap-2">
-                    <Input
-                      id="accessCode"
-                      type="text"
-                      value={accessCode}
-                      onChange={(e) => setAccessCode(e.target.value)}
-                      placeholder="Enter access code"
-                      className="flex-1"
-                    />
-                    <Button
-                      type="submit"
-                      disabled={!accessCode.trim()}
-                    >
-                      Submit
-                    </Button>
-                  </div>
-                  {accessCodeError && (
-                    <p className="text-sm text-red-600">{accessCodeError}</p>
-                  )}
-                </>
-              )}
-            </div>
-          </form>
 
           <div className="flex flex-col gap-4 pt-4">
             <Button 

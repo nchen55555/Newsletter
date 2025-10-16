@@ -65,6 +65,7 @@ export type ProfileFormState = {
   pending_connections_new?: ConnectionData[];
   interests?: string;
   network_recommendations?: NetworkRecommendation[];
+  verified?: boolean;
 };
 
 // Company-related types

@@ -331,11 +331,10 @@ export default function LandingClient({ posts}: { posts: ArticleCardPost[]}) {
                   </span>
                 )}
               </p>
-              {pathname === '/access' && (
-                <div className="flex justify-center lg:justify-start">
-                  <Subscribe/>
-                </div>
-              )}
+              <div className="flex justify-center lg:justify-start">
+                <Subscribe/>
+              </div>
+              
             </motion.div>
           </div>
 

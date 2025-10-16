@@ -9,6 +9,7 @@ import { CheckCircle, Upload, Search, UserPlus, ArrowLeft, ArrowRight, ChevronLe
 import { CompanyCard } from '@/app/companies/company-cards'
 import ProfileCard from './profile_card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ConnectionScale } from './connection-scale'
 
 interface Question {
@@ -26,10 +27,10 @@ const questions: Question[] = [
   {
     id: 'welcome',
     field: 'first_name', // Using existing field as placeholder
-    question: "Thank you for your interest in The Niche!",
-    description: "We are excited to get to know you better to help curate a personalized, professional network for you and surface opportunities tailored to your interests and skillsets, verified by the existing networks you operate in. If there is mutual fit, we are also excited to also introduce you to the partner startups we are working directly with to match stellar early talent to in this private beta.",
+    question: "Welcome to The Niche!",
+    description: "We are excited to get to know you better and explore if there's a mutual fit. Our goal is to help curate a personalized, professional network that aligns with your interests, skillsets, and verified by your existing professional community. We look forward to introducing you to our partner startups! \n\nIf you've received a special access code, your profile has already been pre-verified. Once you complete your account setup, you'll gain access to our private beta experience.",
     type: 'welcome',
-    required: false
+    required: true
   },
   {
     id: 'profile_image',
@@ -206,6 +207,11 @@ export default function ProfileInfoChatbot({
   const [dialogOpen, setDialogOpen] = useState(false)
   const [currentUserData, setCurrentUserData] = useState<ProfileData | null>(null)
   
+  // Access code state
+  const [accessCode, setAccessCode] = useState('')
+  const [accessCodeError, setAccessCodeError] = useState<string | null>(null)
+  const [accessCodeVerified, setAccessCodeVerified] = useState(false)
+  
   const inputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -220,6 +226,11 @@ export default function ProfileInfoChatbot({
   const isQuestionValid = useCallback((question: typeof questions[0]) => {
     if (!question) return true
     if (!question.required) return true
+    
+    // Handle welcome question - it's valid if an access code has been submitted or verified
+    if (question.type === 'welcome') {
+      return accessCodeVerified || accessCode.trim() !== ''
+    }
     
     const field = question.field
     const value = form[field]
@@ -260,7 +271,7 @@ export default function ProfileInfoChatbot({
     
     // Handle all other fields
     return !!value && value.toString().trim() !== ''
-  }, [form, currentUserData])
+  }, [form, currentUserData, accessCodeVerified, accessCode])
 
   // Validation function to check if current question is satisfied
   const isCurrentQuestionValid = () => {
@@ -571,6 +582,40 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
       setStatusMessage('Failed to send connection request. Please try again.')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  // Access code submission handler
+  const handleAccessCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Any input fulfills the requirement, but special handling for THENICHELIST
+    if (accessCode.trim() === 'THENICHELIST') {
+      // Special access code - mark as verified in database
+      const formData = new FormData()
+      formData.append('verified', 'true')
+      formData.append('id', form.id.toString())
+
+      try {
+        const response = await fetch('/api/post_profile', {
+          method: 'PATCH',
+          body: formData,
+        });
+        
+        if (response.ok) {
+          setAccessCodeVerified(true)
+          setAccessCodeError(null)
+        } else {
+          setAccessCodeError('Failed to process access code')
+        }
+      } catch (error) {
+        setAccessCodeError('Failed to process access code')
+      }
+    } else {
+      // Any other input (including NA) - just proceed without verification
+      setAccessCodeVerified(false)
+      setAccessCodeError(null)
+      nextQuestion()
     }
   }
 
@@ -923,14 +968,18 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
 
                 {/* Animated description */}
                 {currentQuestion.description && (
-                  <p className="text-xl text-gray-600 mb-8 min-h-[1.5rem]">
+                  <div className="text-xl text-gray-600 mb-8 min-h-[1.5rem] space-y-4">
                     {questionComplete ? (
                       <>
-                        {typedDescription}
-                        {questionComplete && !descriptionComplete && <span className="animate-pulse">|</span>}
+                        {typedDescription.split('\n').map((line, index, array) => (
+                          <p key={index} className={line.trim() === '' ? 'h-4' : ''}>
+                            {line}
+                            {index === array.length - 1 && !descriptionComplete && <span className="animate-pulse">|</span>}
+                          </p>
+                        ))}
                       </>
                     ) : null}
-                  </p>
+                  </div>
                 )}
 
                 {/* Input area - only show after question is fully typed */}
@@ -1360,6 +1409,57 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                     </div>
                   )}
 
+                  {currentQuestion.type === 'welcome' && (
+                    <div className="space-y-6">
+                      <form onSubmit={handleAccessCodeSubmit} className="mt-6 p-4 rounded-lg">
+                        <div className="flex flex-col gap-3">
+                          <label htmlFor="accessCode" className="text-sm font-medium text-gray-700">
+                            Special Access Code
+                          </label>
+                          <p className="text-sm">
+                            Enter your special access code if you have one, or type &quot;NA&quot; if you don't have one.
+                          </p>
+                          {accessCodeVerified ? (
+                            <Alert>
+                              <AlertDescription>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-5 h-5 bg-neutral-900 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs">✓</span>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Access Code Verified!</span>
+                                  </div>
+                                </div>
+                              </AlertDescription>
+                            </Alert>
+                          ) : (
+                            <>
+                              <div className="flex gap-2">
+                                <Input
+                                  id="accessCode"
+                                  type="text"
+                                  value={accessCode}
+                                  onChange={(e) => setAccessCode(e.target.value)}
+                                  placeholder="Enter access code or NA if you do not have one"
+                                  className="flex-1"
+                                />
+                                <Button
+                                  type="submit"
+                                  disabled={!accessCode.trim()}
+                                >
+                                  Submit
+                                </Button>
+                              </div>
+                              {accessCodeError && (
+                                <p className="text-sm text-red-600">{accessCodeError}</p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </form>
+                    </div>
+                  )}
+
                 {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && currentQuestion.type !== 'welcome' && (
                   <form onSubmit={handleSubmit}>
                     <div className="relative">
@@ -1460,14 +1560,18 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
 
               {/* Animated description */}
               {currentQuestion.description && (
-                <p className="text-xl text-gray-600 mb-8 min-h-[1.5rem]">
+                <div className="text-xl text-gray-600 mb-8 min-h-[1.5rem] space-y-4">
                   {questionComplete ? (
                     <>
-                      {typedDescription}
-                      {questionComplete && !descriptionComplete && <span className="animate-pulse">|</span>}
+                      {typedDescription.split('\n').map((line, index, array) => (
+                        <p key={index} className={line.trim() === '' ? 'h-4' : ''}>
+                          {line}
+                          {index === array.length - 1 && !descriptionComplete && <span className="animate-pulse">|</span>}
+                        </p>
+                      ))}
                     </>
                   ) : null}
-                </p>
+                </div>
               )}
 
               {/* Input area - only show after question is fully typed */}
@@ -1617,6 +1721,57 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {currentQuestion.type === 'welcome' && (
+                    <div className="space-y-6">
+                      <form onSubmit={handleAccessCodeSubmit} className="mt-6 p-4 bg-gray-50 rounded-lg">
+                        <div className="flex flex-col gap-3">
+                          <label htmlFor="accessCode" className="text-sm font-medium text-gray-700">
+                            Special Access Code
+                          </label>
+                          <p className="text-sm text-gray-600">
+                            Enter your special access code if you have one, or type &quot;NA&quot; to bypass.
+                          </p>
+                          {accessCodeVerified ? (
+                            <Alert>
+                              <AlertDescription>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-5 h-5 bg-neutral-900 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs">✓</span>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Access Code Verified!</span>
+                                  </div>
+                                </div>
+                              </AlertDescription>
+                            </Alert>
+                          ) : (
+                            <>
+                              <div className="flex gap-2">
+                                <Input
+                                  id="accessCode"
+                                  type="text"
+                                  value={accessCode}
+                                  onChange={(e) => setAccessCode(e.target.value)}
+                                  placeholder="Enter access code or NA if you do not have one"
+                                  className="flex-1"
+                                />
+                                <Button
+                                  type="submit"
+                                  disabled={!accessCode.trim()}
+                                >
+                                  Submit
+                                </Button>
+                              </div>
+                              {accessCodeError && (
+                                <p className="text-sm text-red-600">{accessCodeError}</p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </form>
                     </div>
                   )}
 
