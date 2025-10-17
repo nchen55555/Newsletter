@@ -7,9 +7,10 @@ import { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { client } from "@/lib/sanity/client";
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { ArticleCardPost } from "./article_issues";
 import {Subscribe} from "@/app/components/subscribe";
+import { useSubscriptionContext } from './subscription_context';
 
 // Vertical Article Carousel Component
 function VerticalArticleCarousel({ posts, urlForImage }: { 
@@ -244,6 +245,8 @@ export default function LandingClient({ posts}: { posts: ArticleCardPost[]}) {
   const [typedText, setTypedText] = useState('');
   const [typingDone, setTypingDone] = useState(false);
   const indexRef = useRef(0);
+  const router = useRouter();
+  const { isSubscribed, loading } = useSubscriptionContext();
   
   // Refs for scroll detection
   // const aboutSectionRef = useRef<HTMLDivElement>(null);
@@ -277,6 +280,27 @@ export default function LandingClient({ posts}: { posts: ArticleCardPost[]}) {
     }, 30);
     return () => clearInterval(interval);
   }, []);
+
+  // Check demo status and route to tour if needed
+  useEffect(() => {
+    const checkDemoStatus = async () => {
+      if (!loading && isSubscribed) {
+        try {
+          const response = await fetch('/api/check_demo_status');
+          if (response.ok) {
+            const data = await response.json();
+            if (!data.demo_done) {
+              router.push('/tour');
+            }
+          }
+        } catch (error) {
+          console.error('Error checking demo status:', error);
+        }
+      }
+    };
+
+    checkDemoStatus();
+  }, [isSubscribed, loading, router]);
   
   return (
     <div>

@@ -12,6 +12,7 @@ import CompanyPageClient from "@/app/components/company-page-client";
 import { motion} from 'framer-motion'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
+import { ProtectedContent } from '../components/protected-content'
 
 interface TourStep {
   id: string
@@ -237,12 +238,22 @@ const copyEmail = async () => {
   }, [tourSteps, showCongratulationsDialog])
 
 
-  const handleFinishTour = () => {
+  const handleFinishTour = async () => {
+    // Mark demo as complete
+    try {
+      await fetch('/api/mark_demo_complete', {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Error marking demo complete:', error);
+    }
+    
     router.push('/opportunities')
   }
 
   if (loading) {
     return (
+      
       <div className="min-h-screen bg-gray-50">
         <Navigation /> 
         <div className="max-w-6xl mx-auto px-8 py-12">
@@ -258,6 +269,8 @@ const copyEmail = async () => {
 
   try {
     return (
+      <ProtectedContent>
+
       <div className="min-h-screen bg-gray-50">
       <Navigation />
     
@@ -537,6 +550,7 @@ const copyEmail = async () => {
         </DialogContent>
       </Dialog>
     </div>
+        </ProtectedContent>
     )
   } catch (error) {
     console.error("Rendering error in TourPage:", error);
@@ -548,5 +562,5 @@ const copyEmail = async () => {
         </div>
       </div>
     )
-  }
+  }  
 }
