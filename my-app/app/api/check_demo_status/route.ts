@@ -16,7 +16,7 @@ export async function GET() {
     // Check demo_done status in profiles table using email
     const { data, error } = await supabase
       .from('subscribers')
-      .select('demo_done')
+      .select('demo_done, applied')
       .eq('email', session.user.email)
       .single()
     
@@ -26,7 +26,8 @@ export async function GET() {
     }
     
     return NextResponse.json({ 
-      demo_done: data?.demo_done || false
+      demo_done: data?.demo_done || false,
+      applied: data?.applied || false 
     })
 
   } catch (error) {

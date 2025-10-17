@@ -114,132 +114,6 @@ function VerticalArticleCarousel({ posts, urlForImage }: {
   );
 }
 
-// // Automatic Rolling Company Carousel Component
-// function CompanyCarousel({ items }: { items: MediaLibraryItem[] }) {
-//   const builder = imageUrlBuilder(client);
-//   const [currentIndex, setCurrentIndex] = useState(0);
-  
-
-//   function urlForImage(source: SanityImageSource) {
-//     return builder.image(source);
-//   }
-  
-//   // Safety check and filter to show only partners and pending partners
-//   const filteredItems = (items || []).filter(item => item.partner || item.pending_partner);
-  
-//   // Auto-scroll functionality
-//   useEffect(() => {
-//     let interval: NodeJS.Timeout | null = null;
-    
-//     if (filteredItems.length > 1) {
-//       interval = setInterval(() => {
-//         setCurrentIndex((prev) => (prev + 1) % filteredItems.length);
-//       }, 4000); // Change slide every 4 seconds
-//     }
-    
-//     return () => {
-//       if (interval) {
-//         clearInterval(interval);
-//       }
-//     };
-//   }, [filteredItems.length]);
-
-//   if (filteredItems.length === 0) {
-//     return (
-//       <div className="text-center py-8">
-//         <p className="text-neutral-600">No partner companies available at the moment.</p>
-//       </div>
-//     );
-//   }
-
-//   const currentItem = filteredItems[currentIndex];
-
-//   return (
-//     <div className="relative max-w-md mx-auto">
-//       {/* Card Container */}
-//       <motion.div 
-//         key={currentIndex}
-//         initial={{ opacity: 0, scale: 0.9, y: 20 }}
-//         animate={{ opacity: 1, scale: 1, y: 0 }}
-//         exit={{ opacity: 0, scale: 0.9, y: -20 }}
-//         transition={{ duration: 0.6, ease: "easeOut" }}
-//         className="group cursor-pointer"
-//       >
-//         <div className="aspect-[4/3] rounded-2xl overflow-hidden relative shadow-2xl">
-//           {currentItem.image ? (
-//             <Image
-//               src={urlForImage(currentItem.image).url()}
-//               alt={currentItem.alt || currentItem.caption || `Company ${currentItem.company}`}
-//               width={400}
-//               height={300}
-//               className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500"
-//             />
-//           ) : (
-//             <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 group-hover:scale-110 transition-all duration-500 flex items-center justify-center">
-//               <span className="text-neutral-500 text-lg font-medium">Company {currentItem.company}</span>
-//             </div>
-//           )}
-          
-//           {/* Gradient overlay */}
-//           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-60 group-hover:opacity-80 transition-all duration-500" />
-          
-//           {/* Content overlay */}
-//           <div className="absolute inset-0 p-6 flex flex-col justify-end">
-//             {/* Partner badge */}
-//             {/* Caption/Title - positioned lower */}
-//             {currentItem.caption && (
-//               <h3 className="text-xl font-semibold text-white mb-1 mt-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-//                 {currentItem.caption}
-//               </h3>
-//             )}
-//              {currentItem.alt && (
-//               <h2 className="text-xl font-semibold text-white mb-1 mt-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-//                 {currentItem.alt}
-//               </h2>
-//             )}
-            
-//             {/* Description */}
-//             {currentItem.description && (
-//               <p className="text-white/90 text-sm transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 line-clamp-2">
-//                 {currentItem.description}
-//               </p>
-//             )}
-            
-//             {/* Location */}
-//             {currentItem.location && (
-//               <p className="text-white/75 text-xs mt-2 transform translate-y-6 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-//                 📍 {currentItem.location}
-//               </p>
-//             )}
-          
-//           </div>
-//         </div>
-//       </motion.div>
-
-//       {/* Progress dots indicator */}
-//       {filteredItems.length > 1 && (
-//         <div className="flex justify-center mt-4 gap-2">
-//           {filteredItems.map((_, index) => (
-//             <div
-//               key={index}
-//               className={`h-1 rounded-full transition-all duration-300 ${
-//                 index === currentIndex ? 'bg-neutral-900 w-8' : 'bg-neutral-400 w-2'
-//               }`}
-//             />
-//           ))}
-//         </div>
-//       )}
-
-//       {/* Company counter */}
-//       {filteredItems.length > 1 && (
-//         <div className="text-center mt-2 text-sm text-neutral-600">
-//           {currentIndex + 1} of {filteredItems.length} partner companies
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
 export default function LandingClient({ posts}: { posts: ArticleCardPost[]}) {
   const builder = imageUrlBuilder(client);
   const [typedText, setTypedText] = useState('');
@@ -289,7 +163,7 @@ export default function LandingClient({ posts}: { posts: ArticleCardPost[]}) {
           const response = await fetch('/api/check_demo_status');
           if (response.ok) {
             const data = await response.json();
-            if (!data.demo_done) {
+            if (!data.demo_done && data.applied) {
               router.push('/tour');
             }
           }
