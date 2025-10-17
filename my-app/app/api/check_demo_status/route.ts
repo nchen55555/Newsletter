@@ -27,7 +27,7 @@ export async function GET() {
     
     return NextResponse.json({ 
       demo_done: data?.demo_done || false,
-      applied: data?.verified || false 
+      verified: data?.verified || false 
     })
 
   } catch (error) {
