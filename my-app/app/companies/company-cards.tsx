@@ -23,7 +23,7 @@ interface CompanyCardsProps {
 }
 
 
-export function CompanyCard({ company, showHighMutualInterest = false, potential = false}: { company: CompanyWithImageUrl; showHighMutualInterest?: boolean; potential?: boolean, external?: boolean}) {
+export function CompanyCard({ company, showHighMutualInterest = false, potential = false, disableNavigation = false}: { company: CompanyWithImageUrl; showHighMutualInterest?: boolean; potential?: boolean, external?: boolean, disableNavigation?: boolean}) {
   const aboutId = useId();
   const router = useRouter();
   const [appliedToNiche, setAppliedToNiche] = useState(false);
@@ -49,8 +49,8 @@ export function CompanyCard({ company, showHighMutualInterest = false, potential
 
   return (
     <article 
-      className="group relative flex h-80 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
-      onClick={() => appliedToNiche ? router.push(`/companies/${company.company}`) : null}
+      className={`group relative flex h-80 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition-all duration-200 ${!disableNavigation ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02]' : ''}`}
+      onClick={() => !disableNavigation && appliedToNiche ? router.push(`/companies/${company.company}`) : null}
     >
       {/* Badge */}
       {showHighMutualInterest && company.partner && (
@@ -91,16 +91,17 @@ export function CompanyCard({ company, showHighMutualInterest = false, potential
           )}
         </div>
       </div>
-
-      <div className="shrink-0 flex gap-2">
-        <RainbowBookmark company={company.company} />
-        <div onClick={(e) => e.stopPropagation()}>
-          <Share company={company.company} />
-        </div>
-        <div onClick={(e) => e.stopPropagation()}>
-          <Post company={company.company} companyData={company} />
-        </div>
-    </div>
+        {disableNavigation ? null :
+          (<div className="shrink-0 flex gap-2">
+            <RainbowBookmark company={company.company} />
+            <div onClick={(e) => e.stopPropagation()}>
+              <Share company={company.company} />
+            </div>
+            <div onClick={(e) => e.stopPropagation()}>
+              <Post company={company.company} companyData={company} />
+            </div>
+        </div>)
+      }
 
       </div>
 

@@ -17,12 +17,22 @@ import CalendarAuthGate from "./calendar_auth_gate";
 import { useRouter } from "next/navigation";
 
 
-export default function ApplyButton({ company, person }: { company: string; person?: string }) {
+export default function ApplyButton({ 
+  company, 
+  person, 
+  isDemo = false, 
+  onIntroRequested 
+}: { 
+  company: string; 
+  person?: string; 
+  isDemo?: boolean; 
+  onIntroRequested?: () => void; 
+}) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { isSubscribed } = useSubscriptionContext();
   const router = useRouter();
   const [data, setData] = useState<ProfileData | null>(null);
-  const [additionalInfo, setAdditionalInfo] = useState('');
+  const [additionalInfo, setAdditionalInfo] = useState(isDemo ? 'Demo!' : '');
   const [appError, setAppError] = useState<string | null>(null)
   const [appSuccess, setAppSuccess] = useState(false)
   const [loadingApplied, setLoadingApplied] = useState(false)
@@ -156,6 +166,17 @@ export default function ApplyButton({ company, person }: { company: string; pers
     setLoadingApplied(true);
     setAppError(null);
     setAppSuccess(false);
+
+    // Handle demo mode
+    if (isDemo) {
+      setAppSuccess(true);
+      setLoadingApplied(false);
+      onIntroRequested?.();
+      setTimeout(() => {
+        setDialogOpen(false);
+      }, 1500);
+      return;
+    }
 
     if (!form) {
       setAppError("Profile data not loaded. Please try again.");
@@ -354,16 +375,29 @@ export default function ApplyButton({ company, person }: { company: string; pers
               {(hasCalendarAccess, isCheckingCalendar) => ( */}
                 <>
                 <div className="mb-10">
-                <Label htmlFor="add_info" className="text-base font-medium">Intro Blurb</Label>
+                <Label htmlFor="add_info" className="text-base font-medium">
+                  Intro Blurb
+                  {isDemo && <span className="ml-2 text-sm text-gray-600">(Demo Mode)</span>}
+                </Label>
                   <textarea 
                     id="add_info" 
                     name="add_info" 
                     value={additionalInfo} 
-                    onChange={(e) => setAdditionalInfo(e.target.value)} 
+                    onChange={(e) => !isDemo && setAdditionalInfo(e.target.value)} 
                     required 
-                    placeholder="Tell us why you're interested in connecting and what draws you to this opportunity." 
-                    className="w-full min-h-[120px] text-lg px-4 py-3 mt-2 border border-neutral-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder={isDemo ? "Demo mode - text is pre-filled" : "Tell us why you're interested in connecting and what draws you to this opportunity."} 
+                    className={`w-full min-h-[120px] text-lg px-4 py-3 mt-2 border rounded-lg resize-none ${
+                      isDemo 
+                        ? 'border-gray-300 bg-gray-50 text-gray-700 cursor-not-allowed' 
+                        : 'border-neutral-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                    }`}
+                    readOnly={isDemo}
                   />
+                  {isDemo && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      ✨ in demo mode, the intro text is automatically filled with &quot;Demo!&quot; and will not actually be sent.
+                    </p>
+                  )}
                   {appSuccess && (
                     <Alert className="mt-6">
                       <CheckCircle2Icon />

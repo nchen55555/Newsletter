@@ -6,7 +6,7 @@ import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { Container } from "@/app/components/container";
 import { Navigation } from "@/app/components/header";
 import { CompanyData } from "@/app/types";
-import CompanyPageClient from "./company-page-client";
+import CompanyPageClient from "../../components/company-page-client";
 
 const { projectId, dataset } = client.config();
 const urlFor = (source: SanityImageSource) =>

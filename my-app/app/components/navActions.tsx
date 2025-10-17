@@ -82,9 +82,9 @@ export function NavActions() {
             <DropdownMenuLabel>account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem><Link href="/profile">profile</Link></DropdownMenuItem>
-            {/* <DropdownMenuItem><Link href="/ats">ats</Link></DropdownMenuItem> */}
             {/* <DropdownMenuItem><Link href="/bookmarks">bookmarks</Link></DropdownMenuItem> */}
             <DropdownMenuItem><Link href="/ats">ats</Link></DropdownMenuItem>
+            <DropdownMenuItem><Link href="/tour">platform tour</Link></DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout}>logout</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

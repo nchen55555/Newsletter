@@ -241,7 +241,6 @@ function VerticalArticleCarousel({ posts, urlForImage }: {
 
 export default function LandingClient({ posts}: { posts: ArticleCardPost[]}) {
   const builder = imageUrlBuilder(client);
-  const pathname = usePathname();
   const [typedText, setTypedText] = useState('');
   const [typingDone, setTypingDone] = useState(false);
   const indexRef = useRef(0);
@@ -258,7 +257,7 @@ export default function LandingClient({ posts}: { posts: ArticleCardPost[]}) {
   //   margin: "-50%"
   // });
 
-  const fullText = 'Connect, discover, and grow with a personalized and verified professional network of opportunities. Read about the latest startups through our company profile drops. Accessible only be referral in this public beta. ';
+  const fullText = 'Our goal is to introduce you directly to opportunities and founders at some of the highest growth startups while helping you curate a personalized, professional network that aligns with your interests, skillsets, and verified by your existing professional community. Accessible only be referral.';
 
   function urlForImage(source: SanityImageSource) {
     return builder.image(source);

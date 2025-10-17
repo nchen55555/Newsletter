@@ -47,12 +47,20 @@ interface BookmarkedUser {
 
 interface CompanyPageClientProps {
   company: CompanyWithImageUrl;
-  companyPost: { body?: PortableTextBlock[] } | null;
+  companyPost?: { body?: PortableTextBlock[] } | null;
+  isDemo?: boolean;
+  onIntroRequested?: () => void;
+  onRepost?: () => void;
+  onShare?: () => void;
 }
 
 export default function CompanyPageClient({ 
   company, 
-  companyPost
+  companyPost,
+  isDemo = false,
+  onIntroRequested,
+  onRepost,
+  onShare
 }: CompanyPageClientProps) {
   console.log('CompanyPageClient company data:', company);
   console.log('CompanyPageClient companyPost data:', companyPost);
@@ -284,8 +292,17 @@ export default function CompanyPageClient({
         {/* Action Buttons Section */}
         <div className="flex items-center justify-center gap-4 py-6 border-b border-neutral-200">
           <RainbowBookmark company={company.company} />
-          <Share company={company.company} />
-          <Post company={company.company} companyData={company} />
+          <Share 
+            company={company.company} 
+            isDemo={isDemo}
+            onShare={onShare}
+          />
+          <Post 
+            company={company.company} 
+            companyData={company} 
+            isDemo={isDemo}
+            onRepost={onRepost}
+          />
         </div>
 
         {company && company.people && (
@@ -298,7 +315,12 @@ export default function CompanyPageClient({
             <div className="flex items-center justify-between">
               <span className="font-medium text-neutral-900">{company.people}</span>
               {company.partner && !company.pending_partner ? (
-                <ApplyButton company={company.company.toString()} person={company.people} />
+                <ApplyButton 
+                  company={company.company.toString()} 
+                  person={company.people}
+                  isDemo={isDemo}
+                  onIntroRequested={onIntroRequested}
+                />
               ) : company.pending_partner ? (
                 <EarlyInterestButton company={company.company.toString()} />
               ) : (

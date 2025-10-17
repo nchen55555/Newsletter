@@ -72,6 +72,7 @@ export type ProfileFormState = {
 import { SanityDocument } from "next-sanity"
 import { SanityImageSource } from "@sanity/image-url/lib/types/types"
 import type { Session } from '@supabase/supabase-js'
+import type { PortableTextBlock } from '@portabletext/types'
 
 export interface CompanyData extends SanityDocument {
   company: number;
@@ -112,6 +113,7 @@ export interface MediaLibraryItem extends SanityDocument {
   external_media?: string;
   location?: string;
   people?: string;
+  body?: PortableTextBlock[];
 }
 
 // lib/resume-types.ts

@@ -6,7 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
-export default function Share({ company }: { company: number }) {
+export default function Share({ 
+  company, 
+  isDemo = false, 
+  onShare 
+}: { 
+  company: number; 
+  isDemo?: boolean; 
+  onShare?: () => void; 
+}) {
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -14,6 +22,17 @@ export default function Share({ company }: { company: number }) {
   const shareableLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/companies/${company}`;
 
   const handleCopyLink = async () => {
+    if (isDemo) {
+      // Demo mode - simulate copying
+      setCopied(true);
+      onShare?.(); // Trigger tour callback
+      setTimeout(() => {
+        setCopied(false);
+        setOpen(false); // Close dialog after demo
+      }, 1500);
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(shareableLink);
       setCopied(true);
@@ -43,7 +62,10 @@ export default function Share({ company }: { company: number }) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Share This Company Profile</DialogTitle>
+          <DialogTitle>
+            Share This Company Profile
+            {isDemo && <span className="ml-2 text-sm text-gray-600">(Demo Mode)</span>}
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
@@ -74,7 +96,10 @@ export default function Share({ company }: { company: number }) {
             </div>
           </div>
           <p className="text-sm text-neutral-600">
-            Share this link to let others view this company profile. Certain details are only accessible if you are part of The Niche network.
+            {isDemo 
+              ? "✨ in demo mode, clicking copy will complete the tour step without actually copying the link!" 
+              : "Share this link to let others view this company profile. Certain details are only accessible if you are part of The Niche network."
+            }
           </p>
         </div>
       </DialogContent>

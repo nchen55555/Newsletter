@@ -13,7 +13,19 @@ import { ConnectionScale } from './connection-scale';
 import { FeedPreview } from './feed-preview';
 import { encodeSimple } from "../utils/simple-hash";
 
-export default function Post({ company, companyData, feedId }: { company?: number; companyData?: CompanyWithImageUrl; feedId?: string }) {
+export default function Post({ 
+  company, 
+  companyData, 
+  feedId, 
+  isDemo = false, 
+  onRepost 
+}: { 
+  company?: number; 
+  companyData?: CompanyWithImageUrl; 
+  feedId?: string; 
+  isDemo?: boolean; 
+  onRepost?: () => void; 
+}) {
   const [loading, setLoading] = useState(false);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [open, setOpen] = useState(false);
@@ -26,7 +38,7 @@ export default function Post({ company, companyData, feedId }: { company?: numbe
   // Tiptap editor setup
   const editor = useEditor({
     extensions: [StarterKit],
-    content: '<p>Could be interesting to see how they go up against their competitors... </p>',
+    content: isDemo ? '<p>Demo!</p>' : '<p>Could be interesting to see how they go up against their competitors... </p>',
     immediatelyRender: false,
     editorProps: {
       attributes: {
@@ -106,6 +118,20 @@ export default function Post({ company, companyData, feedId }: { company?: numbe
     if (!editor) return;
     
     setLoading(true);
+    
+    // Handle demo mode
+    if (isDemo) {
+      // Simulate posting delay
+      setTimeout(() => {
+        setLoading(false);
+        setOpen(false);
+        onRepost?.(); // Trigger tour callback
+        // Reset editor for next use
+        editor.commands.setContent('<p>Demo!</p>');
+      }, 1000);
+      return;
+    }
+    
     try {
       // const content = editor.getJSON();
       const contentHTML = editor.getHTML();
@@ -158,9 +184,15 @@ export default function Post({ company, companyData, feedId }: { company?: numbe
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl lg:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Share Your Thread of Thought</DialogTitle>
+          <DialogTitle>
+            Share Your Thread of Thought
+            {isDemo && <span className="ml-2 text-sm text-gray-600">(Demo Mode)</span>}
+          </DialogTitle>
           <p className="text-sm text-muted-foreground mt-2">
-            Thoughts or questions about the company profile, your experience chatting with the team, or relevant industry insights? We want to hear your thoughts!
+            {isDemo 
+              ? "✨ in demo mode, your post won't be published but will complete the tour step!" 
+              : "Thoughts or questions about the company profile, your experience chatting with the team, or relevant industry insights? We want to hear your thoughts!"
+            }
           </p>
         </DialogHeader>
         <div className="space-y-4">

@@ -21,6 +21,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const router = useRouter();
   const { isSubscribed, loading } = useSubscriptionContext()
   const [, setEmailSent] = useState(false)
+  const [isVerified, setIsVerified] = useState(false)
 
   useEffect(() => {
     if (!loading && !isSubscribed) {
@@ -95,8 +96,13 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   };
 
   const handleConfirmationClose = () => {    
-    // Use the hash function to encode the user ID
-    window.location.href = `/people`;
+    if (isVerified) {
+      // For verified users, navigate to the tour page
+      router.push('/tour')
+    } else {
+      // For unverified users, go directly to people page
+      router.push('/people')
+    }
   };
 
 
@@ -212,6 +218,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     <ProfileInfoChatbot 
       form={form} 
       setForm={setForm} 
+      setIsVerified={setIsVerified}
       onComplete={(isComplete) => {
         setProfileFormComplete(isComplete);
         if (isComplete) {
@@ -238,34 +245,42 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             <DialogDescription className="text-lg mt-2">
               Hi {form.first_name}! 
               <br></br><br></br>
-              {form.verified ? (
+              {isVerified ? (
                 <>
-                  Congratulations on gaining access to The Niche! We are so excited to build your verified professional network of opportunities personalized to your interests and skills.
+                  Welcome to The Niche! We are so excited to <strong>directly intro you to</strong> some incredible high-talent startups and founders, <strong>curating your verified professional network</strong> personalized to your interests, skills, and the opportunities you have explored.
                   <br></br>
                   <br></br>
-                  Feel free to curate your professional network by connecting to your verified professional community or bringing others on to the platform, sharing your thoughts on our company articles with your network, and more! Interacting more with The Niche allows us to better understand your interests and how our network of beta opportunities might be a good fit for you.
+                  Time for a quick tour of the platform! 
+                  <div className="flex flex-col gap-4 pt-4">
+                    <Button 
+                      onClick={handleConfirmationClose}
+                      className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-2 text-sm w-fit"
+                    >
+                      Access the Platform
+                    </Button>
+                  </div>
                 </>
               ) : (
                 <>
-                  Congratulations on requesting access to The Niche! We are excited to review your profile for our private beta launch. If we believe there is mutual fit between our network of beta opportunities or if a founder reaches out to specifically connect with you, we will reach back out with an invitation to be officially a part of this network! 
+                  Congratulations on requesting access to The Niche! We are excited to review your profile for our private beta launch. <strong>If we believe there is mutual fit between our network of beta opportunities or if a founder reaches out to specifically connect with you, we will reach back out with an invitation to be officially a part of this network!</strong>
                   <br></br>
                   <br></br>
-                  In the meantime, feel free to curate your professional network by connecting to your verified professional community or bringing others on to the platform, sharing your thoughts on our company articles with your network, and more! Interacting more with The Niche allows us to better understand your interests and how our network of beta opportunities might be a good fit for you.
+                  In the meantime, start curating your professional network by connecting on your verified professional community, sharing your thoughts on our company articles with your network, and more! <strong>Interacting more with The Niche allows us to better understand your interests and how our network of beta opportunities might be a good fit for you.</strong>
+                  <br></br>
+                  <br></br>
+                  <div className="flex flex-col gap-4 pt-4">
+                    <Button 
+                      onClick={handleConfirmationClose}
+                      className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-2 text-sm w-fit"
+                    >
+                      The Network
+                    </Button>
+                  </div>
                 </>
-              )}
-              <br></br>
-              
+                
+              )}              
             </DialogDescription>
           </DialogHeader>
-
-          <div className="flex flex-col gap-4 pt-4">
-            <Button 
-              onClick={handleConfirmationClose}
-              className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-2 text-sm w-fit"
-            >
-              The Network
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

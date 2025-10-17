@@ -28,7 +28,7 @@ const questions: Question[] = [
     id: 'welcome',
     field: 'first_name', // Using existing field as placeholder
     question: "Welcome to The Niche!",
-    description: "We are excited to get to know you better and explore if there's a mutual fit. Our goal is to help curate a personalized, professional network that aligns with your interests, skillsets, and verified by your existing professional community. We look forward to introducing you to our partner startups! \n\nIf you've received a special access code, your profile has already been pre-verified. Once you complete your account setup, you'll gain access to our private beta experience.",
+    description: "We are excited to get to know you better and explore if there's a mutual fit. Our goal is to introduce you directly to opportunities and founders at some of the highest growth startups while helping you curate a personalized, professional network that aligns with your interests, skillsets, and verified by your existing professional community. \nIf you've received a special access code, your profile has already been pre-verified. Once you complete your account setup, you'll gain access to our private beta experience.",
     type: 'welcome',
     required: true
   },
@@ -63,7 +63,7 @@ const questions: Question[] = [
     type: 'text',
     required: true,
     placeholder: 'Start typing your school name...',
-    options: ['MIT', 'Harvard', 'Georgia Tech', 'Stanford', 'Waterloo', 'UIUC', 'University of Michigan', 'UT Austin', 'Yale']
+    options: ['MIT', 'Harvard', 'Brown', 'Columbia', 'Georgia Tech', 'Stanford', 'Waterloo', 'UIUC', 'University of Michigan', 'UT Austin', 'Yale']
   },
   {
     id: 'bio',
@@ -119,7 +119,7 @@ const questions: Question[] = [
     id: 'companies',
     field: 'bookmarked_companies', 
     question: "Explore opportunities",
-    description: "Browse a few partner opportunities on The Niche and bookmark ones that interest you",
+    description: "The Niche works with a select cohort of high-talent density startups. We want to get a better understanding of your interests. Please bookmark companies that interest you!",
     type: 'companies',
     required: false
   },
@@ -177,10 +177,12 @@ const questions: Question[] = [
 export default function ProfileInfoChatbot({
   form,
   setForm,
+  setIsVerified,
   onComplete,
 }: {
   form: ProfileFormState,
   setForm: React.Dispatch<React.SetStateAction<ProfileFormState>>
+  setIsVerified: React.Dispatch<React.SetStateAction<boolean>>
   onComplete?: (isComplete: boolean) => void
 }) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -605,11 +607,14 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
         if (response.ok) {
           setAccessCodeVerified(true)
           setAccessCodeError(null)
+          // Update the parent component's verification status
+          setIsVerified(true)
+          
         } else {
           setAccessCodeError('Failed to process access code')
         }
       } catch (error) {
-        setAccessCodeError('Failed to process access code')
+        setAccessCodeError(`Failed to process access code ${error}`)
       }
     } else {
       // Any other input (including NA) - just proceed without verification
