@@ -163,7 +163,7 @@ export default function LandingClient({ posts}: { posts: ArticleCardPost[]}) {
           const response = await fetch('/api/check_demo_status');
           if (response.ok) {
             const data = await response.json();
-            if (!data.demo_done && data.applied) {
+            if (!data.demo_done && data.verified) {
               router.push('/tour');
             }
           }
