@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Users, AlertCircle, UserPlus, CheckCircle2Icon, Terminal } from "lucide-react";
+import { Search, Users, AlertCircle, UserPlus, CheckCircle2Icon, Terminal, Send } from "lucide-react";
 import ProfileAvatar from "@/app/components/profile_avatar";
 import ProfileCard from "@/app/components/profile_card";
 import { encodeSimple } from "@/app/utils/simple-hash";
@@ -370,9 +370,7 @@ export default function PeoplePage() {
                                 }}
                                 className="flex items-center gap-3 p-3 hover:bg-blue-50 cursor-pointer border-t border-neutral-200 bg-neutral-50"
                               >
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-yellow-400 via-pink-400 to-blue-400 flex items-center justify-center flex-shrink-0">
-                                  <UserPlus className="w-4 h-4 text-white" />
-                                </div>
+                                <Send className="w-4 h-4" />
                                 <div className="flex-1 text-left">
                                   <div className="font-medium">
                                     Refer Someone to Your Professional Network
@@ -394,9 +392,7 @@ export default function PeoplePage() {
                             className="inline-flex items-center gap-2 rounded-full border-neutral-300 text-neutral-700 hover:border-black hover:text-black transition-all duration-200"
                             onClick={() => setShowReferralDialog(true)}
                           >
-                            <div className="w-4 h-4 rounded-full bg-gradient-to-r from-yellow-400 via-pink-400 to-blue-400 flex items-center justify-center">
-                              <UserPlus className="w-2.5 h-2.5 text-white" />
-                            </div>
+                              <Send className="w-2.5 h-2.5 " />
                             Refer Someone to Your Professional Network
                           </Button>
 

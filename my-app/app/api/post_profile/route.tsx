@@ -255,6 +255,7 @@ async function handleProfileUpdate(req: NextRequest) {
     
     // Handle new ProfileInfoChatbot fields
     if (formData.get('interests')) updateData.interests = String(formData.get('interests'));
+    if (formData.get('outreach_frequency')) updateData.outreach_frequency = parseInt(String(formData.get('outreach_frequency')), 10);
     if (formData.get('network_recommendations')) {
       try {
         updateData.network_recommendations = JSON.parse(String(formData.get('network_recommendations')));

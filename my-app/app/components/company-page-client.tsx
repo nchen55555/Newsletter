@@ -5,12 +5,10 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Container } from "@/app/components/container";
 import { CompanyData } from "@/app/types";
-import { ExternalLink, MapPin, UserPlus, CheckCircle2Icon, Terminal } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ExternalLink, UserPlus, MapPin, Send } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { ReferralDialog } from "@/app/components/referral-dialog";
 import { PortableText, type PortableTextComponents, type PortableTextBlock } from '@portabletext/react';
 import ApplyButton from "@/app/components/apply";
 import EarlyInterestButton from "@/app/components/early_interest";
@@ -68,13 +66,6 @@ export default function CompanyPageClient({
   const [bookmarkedUsers, setBookmarkedUsers] = useState<BookmarkedUser[]>([]);
   const [isLoadingBookmarks, setIsLoadingBookmarks] = useState(true);
   const [showReferralDialog, setShowReferralDialog] = useState(false);
-  const [referralName, setReferralName] = useState("");
-  const [referralEmail, setReferralEmail] = useState("");
-  const [referralBackground, setReferralBackground] = useState("");
-  const [referralFormError, setReferralFormError] = useState<string | null>(null);
-  const [referralFormSuccess, setReferralFormSuccess] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [referrerName, setReferrerName] = useState<string>("");
 
   const router = useRouter();
 
@@ -130,58 +121,7 @@ export default function CompanyPageClient({
     fetchBookmarkedUsers();
   }, [company.company]);
 
-  // Fetch user profile for referral functionality
-  useEffect(() => {
-    fetch("/api/get_external_profile", { credentials: "include" })
-      .then(res => res.json())
-      .then(data => {
-        setCurrentUserId(data.id);
-        const capitalizeFirstLetter = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-        setReferrerName(`${capitalizeFirstLetter(data.first_name || '')} ${capitalizeFirstLetter(data.last_name || '')}`);
-      })
-      .catch(error => {
-        console.error("Failed to fetch user profile:", error);
-      });
-  }, []);
 
-  const handleReferralFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setReferralFormError(null);
-    setReferralFormSuccess(false);
-
-    if (!referralEmail || !referralBackground) {
-      setReferralFormError("Please fill in all required fields.");
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/post_referral', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: referrerName,
-          referralName: referralName,
-          referralEmail: referralEmail,
-          referralBackground: referralBackground,
-          id: currentUserId
-        }),
-      });
-
-      if (res.ok) {
-        setReferralFormSuccess(true);
-        setReferralName("");
-        setReferralEmail("");
-        setReferralBackground("");
-      } else {
-        setReferralFormError("Failed to submit referral. Please try again.");
-      }
-    } catch (error) {
-      setReferralFormError(`An error occurred. Please try again. ${error}`);
-    }
-  };
 
   const title = company.alt || company.caption || `Company ${company.company}`;
 
@@ -392,9 +332,7 @@ export default function CompanyPageClient({
                 className="inline-flex items-center gap-2 rounded-full border-neutral-300 text-neutral-700 hover:border-black hover:text-black transition-all duration-200"
                 onClick={() => setShowReferralDialog(true)}
               >
-                <div className="w-4 h-4 rounded-full bg-gradient-to-r from-yellow-400 via-pink-400 to-blue-400 flex items-center justify-center">
-                  <UserPlus className="w-2.5 h-2.5 text-white" />
-                </div>
+                <Send className="w-2.5 h-2.5" />
                 Refer Someone You Think Would Be A Good Fit Here
               </Button>
             </div>
@@ -439,73 +377,11 @@ export default function CompanyPageClient({
       </div>
 
       {/* Referral Dialog */}
-      <Dialog open={showReferralDialog} onOpenChange={setShowReferralDialog}>
-        <DialogTrigger asChild>
-          <span style={{ display: 'none' }} />
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[600px] p-8" showCloseButton={false}>
-          <DialogHeader className="mb-8">
-            <DialogTitle className="text-2xl font-semibold">Refer Someone You Want to Bring To The Niche</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleReferralFormSubmit}>
-            <div className="grid gap-8">
-              <div className="grid gap-2">
-                <Label htmlFor="referralName" className="text-base font-medium">Name *</Label>
-                <Input 
-                  id="referralName" 
-                  name="referralName"
-                  type="text"
-                  value={referralName} 
-                  onChange={(e) => setReferralName(e.target.value)}
-                  placeholder="Jane Doe"
-                  className="h-12 text-lg px-4" 
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="referralEmail" className="text-base font-medium">Email *</Label>
-                <Input 
-                  id="referralEmail" 
-                  name="referralEmail"
-                  type="email"
-                  value={referralEmail} 
-                  onChange={(e) => setReferralEmail(e.target.value)}
-                  placeholder="person@email.com"
-                  className="h-12 text-lg px-4" 
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="referralBackground" className="text-base font-medium">How Do You Know Them?</Label>
-                <Input
-                  id="referralBackground"
-                  name="referralBackground"
-                  value={referralBackground}
-                  onChange={(e) => setReferralBackground(e.target.value)}
-                  placeholder="Group project partner, former colleague at ..."
-                  className="h-12 text-lg px-4"
-                  required
-                />
-              </div>
-              {referralFormSuccess && (
-                <Alert>
-                  <CheckCircle2Icon />
-                  <AlertTitle className="break-words whitespace-normal">Referral submitted successfully! We&apos;ll review and reach out to them if they&apos;re a good fit.</AlertTitle>
-                </Alert>
-              )}
-              {referralFormError && (
-                <Alert variant="destructive">
-                  <Terminal className="h-4 w-4" />
-                  <AlertTitle>{referralFormError}</AlertTitle>
-                </Alert>
-              )}
-            </div>
-            <DialogFooter className="mt-8 gap-4">
-              <Button type="submit" className="h-12 px-8 text-lg">Submit Referral</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <ReferralDialog 
+        open={showReferralDialog} 
+        onOpenChange={setShowReferralDialog}
+        title="Refer Someone You Want to Bring To The Niche"
+      />
     </Container>
   );
 }

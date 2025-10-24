@@ -1,6 +1,9 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { client } from '@/lib/sanity/client';
+import imageUrlBuilder from '@sanity/image-url';
+import { CompanyData } from '@/app/types';
 
 export async function GET() {
   const cookieStore = cookies();
@@ -77,24 +80,36 @@ export async function GET() {
     return userConnection.rating >= feed.audience_rating;
   });
 
-  // Get company data for feeds that reference companies
+  // Get company data for feeds that reference companies using Sanity
   const companyIds = filteredFeeds?.map(feed => feed.company_id).filter(Boolean) || [];
-  let companiesData: Array<{
-    company: number;
-    alt: string;
-    caption?: string;
-    description?: string;
-    imageUrl: string;
-    location?: string;
-    hiring_tags?: string[];
-    partner: boolean;
-  }> = [];
+  let companiesData: Array<CompanyData & { imageUrl: string | null }> = [];
   if (companyIds.length > 0) {
-    const { data: companies } = await supabase
-      .from('companies')
-      .select('company, alt, caption, description, imageUrl, location, hiring_tags, partner')
-      .in('company', companyIds);
-    companiesData = companies || [];
+    const COMPANIES_QUERY = `*[
+      _type == "mediaLibrary" && company in [${companyIds.join(', ')}]
+    ]{
+      _id,
+      company,
+      image,
+      publishedAt,
+      alt,
+      caption,
+      description,
+      tags,
+      hiring_tags,
+      location,
+      partner,
+      pending_partner,
+      external_media,
+      people
+    }`;
+
+    const builder = imageUrlBuilder(client);
+    const rawCompanies = await client.fetch(COMPANIES_QUERY, {});
+    
+    companiesData = rawCompanies.map((company: CompanyData) => ({
+      ...company,
+      imageUrl: company.image ? builder.image(company.image).width(300).height(200).url() : null
+    }));
   }
 
   // Get referenced feed data for feeds that reference other feeds
@@ -154,22 +169,7 @@ export async function GET() {
       // Repost data
       company_name: companyData?.alt || companyData?.caption,
       company_image: companyData?.imageUrl,
-      company_data: companyData ? {
-        _id: `company-${companyData.company}`,
-        _rev: 'feed-generated',
-        _type: 'company',
-        _createdAt: new Date().toISOString(),
-        _updatedAt: new Date().toISOString(),
-        publishedAt: new Date().toISOString(),
-        company: companyData.company,
-        partner: companyData.partner || false,
-        alt: companyData.alt,
-        caption: companyData.caption,
-        description: companyData.description,
-        imageUrl: companyData.imageUrl,
-        location: companyData.location,
-        hiring_tags: companyData.hiring_tags
-      } : undefined,
+      company_data: companyData || undefined,
       referenced_feed_content: referencedFeed?.content,
       referenced_feed_author: referencedAuthor ? 
         `${referencedAuthor.first_name} ${referencedAuthor.last_name}`.trim() : undefined

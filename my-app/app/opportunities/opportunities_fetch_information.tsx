@@ -2,19 +2,11 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 import { SanityDocument } from "next-sanity"
 import { SanityImageSource } from "@sanity/image-url/lib/types/types"
-import { Info, FileText, Heart, Users, MousePointer, Handshake } from "lucide-react";
+import { Info, Repeat2, Send } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CompanyCard } from "../companies/company-cards";
 import { CompanyRow } from "../companies/company-row";
-import { Button } from "@/components/ui/button";
 import { VerificationProtectedContent } from "../components/verification-protected-content";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 export interface CompanyData extends SanityDocument {
   company: number
@@ -52,7 +44,6 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
     const [companyRecommendations, setCompanyRecommendations] = useState<number[]>([])
     const [bookmarkedCompanies, setBookmarkedCompanies] = useState<number[]>([])
     const [verifiedToTheNiche, setVerifiedToTheNiche] = useState(false)
-    const [showHowItWorksDialog, setShowHowItWorksDialog] = useState(false)
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -132,156 +123,22 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                             <p className="text-lg text-neutral-600 leading-relaxed font-light text-center mb-6">
                                 We have partnered with some of the highest-talent startups so that every connect is fast-tracked to the founder&apos;s inbox. Opportunities recommended to you are tailored to your interests and skillsets, with a higher probability of mutual interest from our partners. 
                             </p>
-                            
-                            {/* How It Works Button */}
-                            <div className="text-center mb-12">
-                                <Dialog open={showHowItWorksDialog} onOpenChange={setShowHowItWorksDialog}>
-                                    <DialogTrigger asChild>
-                                        <Button 
-                                        type="submit" 
-                                        className="h-12 px-8 text-lg text-white"
-                                        >
-                                            How It Works
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="w-full sm:max-w-4xl">
-                                        <DialogHeader>
-                                            <DialogTitle className="text-center text-2xl font-semibold mb-4">How It Works</DialogTitle>
-                                        </DialogHeader>
-                                        <div className="p-6 overflow-x-auto">
-                                            {/* Horizontal Process Flow */}
-                                            <div className="flex flex-row items-center justify-center gap-4 min-w-fit">
-                                                {/* Circular Data Flow */}
-                                                <div className="relative w-64 h-68">
-                                                    {/* Center - Personalized Recommendations */}
-                                                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                                                        <div className="text-center flex flex-col items-center">
-                                                            <div className="w-20 h-20 flex items-center justify-center mb-2">
-                                                                <p className="text-xs text-neutral-700 font-medium leading-tight">Personalized<br/>Recommendations</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Skills - Top */}
-                                                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
-                                                        <div className="text-center">
-                                                            <div className="w-14 h-14 flex items-center justify-center mb-2">
-                                                                <FileText className="w-7 h-7 text-neutral-600" />
-                                                            </div>
-                                                            <p className="text-xs text-neutral-600 font-medium">Skills</p>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Interests - Bottom Left */}
-                                                    <div className="absolute bottom-0 left-0">
-                                                        <div className="text-center">
-                                                            <div className="w-14 h-14 flex items-center justify-center mb-2">
-                                                                <Heart className="w-7 h-7 text-neutral-600" />
-                                                            </div>
-                                                            <p className="text-xs text-neutral-600 font-medium">Interests</p>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Networks - Bottom Right */}
-                                                    <div className="absolute bottom-0 right-0">
-                                                        <div className="text-center">
-                                                            <div className="w-14 h-14 flex items-center justify-center mb-2">
-                                                                <Users className="w-7 h-7 text-neutral-600" />
-                                                            </div>
-                                                            <p className="text-xs text-neutral-600 font-medium">Networks</p>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Small arrows pointing to center */}
-                                                    <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 256 256">
-                                                        <defs>
-                                                            <marker id="small-arrow" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
-                                                                <polygon points="0 0, 6 2, 0 4" fill="#a3a3a3" />
-                                                            </marker>
-                                                        </defs>
-                                                        
-                                                        {/* Small arrow from Skills */}
-                                                        <line
-                                                            x1="128" y1="80"
-                                                            x2="128" y2="95"
-                                                            stroke="#a3a3a3"
-                                                            strokeWidth="1"
-                                                            markerEnd="url(#small-arrow)"
-                                                        />
-                                                        
-                                                        {/* Small arrow from Networks */}
-                                                        <line
-                                                            x1="170" y1="180"
-                                                            x2="155" y2="155"
-                                                            stroke="#a3a3a3"
-                                                            strokeWidth="1"
-                                                            markerEnd="url(#small-arrow)"
-                                                        />
-                                                        
-                                                        {/* Small arrow from Interests */}
-                                                        <line
-                                                            x1="86" y1="180"
-                                                            x2="101" y2="155"
-                                                            stroke="#a3a3a3"
-                                                            strokeWidth="1"
-                                                            markerEnd="url(#small-arrow)"
-                                                        />
-                                                    </svg>
-                                                </div>
-
-                                                {/* Arrow 1 - from edge of circular diagram to You Connect */}
-                                                <div className="flex items-center">
-                                                    <svg className="w-12 h-6" viewBox="0 0 48 24">
-                                                        <path d="M 4 12 L 40 12" stroke="#a3a3a3" strokeWidth="2" markerEnd="url(#arrow-flow)" />
-                                                        <defs>
-                                                            <marker id="arrow-flow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                                                <polygon points="0 0, 8 3, 0 6" fill="#a3a3a3" />
-                                                            </marker>
-                                                        </defs>
-                                                    </svg>
-                                                </div>
-
-                                                {/* Connect */}
-                                                <div className="text-center">
-                                                    <div className="w-16 h-16 flex items-center justify-center mb-3">
-                                                        <MousePointer className="w-8 h-8 text-neutral-600" />
-                                                    </div>
-                                                    <p className="text-sm text-neutral-700 font-medium">You<br/>Connect</p>
-                                                </div>
-
-                                               {/* Arrow 2 - from You Connect to Direct Founder Connection */}
-                                                <div className="flex items-center">
-                                                    <svg className="w-12 h-6" viewBox="0 0 48 24">
-                                                        <path d="M 4 12 L 40 12" stroke="#a3a3a3" strokeWidth="2" markerEnd="url(#arrow-flow)" />
-                                                        <defs>
-                                                            <marker id="arrow-flow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                                                <polygon points="0 0, 8 3, 0 6" fill="#a3a3a3" />
-                                                            </marker>
-                                                        </defs>
-                                                    </svg>
-                                                </div>
-
-                                                {/* Founder Connection */}
-                                                <div className="text-center">
-                                                    <div className="w-16 h-16 flex items-center justify-center mb-3">
-                                                        <Handshake className="w-8 h-8 text-neutral-600" />
-                                                    </div>
-                                                    <p className="text-sm text-neutral-700 font-medium">Founder <br />Introduction</p>
-                                                </div>
-                                            </div>
-                                            
-                                            {/* Explanation Text */}
-                                            <div className="mt-8 text-center max-w-4xl mx-auto">
-                                                <p className="text-base text-neutral-700 leading-relaxed">
-                                                    Your interests, skills, and verified professional network feeds our algorithm to create personalized recommendations. That is why the more you tell us about yourself the better we are able to match you with the best opportunities. <strong> You request an intro to our partners by clicking on the company and connecting on the opportunities tab. Our platform fast-tracks you directly to the founder&apos;s inbox, so that if there is mutual interest, you meet directly with the founders.</strong>
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
-                            </div>
-                            
-                            
+                            <Alert className="max-w-3xl mx-auto mb-8 bg-gradient-to-r from-yellow-50 via-orange-50 to-pink-50 border border-yellow-200">
+                                <Repeat2 className="h-5 w-5 text-orange-600" />
+                                <AlertDescription>
+                                <span className="text-neutral-700">
+                                    We are now introducing <strong>Thought Threads</strong>. Once you have received an offer from an opportunity on The Niche, you can thread into the community feed to get opinions on the company, connect with others that have also received an offer and are deliberating, as well as share your experiences! 
+                                </span>
+                                </AlertDescription>
+                            </Alert>
+                             <Alert className="max-w-3xl mx-auto mb-8 bg-gradient-to-r from-yellow-50 via-orange-50 to-pink-50 border border-yellow-200">
+                                <Send className="h-5 w-5 text-orange-600" />
+                                <AlertDescription>
+                                <span className="text-neutral-700">
+                                    We are now introducing <strong>Organic Referrals</strong>. Click share to send the company profile with a customized link tied to your profile to people who you think would be a good fit for the opportunity and refer them to apply!
+                                </span>
+                                </AlertDescription>
+                            </Alert>
                         </div>
                     </div>
                     <div className="w-full max-w-6xl mx-auto">

@@ -14,8 +14,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ProfileData, CompanyData, ConnectionData } from "@/app/types";
-import { Linkedin, Globe, UserPlus, Info } from "lucide-react";
+import { Linkedin, Globe, UserPlus, Info, Send } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ReferralDialog } from "@/app/components/referral-dialog";
 import ProfileAvatar from "../../components/profile_avatar";
 import { CompanyRow } from "../../companies/company-row";
 import { decodeSimple } from "../../utils/simple-hash";
@@ -33,6 +34,7 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
   const [existingRating, setExistingRating] = useState<number | undefined>(undefined);
   const [bookmarkedCompanies, setBookmarkedCompanies] = useState<(CompanyData & { imageUrl: string | null })[]>([]);
   const [loadingBookmarks, setLoadingBookmarks] = useState(false);
+  const [showReferralDialog, setShowReferralDialog] = useState(false);
 
   useEffect(() => {
     const getParams = async () => {
@@ -490,6 +492,21 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                 )}
               </div>
 
+              {/* Referral Section */}
+              <div className="w-full max-w-4xl space-y-4">
+                <div className="flex justify-center">
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    className="inline-flex items-center gap-2 rounded-full border-neutral-300 text-neutral-700 hover:border-black hover:text-black transition-all duration-200"
+                    onClick={() => setShowReferralDialog(true)}
+                  >
+                    <Send className="w-2.5 h-2.5" />
+                    Refer Someone To The Niche Network
+                  </Button>
+                </div>
+              </div>
+
               <div className="text-center text-sm text-neutral-600 py-8">
                 Network Profile
                 <div className="mt-2 text-neutral-500">
@@ -500,6 +517,14 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
           </div>
         </Container>
       </div>
+      
+      {/* Referral Dialog */}
+      <ReferralDialog 
+        open={showReferralDialog} 
+        onOpenChange={setShowReferralDialog}
+        title="Refer Someone You Want to Bring To Your Verified Professional Network"
+        description="We are personal referral only and will verify if your referral is a good fit for our partner companies!"
+      />
     </div>
   );
 }

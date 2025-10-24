@@ -1,10 +1,11 @@
 'use client'
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Send, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { encodeSimple } from "../utils/simple-hash";
 
 export default function Share({ 
   company, 
@@ -17,9 +18,31 @@ export default function Share({
 }) {
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Generate the shareable link
-  const shareableLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/companies/${company}`;
+  // Fetch user profile to get their ID
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const res = await fetch("/api/get_profile", { credentials: "include" });
+        if (res.ok) {
+          const profile = await res.json();
+          setUserId(profile.id);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
+  // Generate the shareable link with encoded user ID
+  const shareableLink = userId 
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/companies/${company}?ref=${encodeSimple(userId)}`
+    : `${typeof window !== 'undefined' ? window.location.origin : ''}/companies/${company}`;
 
   const handleCopyLink = async () => {
     if (isDemo) {
@@ -72,14 +95,16 @@ export default function Share({
             <div className="flex space-x-2">
               <Input
                 id="share-link-input"
-                value={shareableLink}
+                value={loading ? "Generating your unique link..." : shareableLink}
                 readOnly
                 className="flex-1"
+                disabled={loading}
               />
               <Button
                 size="sm"
                 onClick={handleCopyLink}
                 className="shrink-0"
+                disabled={loading}
               >
                 {copied ? (
                   <>
@@ -98,7 +123,11 @@ export default function Share({
           <p className="text-sm text-neutral-600">
             {isDemo 
               ? "✨ in demo mode, clicking copy will complete the tour step without actually copying the link!" 
-              : "Share this link to let others view this company profile. Certain details are only accessible if you are part of The Niche network."
+              : loading
+              ? "Generating your personalized referral link..."
+              : userId
+              ? "Share this personalized link to let others view the company profile. When they visit through your link, you'll get credit for the referral!"
+              : "Share this link to let others view the company profile and refer them to the opportunity!"
             }
           </p>
         </div>

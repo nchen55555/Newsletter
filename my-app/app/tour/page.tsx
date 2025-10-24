@@ -77,8 +77,8 @@ export default function TourPage() {
       highlights: [
         '**Click on the company below** to view their profile.',
         '**Click "request intro"** to request a warm intro to the founder either to learn more or to apply to the opportunity.',
-        '**Click repost to thread your thoughts** on the company profile, any advice or questions you have about the opportunity, or just to share your experiences connecting and interviewing with them!',
-        '**Click share to copy and paste the company profile link** and send externally to help others in your network discover great startups! **You can also refer people you think would be a great fit on the company profile**.',
+        '**Thread your thoughts** on the opportunity once you have received an offer! Let others know your new status, get their opinion on the company, and reach others who have also received an offer.',
+        '**Click share to send the company profile** with a customized link tied to your profile to people who you think would be a good fit for the opportunity and refer them to the network to apply!',
       ],
       actions: [
         { id: 'openModal', completed: false, description: 'View company profile' },

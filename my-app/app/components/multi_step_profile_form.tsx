@@ -100,8 +100,8 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       // For verified users, navigate to the tour page
       router.push('/tour')
     } else {
-      // For unverified users, go directly to people page
-      router.push('/people')
+      // For unverified users, go directly to profile page
+      router.push('/profile')
     }
   };
 

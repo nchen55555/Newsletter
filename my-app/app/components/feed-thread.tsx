@@ -5,41 +5,7 @@ import { Repeat2 } from "lucide-react";
 import ProfileAvatar from "./profile_avatar";
 import { CompanyRow } from "../companies/company-row";
 import PostComponent from "@/app/components/post";
-
-export interface FeedItem {
-  id: string;
-  created_at: string;
-  subscriber_id: number;
-  company_id?: number;
-  feed_id?: string;
-  content: string; // HTML content
-  audience_rating: number;
-  // Additional fields for display
-  author_name?: string;
-  author_image?: string;
-  company_name?: string;
-  company_image?: string;
-  // Repost data
-  referenced_feed_content?: string;
-  referenced_feed_author?: string;
-  // Complete company data for CompanyRow
-  company_data?: {
-    _id: string;
-    _rev: string;
-    _type: string;
-    _createdAt: string;
-    _updatedAt: string;
-    publishedAt: string;
-    partner: boolean;
-    company: number;
-    alt: string;
-    caption?: string;
-    description?: string;
-    imageUrl: string;
-    location?: string;
-    hiring_tags?: string[];
-  };
-}
+import { FeedItem } from "@/app/types";
 
 export function FeedThread({ feedItem}: { feedItem: FeedItem}) {
   return (

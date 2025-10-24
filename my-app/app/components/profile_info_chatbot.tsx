@@ -16,10 +16,10 @@ interface Question {
   id: string
   field: keyof ProfileFormState
   question: string
-  type: 'text' | 'textarea' | 'file' | 'toggle' | 'url' | 'tel' | 'companies' | 'networking' | 'network_recommendations' | 'welcome'
+  type: 'text' | 'textarea' | 'file' | 'toggle' | 'url' | 'tel' | 'companies' | 'networking' | 'network_recommendations' | 'welcome' | 'outreach_frequency'
   required: boolean
   placeholder?: string
-  options?: string[]
+  options?: string[] | { display: string; value: number }[]
   description?: string
 }
 
@@ -28,7 +28,7 @@ const questions: Question[] = [
     id: 'welcome',
     field: 'first_name', // Using existing field as placeholder
     question: "Welcome to The Niche!",
-    description: "We are excited to get to know you better and explore if there's a mutual fit. Our goal is to introduce you directly to opportunities and founders at some of the highest growth startups while helping you curate a personalized, professional network that aligns with your interests, skillsets, and verified by your existing professional community. \nIf you've received a special access code, your profile has already been pre-verified. Once you complete your account setup, you'll gain access to our private beta experience.",
+    description: "We are excited to get to know you better and explore if there's a mutual fit. Our goal is to introduce you directly to opportunities and founders at some of the highest growth startups while helping you curate a personalized, professional network that aligns with your interests, skillsets, and verified by your existing professional community. \nIf you've received a special access code, your profile has already been pre-verified. Once you complete your account setup, you'll gain access to our private beta experience. If you haven't received a code, please enter 'NA' to proceed and we will review your profile after you submit!",
     type: 'welcome',
     required: true
   },
@@ -151,15 +151,28 @@ const questions: Question[] = [
   {
     id: 'public_profile',
     field: 'is_public_profile',
-    question: "Make your profile public?",
-    description: "Allow partner companies and other students to discover you",
+    question: "Accept company outreaches who may be interested in your profile?",
+    description: "Allow partner companies to reach out directly about opportunities that match your interests",
     type: 'toggle',
     required: true
   },
   {
+    id: 'outreach_frequency',
+    field: 'outreach_frequency',
+    question: "How many outreaches per month are you willing to accept?",
+    description: "Help us limit outreach volume to a level you're comfortable with",
+    type: 'outreach_frequency',
+    required: true,
+    options: [
+      { display: '<5', value: 5 },
+      { display: '<10', value: 10 },
+      { display: '10+', value: 15 }
+    ]
+  },
+  {
     id: 'newsletter',
     field: 'newsletter_opt_in',
-    question: "Stay updated with new companie profiles?",
+    question: "Stay updated with new company profiles?",
     description: "Get an email when we cover a new company. We drop a maximum of two company profiles each week.",
     type: 'toggle',
     required: true
@@ -287,7 +300,7 @@ export default function ProfileInfoChatbot({
 
 
   // Function to post individual field updates
-  const postFieldUpdate = async (field: keyof ProfileFormState, value: string | boolean | File | Array<{name: string, email: string, connection: string}> | null) => {
+  const postFieldUpdate = async (field: keyof ProfileFormState, value: string | boolean | number | File | Array<{name: string, email: string, connection: string}> | null) => {
     try {
       const formData = new FormData()
       formData.append('id', form.id.toString())
@@ -302,6 +315,8 @@ export default function ProfileInfoChatbot({
       } else if (field === 'network_recommendations' && Array.isArray(value)) {
         formData.append('network_recommendations', JSON.stringify(value))
       } else if (typeof value === 'boolean') {
+        formData.append(field as string, value.toString())
+      } else if (typeof value === 'number') {
         formData.append(field as string, value.toString())
       } else if (value !== null && value !== undefined) {
         formData.append(field as string, value.toString())
@@ -747,7 +762,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     if (currentQuestion) {
       const currentValue = form[currentQuestion.field]
       if (currentValue !== null && currentValue !== undefined && currentValue !== '') {
-        await postFieldUpdate(currentQuestion.field, currentValue as string | boolean | File | Array<{name: string, email: string, connection: string}> | null)
+        await postFieldUpdate(currentQuestion.field, currentValue as string | boolean | number | File | Array<{name: string, email: string, connection: string}> | null)
       }
     }
 
@@ -855,8 +870,9 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
   const handleSchoolSearch = (value: string) => {
     setInputValue(value)
     
-    if (value.length > 0 && currentQuestion?.options) {
-      const filtered = currentQuestion.options.filter(school => 
+    if (value.length > 0 && currentQuestion?.options && Array.isArray(currentQuestion.options) && 
+        currentQuestion.options.every(opt => typeof opt === 'string')) {
+      const filtered = (currentQuestion.options as string[]).filter(school => 
         school.toLowerCase().includes(value.toLowerCase())
       )
       setFilteredSchools(filtered)
@@ -1465,7 +1481,35 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                     </div>
                   )}
 
-                {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && currentQuestion.type !== 'welcome' && (
+                {currentQuestion.type === 'outreach_frequency' && (
+                  <div className="flex gap-4">
+                    {Array.isArray(currentQuestion.options) && currentQuestion.options.every(opt => typeof opt === 'object' && 'display' in opt && 'value' in opt) && 
+                      (currentQuestion.options as { display: string; value: number }[]).map((option) => (
+                        <Button
+                          key={option.value}
+                          onClick={() => {
+                            setForm(prev => ({ ...prev, [currentQuestion.field]: option.value }))
+                            postFieldUpdate(currentQuestion.field, option.value).then(() => {
+                              setTimeout(() => {
+                                const newIndex = currentQuestionIndex + 1
+                                setCurrentQuestionIndex(newIndex)
+                                if (onComplete) {
+                                  onComplete(newIndex >= questions.length)
+                                }
+                              }, 200)
+                            })
+                          }}
+                          variant={form[currentQuestion.field] === option.value ? "default" : "outline"}
+                          className="flex-1 py-6 text-lg"
+                        >
+                          {option.display}
+                        </Button>
+                      ))
+                    }
+                  </div>
+                )}
+
+                {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && currentQuestion.type !== 'welcome' && currentQuestion.type !== 'outreach_frequency' && (
                   <form onSubmit={handleSubmit}>
                     <div className="relative">
                       <Input
@@ -1780,7 +1824,35 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                     </div>
                   )}
 
-                  {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && currentQuestion.type !== 'welcome' && (
+                  {currentQuestion.type === 'outreach_frequency' && (
+                    <div className="flex gap-4">
+                      {Array.isArray(currentQuestion.options) && currentQuestion.options.every(opt => typeof opt === 'object' && 'display' in opt && 'value' in opt) && 
+                        (currentQuestion.options as { display: string; value: number }[]).map((option) => (
+                          <Button
+                            key={option.value}
+                            onClick={() => {
+                              setForm(prev => ({ ...prev, [currentQuestion.field]: option.value }))
+                              postFieldUpdate(currentQuestion.field, option.value).then(() => {
+                                setTimeout(() => {
+                                  const newIndex = currentQuestionIndex + 1
+                                  setCurrentQuestionIndex(newIndex)
+                                  if (onComplete) {
+                                    onComplete(newIndex >= questions.length)
+                                  }
+                                }, 200)
+                              })
+                            }}
+                            variant={form[currentQuestion.field] === option.value ? "default" : "outline"}
+                            className="flex-1 py-6 text-lg"
+                          >
+                            {option.display}
+                          </Button>
+                        ))
+                      }
+                    </div>
+                  )}
+
+                  {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && currentQuestion.type !== 'welcome' && currentQuestion.type !== 'outreach_frequency' && (
                     <form onSubmit={handleSubmit}>
                       <div className="relative">
                         <Input

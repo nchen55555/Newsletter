@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Repeat2, Send, Bold, Italic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CompanyRow } from "../companies/company-row";
 import { CompanyWithImageUrl, ConnectionData, ProfileData } from "@/app/types";
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -18,13 +19,15 @@ export default function Post({
   companyData, 
   feedId, 
   isDemo = false, 
-  onRepost 
+  onRepost,
+  triggerElement
 }: { 
   company?: number; 
   companyData?: CompanyWithImageUrl; 
   feedId?: string; 
   isDemo?: boolean; 
-  onRepost?: () => void; 
+  onRepost?: () => void;
+  triggerElement?: React.ReactNode;
 }) {
   const [loading, setLoading] = useState(false);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
@@ -34,11 +37,18 @@ export default function Post({
   const [connections, setConnections] = useState<ConnectionData[]>([]);
   const [filteredConnections, setFilteredConnections] = useState<ConnectionData[]>([]);
   const [connectionProfiles, setConnectionProfiles] = useState<ProfileData[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<CompanyWithImageUrl | null>(companyData || null);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<number | undefined>(company);
+  const [allCompanies, setAllCompanies] = useState<CompanyWithImageUrl[]>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
+
+  // Determine if we need company selection (when no company is provided)
+  const needsCompanySelection = !company && !companyData;
 
   // Tiptap editor setup
   const editor = useEditor({
     extensions: [StarterKit],
-    content: isDemo ? '<p>Demo!</p>' : '<p>Could be interesting to see how they go up against their competitors... </p>',
+    content: isDemo ? '<p>Demo!</p>' : needsCompanySelection ? '<p>Share your thoughts or updates with this opportunity...</p>' : '<p>Recently got an offer! Would love to connect with anyone else who is considering this option as well! </p>',
     immediatelyRender: false,
     editorProps: {
       attributes: {
@@ -82,6 +92,29 @@ export default function Post({
     checkVerification();
     return () => { isMounted = false; };
   }, []);
+
+  // Fetch all companies when company selection is needed
+  useEffect(() => {
+    if (needsCompanySelection) {
+      const fetchAllCompanies = async () => {
+        setLoadingCompanies(true);
+        try {
+          const response = await fetch('/api/companies', {
+            credentials: 'include'
+          });
+          if (response.ok) {
+            const companies = await response.json();
+            setAllCompanies(companies);
+          }
+        } catch (error) {
+          console.error('Error fetching companies:', error);
+        } finally {
+          setLoadingCompanies(false);
+        }
+      };
+      fetchAllCompanies();
+    }
+  }, [needsCompanySelection]);
 
   // Handle audience selection and filter connections
   const handleAudienceSelection = async (scale: number) => {
@@ -140,7 +173,7 @@ export default function Post({
         method: 'POST',
         body: JSON.stringify({
           subscriber_id: userProfile?.id, 
-          company_id: company,
+          company_id: selectedCompanyId || company,
           feed_id: feedId,
           content: contentHTML, 
           rating: audienceScale
@@ -149,7 +182,12 @@ export default function Post({
 
       if (response.ok) {
         // Reset form and close dialog
-        editor.commands.setContent('<p>Share your thoughts or updates with this opportunity...</p>');
+        const resetContent = isDemo ? '<p>Demo!</p>' : needsCompanySelection ? '<p>Share your thoughts or updates with this opportunity...</p>' : '<p>Recently got an offer! Would love to connect with anyone else who is considering this option as well! </p>';
+        editor.commands.setContent(resetContent);
+        if (needsCompanySelection) {
+          setSelectedCompany(null);
+          setSelectedCompanyId(undefined);
+        }
         setOpen(false);
         
         // Show success alert and redirect after delay
@@ -173,14 +211,16 @@ export default function Post({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label="Repost company"
-          className="transition-all duration-300"
-        >
-          <Repeat2 className="h-4 w-4" />
-        </Button>
+        {triggerElement || (
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Repost company"
+            className="transition-all duration-300"
+          >
+            <Repeat2 className="h-4 w-4" />
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl lg:max-w-3xl">
         <DialogHeader>
@@ -191,12 +231,40 @@ export default function Post({
           <p className="text-sm text-muted-foreground mt-2">
             {isDemo 
               ? "✨ in demo mode, your post won't be published but will complete the tour step!" 
+              : needsCompanySelection
+              ? "Choose a company and share your thoughts or questions about the company profile, your experience chatting with the team, or relevant industry insights!"
               : "Thoughts or questions about the company profile, your experience chatting with the team, or relevant industry insights? We want to hear your thoughts!"
             }
           </p>
         </DialogHeader>
         <div className="space-y-4">
+          {/* Company Selection */}
+          {needsCompanySelection && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Company</label>
+              <Select value={selectedCompanyId?.toString() || ""} onValueChange={(value) => {
+                const companyId = parseInt(value);
+                const company = allCompanies.find(c => c.company === companyId);
+                setSelectedCompany(company || null);
+                setSelectedCompanyId(companyId);
+              }} disabled={loadingCompanies}>
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingCompanies ? "Loading companies..." : "Choose a company to thread about..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  {allCompanies.map((company) => (
+                    <SelectItem key={company._id} value={company.company.toString()}>
+                      {company.alt || company.caption || `Company ${company.company}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Complete post section */}
+          {(!needsCompanySelection || selectedCompany) && (
+          <>
           <div className="p-3 border border-input rounded-lg space-y-3">
             {/* User profile and formatting toolbar */}
             <div className="flex items-center justify-between p-2 border border-input rounded-md bg-muted/50">
@@ -244,11 +312,11 @@ export default function Post({
             </div>
             
             {/* Company repost preview */}
-            {companyData && (
+            {(companyData || selectedCompany) && (
               <div className="flex items-center gap-3 pt-2 border-t border-input">
                 <Repeat2 className="h-5 w-5 text-muted-foreground" />
                 <div className="flex-1">
-                  <CompanyRow company={companyData} />
+                  <CompanyRow company={companyData || selectedCompany!} />
                 </div>
               </div>
             )}
@@ -315,11 +383,13 @@ export default function Post({
                 </>
               )}
           </div>
+          </>
+          )}
         </div>
         <DialogFooter>
           <Button
             onClick={handlePost}
-            disabled={loading}
+            disabled={loading || (needsCompanySelection && !selectedCompany)}
             className="w-full"
           >
             {loading ? (

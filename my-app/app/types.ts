@@ -37,6 +37,7 @@ export type ProfileData = {
     needs_visa_sponsorship?: boolean;
     company_recommendations?: number[];
     network_recommendations?: NetworkRecommendation[];
+    outreach_frequency?: number;
   };
 
 export type ProfileFormState = {
@@ -66,6 +67,7 @@ export type ProfileFormState = {
   interests?: string;
   network_recommendations?: NetworkRecommendation[];
   verified?: boolean;
+  outreach_frequency?: number;
 };
 
 // Company-related types
@@ -232,6 +234,51 @@ export interface CalendarEventMatch {
 export interface ExtendedSession extends Session {
   provider_token?: string;
   provider_refresh_token?: string;
+}
+
+// Feed/Thread types
+export interface FeedItem {
+  id: string;
+  created_at: string;
+  subscriber_id: number;
+  company_id?: number;
+  feed_id?: string;
+  content: string;
+  audience_rating: number;
+  author_name?: string;
+  author_image?: string;
+  company_name?: string;
+  company_image?: string;
+  referenced_feed_content?: string;
+  referenced_feed_author?: string;
+  company_data?: {
+    _id: string;
+    _rev: string;
+    _type: string;
+    _createdAt: string;
+    _updatedAt: string;
+    publishedAt: string;
+    partner: boolean;
+    company: number;
+    alt: string;
+    caption?: string;
+    description?: string;
+    imageUrl: string;
+    location?: string;
+    hiring_tags?: string[];
+  };
+}
+
+// Referral types
+export interface Referral {
+  id: number;
+  referral_name: string;
+  referral_email: string;
+  referrer: number;
+}
+
+export interface ReferralWithProfile extends Referral {
+  subscriber_profile?: ProfileData;
 }
 
 

@@ -5,6 +5,7 @@ import { FeedRow } from "./article_mosaic";
 import { FeedThread } from "./feed-thread";
 import { type SanityDocument } from "next-sanity";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
+import { FeedItem } from "@/app/types";
 
 export interface Post extends SanityDocument {
   title: string;
@@ -14,38 +15,6 @@ export interface Post extends SanityDocument {
   excerpt?: string;
   author?: string;
   tags?: string[];
-}
-
-export interface FeedItem {
-  id: string;
-  created_at: string;
-  subscriber_id: number;
-  company_id?: number;
-  feed_id?: string;
-  content: string;
-  audience_rating: number;
-  author_name?: string;
-  author_image?: string;
-  company_name?: string;
-  company_image?: string;
-  referenced_feed_content?: string;
-  referenced_feed_author?: string;
-  company_data?: {
-    _id: string;
-    _rev: string;
-    _type: string;
-    _createdAt: string;
-    _updatedAt: string;
-    publishedAt: string;
-    partner: boolean;
-    company: number;
-    alt: string;
-    caption?: string;
-    description?: string;
-    imageUrl: string;
-    location?: string;
-    hiring_tags?: string[];
-  };
 }
 
 export interface CombinedFeedItem {
