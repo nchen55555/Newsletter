@@ -151,19 +151,20 @@ const questions: Question[] = [
   {
     id: 'public_profile',
     field: 'is_public_profile',
-    question: "Accept company outreaches who may be interested in your profile?",
-    description: "Allow partner companies to reach out directly about opportunities that match your interests",
+    question: "Accept founder outreaches who are interested in your profile?",
+    description: "Allow partner companies to reach out to connect with you about their opportunities",
     type: 'toggle',
     required: true
   },
   {
     id: 'outreach_frequency',
     field: 'outreach_frequency',
-    question: "How many outreaches per month are you willing to accept?",
-    description: "Help us limit outreach volume to a level you're comfortable with",
+    question: "How many conversations per month would you want to have through The Niche?",
+    description: "Help us understand the outreach volume to a level you're comfortable with. We DONT want to be LinkedIn 2.0, spamming you with opportunities you aren't interested in",
     type: 'outreach_frequency',
     required: true,
     options: [
+      { display: '<1', value: 1 },
       { display: '<5', value: 5 },
       { display: '<10', value: 10 },
       { display: '10+', value: 15 }

@@ -161,14 +161,14 @@ export default async function PostPage({
                 </header>
 
                 {/* Company profile/body */}
-                <PaywallContent wordLimit={300}>
+                {/* <PaywallContent wordLimit={300}> */}
                   <section className="prose prose-neutral max-w-none">
                     {Array.isArray(post.body) && (
                       <PortableText value={post.body} components={components} />
                     )}
                   </section>
                 
-
+            <PaywallContent wordLimit={0}>
                 {/* Open roles — minimalist rows at bottom */}
                 {roles.length > 0 && (
                   <section className="mt-10">
