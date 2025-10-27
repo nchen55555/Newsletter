@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { client } from '@/lib/sanity/client';
 import imageUrlBuilder from '@sanity/image-url';
 import { CompanyData } from '@/app/types';
+import { createFilteredCompaniesQuery, CACHE_OPTIONS } from '@/lib/sanity/queries';
 
 export async function GET() {
   const cookieStore = cookies();
@@ -84,27 +85,8 @@ export async function GET() {
   const companyIds = filteredFeeds?.map(feed => feed.company_id).filter(Boolean) || [];
   let companiesData: Array<CompanyData & { imageUrl: string | null }> = [];
   if (companyIds.length > 0) {
-    const COMPANIES_QUERY = `*[
-      _type == "mediaLibrary" && company in [${companyIds.join(', ')}]
-    ]{
-      _id,
-      company,
-      image,
-      publishedAt,
-      alt,
-      caption,
-      description,
-      tags,
-      hiring_tags,
-      location,
-      partner,
-      pending_partner,
-      external_media,
-      people
-    }`;
-
     const builder = imageUrlBuilder(client);
-    const rawCompanies = await client.fetch(COMPANIES_QUERY, {});
+    const rawCompanies = await client.fetch(createFilteredCompaniesQuery(companyIds), {}, CACHE_OPTIONS.COMPANIES);
     
     companiesData = rawCompanies.map((company: CompanyData) => ({
       ...company,

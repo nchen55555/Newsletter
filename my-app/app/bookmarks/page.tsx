@@ -7,23 +7,11 @@ import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import imageUrlBuilder from "@sanity/image-url";
+import { COMPANIES_QUERY, CACHE_OPTIONS } from '@/lib/sanity/queries';
 
 export default async function Bookmarks() {
     // Query companies from mediaLibrary instead of posts
-    const COMPANIES_QUERY = `*[
-        _type == "mediaLibrary"
-      ]{
-        _id,
-        company,
-        image,
-        publishedAt,
-        alt,
-        caption,
-        description,
-        tags
-      }`;
-    const options = { next: { revalidate: 30 } };
-    const companies = await client.fetch(COMPANIES_QUERY, {}, options);
+    const companies = await client.fetch(COMPANIES_QUERY, {}, CACHE_OPTIONS.COMPANIES);
 
     const cookieStore = cookies();
 

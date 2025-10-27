@@ -9,6 +9,7 @@ import Share from "@/app/components/share";
 import { CombinedFeed } from "./combined-feed";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import { FeedItem } from "@/app/types";
+import { CACHE_OPTIONS } from "@/lib/sanity/queries";
 // --- Types --------------------------------------------------------------
 export interface Post extends SanityDocument {
   title: string;
@@ -36,10 +37,10 @@ function urlForImage(source: SanityImageSource) {
 // Normalize tags → role labels (title case)
 
 // --- Query --------------------------------------------------------------
-// Tags are simple strings in the Sanity schema
+// Tags are simple strings in the Sanity schema - Limited to 20 posts for performance
 const POSTS_QUERY = `*[
   _type == "post" && defined(slug.current) && !(slug.current match "*-beta*")
-]|order(publishedAt desc){
+]|order(publishedAt desc)[0...20]{
   _id, title, slug, publishedAt, image, excerpt, author, tags
 }`;
 
@@ -104,7 +105,7 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
 
 // --- Newsfeed (one per row vibe) ----------------------------------------
 export async function ArticleNewsfeed() {
-  const posts = await client.fetch<Post[]>(POSTS_QUERY);
+  const posts = await client.fetch<Post[]>(POSTS_QUERY, {}, CACHE_OPTIONS.POSTS);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

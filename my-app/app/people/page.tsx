@@ -50,7 +50,12 @@ function ProfileCardSkeleton() {
 // Loading Skeleton for entire page
 function LoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{
+        background: `
+          radial-gradient(ellipse 700px 500px at 85% 15%, rgba(34, 197, 94, 0.3) 0%, rgba(124, 211, 87, 0.25) 15%, rgba(253, 224, 71, 0.3) 35%, rgba(253, 224, 71, 0.2) 60%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 1) 100%),
+          white
+        `
+      }}>
       <Navigation />
       <Container>
         <div className="max-w-6xl mx-auto py-8 md:py-16 px-4 md:px-6">
@@ -110,6 +115,7 @@ export default function PeoplePage() {
   const [userApplied, setUserApplied] = useState<boolean | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [referrerName, setReferrerName] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<'connections' | 'pending' | 'requested'>('connections');
 
 
   const router = useRouter();
@@ -292,7 +298,12 @@ export default function PeoplePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{
+        background: `
+          radial-gradient(ellipse 700px 500px at 85% 15%, rgba(34, 197, 94, 0.3) 0%, rgba(124, 211, 87, 0.25) 15%, rgba(253, 224, 71, 0.3) 35%, rgba(253, 224, 71, 0.2) 60%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 1) 100%),
+          white
+        `
+      }}>
       <Navigation />
       <Container>
         <div >
@@ -407,88 +418,119 @@ export default function PeoplePage() {
                           </Button>
                         </div>
 
-                        {/* User's Requested Connections Section */}
+                        {/* Tabbed Connections Section */}
                         <VerificationProtectedContent 
-                          sectionTitle="People Requesting To Connect with You"
-                          fallbackTitle="Verification Required for Network Access"
-                          fallbackDescription="Request to join The Niche network to view and respond to connection requests"
-                          className="w-full max-w-6xl mx-auto mt-12"
-                          hideWhenNotVerified={false}
-                        >
-                          {userRequestedConnectionProfiles.length > 0 ? (
-                            <div className="space-y-4">
-                              {userRequestedConnectionProfiles.map((profile) => (
-                                <ProfileCard 
-                                  key={profile.id} 
-                                  profile={profile} 
-                                  onClick={() => handleProfileClick(profile)}
-                                  connectionStatus="requested"
-                                />
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-center py-8 text-neutral-600">
-                              <UserPlus className="mx-auto h-12 w-12 mb-4 text-neutral-400" />
-                              <p>No incoming connection requests at this time.</p>
-                            </div>
-                          )}
-                        </VerificationProtectedContent>
-                        
-                        {/* Verified Connections Section */}
-                        <VerificationProtectedContent 
-                          sectionTitle="Your Verified Connections"
+                          sectionTitle="Your Network"
                           fallbackTitle="Verification Required for Network Access"
                           fallbackDescription="Request to join The Niche network to view and manage your professional connections"
                           className="w-full max-w-6xl mx-auto mt-12"
                           hideWhenNotVerified={false}
                         >
-                          {verifiedConnectionProfiles.length > 0 ? (
-                            <div className="space-y-4">
-                              {verifiedConnectionProfiles.map(([profile, rating]) => (
-                                <ProfileCard 
-                                  key={profile.id} 
-                                  profile={profile} 
-                                  onClick={() => handleProfileClick(profile)}
-                                  connectionStatus="connected"
-                                  connectionRating={rating || undefined}
-                                />
-                              ))}
+                          <div className="w-full">
+                            {/* Tab Navigation */}
+                            <div className="flex border-b border-neutral-200 mb-8">
+                              <button
+                                onClick={() => setActiveTab('connections')}
+                                className={`px-6 py-3 text-base font-medium transition-colors duration-200 border-b-2 ${
+                                  activeTab === 'connections'
+                                    ? 'border-black text-black'
+                                    : 'border-transparent text-neutral-500 hover:text-neutral-700'
+                                }`}
+                              >
+                                Connections ({verifiedConnectionProfiles.length})
+                              </button>
+                              <button
+                                onClick={() => setActiveTab('pending')}
+                                className={`px-6 py-3 text-base font-medium transition-colors duration-200 border-b-2 ${
+                                  activeTab === 'pending'
+                                    ? 'border-black text-black'
+                                    : 'border-transparent text-neutral-500 hover:text-neutral-700'
+                                }`}
+                              >
+                                Your Pending Connections ({userPendingConnectionProfiles.length})
+                              </button>
+                              <button
+                                onClick={() => setActiveTab('requested')}
+                                className={`px-6 py-3 text-base font-medium transition-colors duration-200 border-b-2 ${
+                                  activeTab === 'requested'
+                                    ? 'border-black text-black'
+                                    : 'border-transparent text-neutral-500 hover:text-neutral-700'
+                                }`}
+                              >
+                                Your Requested Connections ({userRequestedConnectionProfiles.length})
+                              </button>
                             </div>
-                          ) : (
-                            <div className="text-center py-8 text-neutral-600">
-                              <Users className="mx-auto h-12 w-12 mb-4 text-neutral-400" />
-                              <p>No verified connections yet. Start connecting with professionals in your network!</p>
-                            </div>
-                          )}
-                        </VerificationProtectedContent>
 
-                      
+                            {/* Tab Content */}
+                            <div className="min-h-[400px]">
+                              {activeTab === 'connections' && (
+                                <>
+                                  {verifiedConnectionProfiles.length > 0 ? (
+                                    <div className="space-y-4">
+                                      {verifiedConnectionProfiles.map(([profile, rating]) => (
+                                        <ProfileCard 
+                                          key={profile.id} 
+                                          profile={profile} 
+                                          onClick={() => handleProfileClick(profile)}
+                                          connectionStatus="connected"
+                                          connectionRating={rating || undefined}
+                                        />
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="text-center py-8 text-neutral-600">
+                                      <Users className="mx-auto h-12 w-12 mb-4 text-neutral-400" />
+                                      <p>No verified connections yet. Start connecting with professionals in your network!</p>
+                                    </div>
+                                  )}
+                                </>
+                              )}
 
-                        {/* User's Pending Connections Section */}
-                        <VerificationProtectedContent 
-                          sectionTitle="Your Pending Requests to Others"
-                          fallbackTitle="Verification Required for Network Access"
-                          fallbackDescription="Request to join The Niche network to view and manage your pending connection requests"
-                          className="w-full max-w-6xl mx-auto mt-12"
-                          hideWhenNotVerified={false}
-                        >
-                          {userPendingConnectionProfiles.length > 0 ? (
-                            <div className="space-y-4">
-                              {userPendingConnectionProfiles.map((profile) => (
-                                <ProfileCard 
-                                  key={profile.id} 
-                                  profile={profile} 
-                                  onClick={() => handleProfileClick(profile)}
-                                  connectionStatus="pending_sent"
-                                />
-                              ))}
+                              {activeTab === 'pending' && (
+                                <>
+                                  {userPendingConnectionProfiles.length > 0 ? (
+                                    <div className="space-y-4">
+                                      {userPendingConnectionProfiles.map((profile) => (
+                                        <ProfileCard 
+                                          key={profile.id} 
+                                          profile={profile} 
+                                          onClick={() => handleProfileClick(profile)}
+                                          connectionStatus="pending_sent"
+                                        />
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="text-center py-8 text-neutral-600">
+                                      <AlertCircle className="mx-auto h-12 w-12 mb-4 text-neutral-400" />
+                                      <p>No pending connection requests. Search and connect with professionals above!</p>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+
+                              {activeTab === 'requested' && (
+                                <>
+                                  {userRequestedConnectionProfiles.length > 0 ? (
+                                    <div className="space-y-4">
+                                      {userRequestedConnectionProfiles.map((profile) => (
+                                        <ProfileCard 
+                                          key={profile.id} 
+                                          profile={profile} 
+                                          onClick={() => handleProfileClick(profile)}
+                                          connectionStatus="requested"
+                                        />
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="text-center py-8 text-neutral-600">
+                                      <UserPlus className="mx-auto h-12 w-12 mb-4 text-neutral-400" />
+                                      <p>No incoming connection requests at this time.</p>
+                                    </div>
+                                  )}
+                                </>
+                              )}
                             </div>
-                          ) : (
-                            <div className="text-center py-8 text-neutral-600">
-                              <AlertCircle className="mx-auto h-12 w-12 mb-4 text-neutral-400" />
-                              <p>No pending requests. Send connection requests to expand your network!</p>
-                            </div>
-                          )}
+                          </div>
                         </VerificationProtectedContent>
 
                                             

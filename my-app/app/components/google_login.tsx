@@ -49,7 +49,7 @@ export function GoogleLogin({
         disabled={isAuthLoading || loading}
         variant="default"
         size="lg"
-        className="bg-black hover:bg-black/90"
+        className="bg-black hover:bg-black/90 text-lg px-8 py-4 h-14"
         >
         {(loading || isAuthLoading) ? (
             <>

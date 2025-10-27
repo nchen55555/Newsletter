@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { client } from '@/lib/sanity/client'
+import { COMPANY_POST_QUERY, CACHE_OPTIONS } from '@/lib/sanity/queries'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,12 +13,13 @@ export async function GET(request: NextRequest) {
     
     const companyId = parseInt(companyIdStr)
     
-    // Use the same query pattern as companies/[id]/page.tsx
-    const COMPANY_POST_QUERY = `*[_type == "post" && company == $companyId][0]`;
+    const postData = await client.fetch(COMPANY_POST_QUERY, { companyId }, CACHE_OPTIONS.ARTICLES);
     
-    const postData = await client.fetch(COMPANY_POST_QUERY, { companyId });
-    
-    return NextResponse.json(postData)
+    return NextResponse.json(postData, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=450' // Cache for 15 min, revalidate in background for 7.5 min
+      }
+    })
   } catch (error) {
     console.error('Error fetching company posts:', error)
     return NextResponse.json(

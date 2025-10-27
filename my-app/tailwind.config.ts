@@ -19,7 +19,7 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ['Nunito Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['Zodiak', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         // mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       backgroundImage: {

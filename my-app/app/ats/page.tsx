@@ -322,7 +322,12 @@ function EmailForwardingATSContent() {
   // Show loading message like opportunities page
   if (showLoadingMessage) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
+      <div className="min-h-screen" style={{
+          background: `
+            radial-gradient(ellipse 700px 500px at 85% 15%, rgba(34, 197, 94, 0.3) 0%, rgba(124, 211, 87, 0.25) 15%, rgba(253, 224, 71, 0.3) 35%, rgba(253, 224, 71, 0.2) 60%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 1) 100%),
+            white
+          `
+        }}>
         <Navigation />
         <div className="pt-12 pb-8 px-6 relative">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.02),transparent)] pointer-events-none"></div>
@@ -340,7 +345,12 @@ function EmailForwardingATSContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
+    <div className="min-h-screen" style={{
+        background: `
+          radial-gradient(ellipse 700px 500px at 85% 15%, rgba(34, 197, 94, 0.3) 0%, rgba(124, 211, 87, 0.25) 15%, rgba(253, 224, 71, 0.3) 35%, rgba(253, 224, 71, 0.2) 60%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 1) 100%),
+          white
+        `
+      }}>
       <Navigation />
       <div className="pt-12 pb-8 px-6 relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.02),transparent)] pointer-events-none"></div>
@@ -674,7 +684,12 @@ function EmailForwardingATSContent() {
 export default function EmailForwardingATS() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
+      <div className="min-h-screen" style={{
+          background: `
+            radial-gradient(ellipse 700px 500px at 85% 15%, rgba(34, 197, 94, 0.3) 0%, rgba(124, 211, 87, 0.25) 15%, rgba(253, 224, 71, 0.3) 35%, rgba(253, 224, 71, 0.2) 60%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 1) 100%),
+            white
+          `
+        }}>
         <Navigation />
         <div className="pt-12 pb-8 px-6 relative">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.02),transparent)] pointer-events-none"></div>

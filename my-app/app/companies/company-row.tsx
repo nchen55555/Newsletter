@@ -90,7 +90,7 @@ export function CompanyRow({ company, potential = false }: { company: CompanyWit
                   {company.hiring_tags.slice(0, 3).map((tag, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700 border border-yellow-200"
+                      className="inline-flex items-center rounded-full bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-700 border border-gray-200"
                     >
                       {tag}
                     </span>
@@ -107,7 +107,7 @@ export function CompanyRow({ company, potential = false }: { company: CompanyWit
             {/* Pending partnership tag */}
             {potential && (
               <div className="mt-3">
-                <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 border border-green-200">
+                <span className="inline-flex items-center rounded-full bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-700 border border-gray-200">
                   Partnership Coming Soon
                 </span>
               </div>

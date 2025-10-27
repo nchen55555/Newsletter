@@ -2,7 +2,7 @@ import { ProfileData, CompanyWithImageUrl, FeedItem, ReferralWithProfile } from 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FileText, Linkedin, Globe, Edit, Plus, Send, Users } from "lucide-react";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import ProfileAvatar from "./profile_avatar";
 import { CompanyCard } from "./company-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +14,11 @@ import { ReferralDialog } from "./referral-dialog";
 import Post from "./post";
 
 
-export function ExternalProfile(props: ProfileData) {
+interface ExternalProfileProps extends ProfileData {
+  isExternalView?: boolean;
+}
+
+export function ExternalProfile(props: ExternalProfileProps) {
   const router = useRouter();
   const [bookmarkedCompanies, setBookmarkedCompanies] = useState<CompanyWithImageUrl[]>([]);
   const [loadingBookmarks, setLoadingBookmarks] = useState(false);
@@ -71,7 +75,7 @@ export function ExternalProfile(props: ProfileData) {
   console.log("ExternalProfile props:", props);
   
   // Fetch user threads
-  const fetchUserThreads = async () => {
+  const fetchUserThreads = useCallback(async () => {
     setLoadingThreads(true);
     try {
       const response = await fetch(`/api/get_user_threads?user_id=${props.id}`, {
@@ -90,10 +94,10 @@ export function ExternalProfile(props: ProfileData) {
     } finally {
       setLoadingThreads(false);
     }
-  };
+  }, [props.id]);
 
   // Fetch user referrals
-  const fetchUserReferrals = async () => {
+  const fetchUserReferrals = useCallback(async () => {
     setLoadingReferrals(true);
     try {
       const response = await fetch(`/api/get_user_referrals?user_id=${props.id}`, {
@@ -112,7 +116,7 @@ export function ExternalProfile(props: ProfileData) {
     } finally {
       setLoadingReferrals(false);
     }
-  };
+  }, [props.id]);
   
   // Fetch bookmarked companies using API
   useEffect(() => {
@@ -188,7 +192,7 @@ export function ExternalProfile(props: ProfileData) {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium text-neutral-900">Bio</h3>
-                  {!editingBio && (
+                  {!props.isExternalView && !editingBio && (
                     <Button
                       onClick={() => setEditingBio(true)}
                       variant="ghost"
@@ -199,7 +203,7 @@ export function ExternalProfile(props: ProfileData) {
                   )}
                 </div>
                 
-                {editingBio ? (
+                {!props.isExternalView && editingBio ? (
                   <div className="space-y-3">
                     <Textarea
                       value={bioValue}
@@ -241,7 +245,7 @@ export function ExternalProfile(props: ProfileData) {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium text-neutral-900">Interests</h3>
-                  {!editingInterests && (
+                  {!props.isExternalView && !editingInterests && (
                     <Button
                       onClick={() => setEditingInterests(true)}
                       variant="ghost"
@@ -252,7 +256,7 @@ export function ExternalProfile(props: ProfileData) {
                   )}
                 </div>
                 
-                {editingInterests ? (
+                {!props.isExternalView && editingInterests ? (
                   <div className="space-y-3">
                     <Textarea
                       value={interestsValue}
@@ -355,7 +359,7 @@ export function ExternalProfile(props: ProfileData) {
                       : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
                   }`}
                 >
-                  Bookmarked Companies ({bookmarkedCompanies.length})
+                  {props.isExternalView ? `Companies ${props.first_name} Bookmarked` : 'Bookmarked Companies'} ({bookmarkedCompanies.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('threads')}
@@ -365,7 +369,7 @@ export function ExternalProfile(props: ProfileData) {
                       : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
                   }`}
                 >
-                  Your Threads ({userThreads.length})
+                  {props.isExternalView ? `${props.first_name}'s Threads` : 'Your Threads'} ({userThreads.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('referrals')}
@@ -375,7 +379,7 @@ export function ExternalProfile(props: ProfileData) {
                       : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
                   }`}
                 >
-                  Your Referrals ({userReferrals.length})
+                  {props.isExternalView ? `${props.first_name}'s Referrals` : 'Your Referrals'} ({userReferrals.length})
                 </button>
               </nav>
             </div>
@@ -387,14 +391,16 @@ export function ExternalProfile(props: ProfileData) {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium text-neutral-900">Bookmarked and Recommended</h3>
-                    <Button
-                      onClick={() => window.location.href = '/opportunities'}
-                      size="sm"
-                      className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Opportunities
-                    </Button>
+                    {!props.isExternalView && (
+                      <Button
+                        onClick={() => window.location.href = '/opportunities'}
+                        size="sm"
+                        className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Opportunities
+                      </Button>
+                    )}
                   </div>
                   {loadingBookmarks ? (
                     <div className="space-y-4">
@@ -410,7 +416,7 @@ export function ExternalProfile(props: ProfileData) {
                     </div>
                   ) : (
                     <div className="text-center py-8 text-neutral-500">
-                      You haven&apos;t bookmarked any companies yet.
+                      {props.isExternalView ? `${props.first_name} hasn't bookmarked any companies yet.` : "You haven't bookmarked any companies yet."}
                     </div>
                   )}
                 </div>
@@ -421,17 +427,19 @@ export function ExternalProfile(props: ProfileData) {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium text-neutral-900">Your Threads</h3>
-                    <Post
-                      triggerElement={
-                        <Button
-                          size="sm"
-                          className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Thread Your Thoughts
-                        </Button>
-                      }
-                    />
+                    {!props.isExternalView && (
+                      <Post
+                        triggerElement={
+                          <Button
+                            size="sm"
+                            className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            Thread Your Thoughts
+                          </Button>
+                        }
+                      />
+                    )}
                   </div>
                   {loadingThreads ? (
                     <div className="space-y-4">
@@ -458,7 +466,7 @@ export function ExternalProfile(props: ProfileData) {
                     </div>
                   ) : (
                     <div className="text-center py-8 text-neutral-500">
-                      You haven&apos;t posted any threads yet.
+                      {props.isExternalView ? `${props.first_name} hasn't posted any threads yet.` : "You haven't posted any threads yet."}
                     </div>
                   )}
                 </div>
@@ -469,14 +477,16 @@ export function ExternalProfile(props: ProfileData) {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium text-neutral-900">Your Referrals</h3>
-                    <Button
-                      onClick={() => setShowReferralDialog(true)}
-                      size="sm"
-                      className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
-                    >
-                      <Send className="w-4 h-4" />
-                      Refer to The Niche Network
-                    </Button>
+                    {!props.isExternalView && (
+                      <Button
+                        onClick={() => setShowReferralDialog(true)}
+                        size="sm"
+                        className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
+                      >
+                        <Send className="w-4 h-4" />
+                        Refer to The Niche Network
+                      </Button>
+                    )}
                   </div>
                   {loadingReferrals ? (
                     <div className="space-y-4">
@@ -523,7 +533,7 @@ export function ExternalProfile(props: ProfileData) {
                     </div>
                   ) : (
                     <div className="text-center py-8 text-neutral-500">
-                      You haven&apos;t referred anyone yet.
+                      {props.isExternalView ? `${props.first_name} hasn't referred anyone yet.` : "You haven't referred anyone yet."}
                     </div>
                   )}
                 </div>
@@ -532,13 +542,15 @@ export function ExternalProfile(props: ProfileData) {
           </div>
       </section>
       
-      {/* Referral Dialog */}
-      <ReferralDialog 
-        open={showReferralDialog} 
-        onOpenChange={setShowReferralDialog}
-        title="Refer Someone You Want to Bring To Your Verified Professional Network"
-        description="We are personal referral only and will verify if your referral is a good fit for our partner companies!"
-      />
+      {/* Referral Dialog - Only show for own profile */}
+      {!props.isExternalView && (
+        <ReferralDialog 
+          open={showReferralDialog} 
+          onOpenChange={setShowReferralDialog}
+          title="Refer Someone You Want to Bring To Your Verified Professional Network"
+          description="We are personal referral only and will verify if your referral is a good fit for our partner companies!"
+        />
+      )}
     </div>
   );
 }

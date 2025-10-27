@@ -55,7 +55,7 @@ export function CompanyCard({ company, showHighMutualInterest = false, potential
       {/* Badge */}
       {showHighMutualInterest && company.partner && (
         <button
-          className="mb-6 absolute right-3 top-3 inline-flex items-center rounded-full bg-blue-100 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-200 transition-all cursor-pointer z-10"
+          className="mb-6 absolute right-3 top-3 inline-flex items-center rounded-full bg-gradient-to-r from-green-50 via-yellow-50 to-green-50 px-3 py-2 text-xs font-medium text-neutral-600 hover:from-green-100 hover:via-yellow-100 hover:to-green-100 transition-all cursor-pointer z-10 border border-neutral-200"
         >
           High Potential Mutual Interest
         </button>
@@ -122,12 +122,12 @@ export function CompanyCard({ company, showHighMutualInterest = false, potential
             
             {/* Hiring tags */}
             {company.hiring_tags && company.hiring_tags.length > 0 && (
-              <div className="mt-2 mb-1 text-left">
+              <div className="mt-8 mb-1 text-left">
                 <div className="flex flex-wrap gap-1.5">
                   {company.hiring_tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 border border-green-200"
+                      className="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700 border border-gray-200"
                     >
                       {tag}
                     </span>

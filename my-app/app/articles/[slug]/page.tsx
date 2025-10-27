@@ -18,7 +18,7 @@ const urlFor = (source: SanityImageSource) =>
     ? imageUrlBuilder({ projectId, dataset }).image(source)
     : null;
 
-const options = { next: { revalidate: 30 } };
+const options = { next: { revalidate: 900 } }; // 15 minutes - articles change less frequently
 
 // Type for Sanity tag objects
 type SanityTag = string | {
