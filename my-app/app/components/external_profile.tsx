@@ -7,12 +7,13 @@ import ProfileAvatar from "./profile_avatar";
 import { CompanyCard } from "./company-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FeedThread } from "./feed-thread";
+import { ProjectsGrid } from "./projects-grid";
 import ProfileCard from "./profile_card";
 import { useRouter } from "next/navigation";
 import { encodeSimple } from "../utils/simple-hash";
 import { ReferralDialog } from "./referral-dialog";
 import Post from "./post";
-
+import { ProjectsDialog } from "@/app/components/projects_dialog";
 
 interface ExternalProfileProps extends ProfileData {
   isExternalView?: boolean;
@@ -30,18 +31,23 @@ export function ExternalProfile(props: ExternalProfileProps) {
   // Referrals state
   const [userReferrals, setUserReferrals] = useState<ReferralWithProfile[]>([]);
   const [loadingReferrals, setLoadingReferrals] = useState(false);
-  
+
+  // Projects state
+  const [userProjects, setUserProjects] = useState<string[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [projectsDialog, setProjectsDialog] = useState(false);
+
   // Editing state
   const [editingBio, setEditingBio] = useState(false);
   const [editingInterests, setEditingInterests] = useState(false);
   const [bioValue, setBioValue] = useState(props.bio || '');
   const [interestsValue, setInterestsValue] = useState(props.interests || '');
-  const [saving, setSaving] = useState<'bio' | 'interests' | null>(null);
+  const [saving, setSaving] = useState<'bio' | 'interests' | 'project_urls' | null>(null);
   const [showReferralDialog, setShowReferralDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState<'bookmarks' | 'threads' | 'referrals'>('bookmarks');
+  const [activeTab, setActiveTab] = useState<'bookmarks' | 'threads' | 'referrals' | 'projects'>('bookmarks');
 
   // Save field function
-  const saveField = async (field: 'bio' | 'interests', value: string) => {
+  const saveField = async (field: 'bio' | 'interests' | 'project_urls', value: string) => {
     setSaving(field);
     try {
       const formData = new FormData();
@@ -72,8 +78,33 @@ export function ExternalProfile(props: ExternalProfileProps) {
     }
   };
 
-  console.log("ExternalProfile props:", props);
-  
+
+  // Fetch user posts
+  const fetchUserProjects = useCallback(async () => {
+    setLoadingProjects(true);
+    try {
+      const response = await fetch(`/api/get_user_projects?user_id=${props.id}`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const projects = await response.json();
+        setUserProjects(projects.project_urls || []);
+      } else {
+        console.error('Failed to fetch user projects');
+        setUserProjects([]);
+      }
+    } catch (error) {
+      console.error('Error fetching user projects:', error);
+      setUserProjects([]);
+    } finally {
+      setLoadingProjects(false);
+    }
+  }, [props.id]);
+
+  const handleProjectDeleted = (deletedProjectUrl: string) => {
+    setUserProjects(prev => prev.filter(url => url !== deletedProjectUrl));
+  };
+
   // Fetch user threads
   const fetchUserThreads = useCallback(async () => {
     setLoadingThreads(true);
@@ -155,7 +186,8 @@ export function ExternalProfile(props: ExternalProfileProps) {
     fetchBookmarkedCompanies();
     fetchUserThreads();
     fetchUserReferrals();
-  }, [props.bookmarked_companies, props.company_recommendations, props.id, fetchUserReferrals, fetchUserThreads]);
+    fetchUserProjects();
+  }, [props.bookmarked_companies, props.company_recommendations, props.id, fetchUserReferrals, fetchUserThreads, fetchUserProjects  ]);
     if (!props) return <Skeleton className="h-12 w-full" />; // or customize size;
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -165,7 +197,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
         </h1>
         <div className="text-base text-neutral-600">
           {props.status}
-          {props.is_public_profile && " · Public Profile"}
+          {props.is_public_profile && "Public Profile"}
           {props.newsletter_opt_in && " · Newsletter Opt-in"}
         </div>
       </div>
@@ -381,6 +413,16 @@ export function ExternalProfile(props: ExternalProfileProps) {
                 >
                   {props.isExternalView ? `${props.first_name}'s Referrals` : 'Your Referrals'} ({userReferrals.length})
                 </button>
+                <button
+                  onClick={() => setActiveTab('projects')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === 'projects'
+                      ? 'border-neutral-900 text-neutral-900'
+                      : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+                  }`}
+                >
+                  {props.isExternalView ? `${props.first_name}'s Projects` : 'Your Projects'} ({userProjects.length})
+                </button>
               </nav>
             </div>
 
@@ -538,6 +580,42 @@ export function ExternalProfile(props: ExternalProfileProps) {
                   )}
                 </div>
               )}
+
+              {/* User Threads Tab */}
+              {activeTab === 'projects' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium text-neutral-900">Your Projects</h3>
+                    {!props.isExternalView && (
+                      <Button
+                        size="sm"
+                        className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
+                        onClick={() => setProjectsDialog(true)}
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Projects and Media
+                      </Button>
+                    )}
+                  </div>
+                  {loadingProjects ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-32 w-full rounded-lg" />
+                      <Skeleton className="h-32 w-full rounded-lg" />
+                      <Skeleton className="h-32 w-full rounded-lg" />
+                    </div>
+                  ) : userProjects.length > 0 ? (
+                    <ProjectsGrid 
+                      projectUrls={userProjects} 
+                      onProjectDeleted={handleProjectDeleted}
+                      showDelete={!props.isExternalView}
+                    />
+                  ) : (
+                    <div className="text-center py-8 text-neutral-500">
+                      {props.isExternalView ? `${props.first_name} hasn't linked any projects yet.` : "You haven't linked any projects yet."}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
       </section>
@@ -549,6 +627,16 @@ export function ExternalProfile(props: ExternalProfileProps) {
           onOpenChange={setShowReferralDialog}
           title="Refer Someone You Want to Bring To Your Verified Professional Network"
           description="We are personal referral only and will verify if your referral is a good fit for our partner companies!"
+        />
+      )}
+      {/* Projects Dialog - Only show for own profile */}
+      {!props.isExternalView && (
+        <ProjectsDialog
+          open={projectsDialog}
+          onOpenChange={setProjectsDialog}
+          title="Add Projects and Media"
+          description="Showcase your work and achievements to your network."
+          onProjectAdded={fetchUserProjects}
         />
       )}
     </div>

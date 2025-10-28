@@ -9,6 +9,7 @@ import { type SanityDocument } from "next-sanity";
 import ApplyButton from "@/app/components/apply";
 import { TableOfContents } from "@/app/components/table-of-contents";
 import { PaywallContent } from "@/app/components/paywall-content";
+import { ReferralInviteDialog } from '@/app/components/referral-invite-dialog';
 
 const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]`;
 
@@ -119,11 +120,20 @@ export default async function PostPage({
   const post = await client.fetch<SanityDocument>(POST_QUERY, await params, options);
   const components = createComponents(post.body || []);
   const roles = getRoleLabels(post.tags);
+  
+  console.log('Post data for ReferralInviteDialog:', { 
+    company: post.company, 
+    companyName: post.companyName,
+    alt: post.alt,
+    caption: post.caption,
+    title: post.title 
+  });
 
   return (
     <div className="min-h-screen bg-white">
       <Navigation />
       <Container>
+        
         <div className="pt-10 pb-16">
           <div className="flex flex-col lg:flex-row gap-8">
               {/* Sidebar (clean + sticky) */}
@@ -192,6 +202,7 @@ export default async function PostPage({
             </div>
         </div>
       </Container>
+      <ReferralInviteDialog />
     </div>
   );
 }

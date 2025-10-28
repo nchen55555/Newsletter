@@ -14,7 +14,7 @@ import {GoogleLogin} from './google_login'
 import { useSubscriptionContext } from './subscription_context';
 import { useRouter } from 'next/navigation';
 
-export function Subscribe() {
+export function Subscribe({referral_id}: {referral_id?: number}) {
   const router = useRouter();
   const [linkedinUrl, setLinkedinUrl] = useState('')
   const [formError, setFormError] = useState(false)
@@ -44,7 +44,7 @@ export function Subscribe() {
     const res = await fetch('/api/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: userEmail, linkedin_url: linkedinUrl }),
+      body: JSON.stringify({ email: userEmail, linkedin_url: linkedinUrl , referral_id: referral_id  }),
     })
 
     const data = await res.json()

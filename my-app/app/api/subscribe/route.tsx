@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, linkedin_url } = await req.json()
+    const { email, linkedin_url, referral_id } = await req.json()
 
     if (!email || !linkedin_url ) {
       return NextResponse.json({ error: 'Invalid email or LinkedIn URL' }, { status: 400 })
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     const { error } = await supabase
       .from('subscribers')
-      .insert([{ email, linkedin_url }])
+      .insert([{ email, linkedin_url, referral_id }])
 
     if (error) {
       console.error('Supabase insert error:', error)

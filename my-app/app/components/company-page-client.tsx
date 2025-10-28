@@ -9,6 +9,7 @@ import { ExternalLink, UserPlus, MapPin, Send } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ReferralDialog } from "@/app/components/referral-dialog";
+import { ReferralInviteDialog } from "@/app/components/referral-invite-dialog";
 import { PortableText, type PortableTextComponents, type PortableTextBlock } from '@portabletext/react';
 import ApplyButton from "@/app/components/apply";
 import EarlyInterestButton from "@/app/components/early_interest";
@@ -274,13 +275,13 @@ export default function CompanyPageClient({
       <h2 className="text-2xl font-bold text-neutral-900 mb-6">Our Company Profile</h2>
         {companyPost && companyPost.body && Array.isArray(companyPost.body) && companyPost.body.length > 0 ? (
           <div className="mb-12 border-b">
-            <PaywallContent wordLimit={300}>
+            {/* <PaywallContent wordLimit={300}> */}
               <section className="prose prose-neutral max-w-none">
                 {Array.isArray(companyPost.body) && (
                   <PortableText value={companyPost.body} components={components} />
                 )}
               </section>
-            </PaywallContent>
+            {/* </PaywallContent> */}
           </div>
         ) : (
            <Alert className="cursor-pointer hover:bg-gray-50" onClick={() => router.push('/articles')}>
@@ -375,6 +376,11 @@ export default function CompanyPageClient({
           </VerificationProtectedContent>
         )}      
       </div>
+
+      {/* Referral Invite Dialog (for incoming referrals) */}
+      <ReferralInviteDialog 
+        companyName={company.alt}
+      />
 
       {/* Referral Dialog */}
       <ReferralDialog 
