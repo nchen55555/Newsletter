@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useSearchParams } from "next/navigation";
 import { decodeSimple } from "@/app/utils/simple-hash";
 import { Subscribe } from "./subscribe";
 import Link from "next/link";
+import Image from "next/image";
 
 interface ReferralInviteDialogProps {
   companyName?: string;
@@ -17,9 +18,27 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
-  const [referralId, setReferralId] = useState<number | undefined>(undefined);
+
   const searchParams = useSearchParams();
 
+   // Calculate referrer ID directly from URL (memoized)
+  const referrerIdFromUrl = useMemo(() => {
+    const refParam = searchParams.get('ref');
+    console.log("refParam in memoized function:", refParam);
+    if (!refParam) return undefined;
+    
+    try {
+      const referrerUserId = decodeSimple(refParam);
+      console.log("decoded referrerUserId in memoized function:", referrerUserId);
+      const result = (referrerUserId && referrerUserId > 0) ? referrerUserId : undefined;
+      console.log("final referrerIdFromUrl result:", result);
+      return result;
+    } catch (error) {
+      console.error("Failed to decode referral parameter:", error);
+      return undefined;
+    }
+  }, [searchParams]);
+  
   // Check login status
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -64,13 +83,9 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
       if (!referrerUserId || referrerUserId <= 0) {
         console.log("No valid referrer user ID found");
         setReferrerName("");
-        setReferralId(undefined);
         setLoading(false);
         return;
       }
-      
-      // Set the referral ID for the Subscribe component
-      setReferralId(referrerUserId);
       
       // Fetch the referrer's profile information
       const fetchReferrerProfile = async () => {
@@ -158,6 +173,15 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md" showCloseButton={false}>
         <DialogHeader className="text-center">
+          <div className="flex justify-center mt-4 mb-3">
+            <Image
+              src="https://ubompjslcfgbkidmfuym.supabase.co/storage/v1/object/public/avatar_profiles/theniche.png"
+              alt="The Niche Logo"
+              width={80}
+              height={80}
+              className="rounded-full"
+            />
+          </div>
           <DialogTitle className="text-xl font-semibold text-center">
             {referrerName 
               ? `${referrerName} has referred you to The Niche`
@@ -168,7 +192,7 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
             {referrerName ? (
               <>
                 Welcome to The Niche! <strong>{referrerName}</strong> thinks you would be a great fit for{" "}
-                <strong>{companyName || `this company`}</strong> and wants to extend you an invite for you to use The Niche Network for a warm intro to the company.
+                <strong>{companyName || `this company`}</strong> and wants to extend you an invite for you to use The Niche Network for a warm intro to the company. <Link href="/" className="text-blue-600 hover:text-blue-800 underline">Learn more</Link>
               </>
             ) : (
               <>
@@ -179,7 +203,7 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
         </DialogHeader>
         
         <div className="flex flex-col gap-3 mt-6 text-center">
-          <Subscribe referral_id={referralId} />
+          <Subscribe referral_id={referrerIdFromUrl} />
         </div>
         
         <p className="text-xs text-neutral-500 text-center mt-4">

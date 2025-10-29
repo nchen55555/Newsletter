@@ -15,7 +15,7 @@ export default async function OpportunitiesPage() {
   const POSTS_QUERY = `*[_type == "post" 
   && defined(slug.current)
   && !(slug.current match "*-beta*")
-  ]|order(publishedAt desc)[0...6]{_id, title, slug, publishedAt}`;
+  ]|order(publishedAt desc)[0...6]{_id, title, slug, image, publishedAt}`;
   
   let posts = [];
   try {

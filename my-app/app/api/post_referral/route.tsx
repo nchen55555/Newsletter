@@ -24,16 +24,19 @@ export async function POST(req: NextRequest) {
       referralName, 
       referralEmail, 
       referralBackground,
-      id
+      id,
+      email_send
     } = body;
     
     // Capitalize first letters of names
     const capitalizeFirstLetter = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     const capitalizedName = name ? name.split(' ').map((word: string) => capitalizeFirstLetter(word)).join(' ') : '';
     const capitalizedReferralName = referralName ? referralName.split(' ').map((word: string) => capitalizeFirstLetter(word)).join(' ') : '';
-    if (!referralName || !referralEmail) {
-      return NextResponse.json({ error: 'Name and email are required' }, { status: 400 });
+    
+    if (!referralEmail || !id){
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+    // All fields are now optional - no validation required
     // 6. Update subscriber profile with step 3 data
     const { error: dbError } = await supabase
       .from('referrals')
@@ -45,6 +48,10 @@ export async function POST(req: NextRequest) {
         error: 'Failed to update step 3 profile data', 
         details: dbError.message 
       }, { status: 500 });
+    }
+
+    if (!email_send) {
+      return NextResponse.json({ success: true});
     }
 
     const emailContent = {

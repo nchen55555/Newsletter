@@ -169,7 +169,7 @@ html, body {
   100% { transform: translateX(-50%); }
 }
 .animate-scroll-x {
-  animation: scroll-x 60s linear infinite;
+  animation: scroll-x 120s linear infinite;
 }
 .animate-scroll-x:hover {
   animation-play-state: paused;

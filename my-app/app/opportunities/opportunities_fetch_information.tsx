@@ -2,6 +2,10 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 import { SanityDocument } from "next-sanity"
 import { SanityImageSource } from "@sanity/image-url/lib/types/types"
+import imageUrlBuilder from "@sanity/image-url"
+import { client } from "@/lib/sanity/client";
+import Image from "next/image"
+import Link from "next/link"
 import { Info, Repeat2, Send } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VerificationProtectedContent } from "../components/verification-protected-content";
@@ -37,6 +41,7 @@ interface Post {
   title: string;
   slug: { current: string };
   publishedAt: string;
+  image?: SanityImageSource;
 }
 
 interface OpportunitiesProp{
@@ -44,6 +49,11 @@ interface OpportunitiesProp{
   posts: Post[]
 }
 
+// Image URL builder
+const builder = imageUrlBuilder(client);
+function urlForImage(source: SanityImageSource) {
+  return builder.image(source);
+}
 
 export default function Opportunities({ featuredOpportunities, posts }: OpportunitiesProp) {
     const [first_name, setFirstName] = useState("")
@@ -183,31 +193,52 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
                             {posts && posts.length > 0 && (
                                 <div className="max-w-6xl mx-auto overflow-hidden whitespace-nowrap mb-8 py-4">
                                     <div className="inline-block animate-scroll-x">
-                                        <span className="inline-flex items-center bg-neutral-100 text-neutral-700 px-3 py-1 rounded-full text-sm font-medium mr-4">
-                                            RECENT CONTENT
-                                        </span>
                                         {posts.map((post) => (
-                                            <span key={post._id} className="inline-flex items-center bg-white border border-neutral-200 px-4 py-2 rounded-full shadow-sm mr-4">
-                                                <span className="w-2 h-2 rounded-full mr-2"></span>
+                                            <Link key={post._id} href={`/articles/${post.slug.current}`} className="inline-flex items-center bg-white border border-neutral-200 px-4 py-2 rounded-full shadow-sm mr-4 hover:shadow-md transition-shadow cursor-pointer">
+                                                {post.image ? (
+                                                    <div className="w-6 h-6 rounded-full overflow-hidden mr-2 flex-shrink-0">
+                                                        <Image
+                                                            src={urlForImage(post.image).width(24).height(24).fit("crop").url()}
+                                                            alt={post.title}
+                                                            width={24}
+                                                            height={24}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <span className="w-2 h-2 rounded-full mr-2 bg-neutral-300"></span>
+                                                )}
                                                 <span className="text-sm text-neutral-700 font-medium">
                                                     {post.title}
                                                 </span>
                                                 <span className="text-xs text-neutral-500 ml-2">
                                                     {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                                 </span>
-                                            </span>
+                                            </Link>
                                         ))}
                                         {/* Duplicate for seamless loop */}
                                         {posts.map((post) => (
-                                            <span key={`${post._id}-duplicate`} className="inline-flex items-center bg-white border border-neutral-200 px-4 py-2 rounded-full shadow-sm mr-4">
-                                                <span className="w-2 h-2 rounded-full mr-2"></span>
+                                            <Link key={`${post._id}-duplicate`} href={`/articles`} className="inline-flex items-center bg-white border border-neutral-200 px-4 py-2 rounded-full shadow-sm mr-4 hover:shadow-md transition-shadow cursor-pointer">
+                                                {post.image ? (
+                                                    <div className="w-6 h-6 rounded-full overflow-hidden mr-2 flex-shrink-0">
+                                                        <Image
+                                                            src={urlForImage(post.image).width(24).height(24).fit("crop").url()}
+                                                            alt={post.title}
+                                                            width={24}
+                                                            height={24}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <span className="w-2 h-2 rounded-full mr-2 bg-neutral-300"></span>
+                                                )}
                                                 <span className="text-sm text-neutral-700 font-medium">
                                                     {post.title}
                                                 </span>
                                                 <span className="text-xs text-neutral-500 ml-2">
                                                     {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                                 </span>
-                                            </span>
+                                            </Link>
                                         ))}
                                     </div>
                                 </div>

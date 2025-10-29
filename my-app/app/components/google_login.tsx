@@ -8,11 +8,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 interface GoogleLoginProps {
     buttonText: string
     flowType: 'login' | 'subscribe'
+    referral_id?: number
 }
 
 export function GoogleLogin({
     buttonText,
     flowType,
+    referral_id,
 }: GoogleLoginProps) {
     const supabase = createClientComponentClient()
     const [isAuthLoading, setIsAuthLoading] = useState(false)
@@ -21,6 +23,10 @@ export function GoogleLogin({
     const handleGoogleLogin = async () => {
         setIsAuthLoading(true)
         localStorage.setItem('googleAuthFlowType', flowType);
+        // Store referral_id if provided
+        if (referral_id) {
+            localStorage.setItem('referral_id', referral_id.toString());
+        }
         supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {

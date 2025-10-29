@@ -28,6 +28,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     try {
       const res = await fetch("/api/subscription");
       const data = await res.json();
+      console.log("Subscription API response:", data);
       setIsSubscribed(data.isSubscribed);
       return data.isSubscribed;
     } catch (error) {

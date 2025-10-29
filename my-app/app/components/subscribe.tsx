@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +19,7 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
   const [linkedinUrl, setLinkedinUrl] = useState('')
   const [formError, setFormError] = useState(false)
   const [formSuccess, setFormSuccess] = useState(false)
+  const [effectiveReferralId, setEffectiveReferralId] = useState<number | undefined>(referral_id)
 
   const {
     isSubscribed,
@@ -27,6 +28,21 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
     showSubscribeDialog,
     setShowSubscribeDialog,
   } = useSubscriptionContext();
+
+  console.log("Subscribe component received referral_id:", referral_id, "isSubscribed:", isSubscribed, "showSubscribeDialog:", showSubscribeDialog);
+
+  // Handle localStorage referral_id in useEffect to avoid SSR issues
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !referral_id) {
+      const storedReferralId = localStorage.getItem('referral_id');
+      if (storedReferralId) {
+        const parsed = parseInt(storedReferralId);
+        if (!isNaN(parsed)) {
+          setEffectiveReferralId(parsed);
+        }
+      }
+    }
+  }, [referral_id]);
 
   const validateLinkedInUrl = (url: string): boolean => {
     const linkedinRegex = /^(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[a-zA-Z0-9\-_]+\/?$/
@@ -44,7 +60,7 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
     const res = await fetch('/api/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: userEmail, linkedin_url: linkedinUrl , referral_id: referral_id  }),
+      body: JSON.stringify({ email: userEmail, linkedin_url: linkedinUrl}),
     })
 
     const data = await res.json()
@@ -53,8 +69,29 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
       setFormSuccess(true)
       setFormError(false)
       setLinkedinUrl('')
-      await refreshSubscription();
+      
+      // Close dialog immediately to prevent "You're logged in" message
       setShowSubscribeDialog(false);
+
+      console.log("Referral ID in subscribe component:", effectiveReferralId)
+      
+      // Make post_referral API call if referral_id exists
+      if (effectiveReferralId && userEmail) {
+        try {
+          await fetch('/api/post_referral', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              id: effectiveReferralId,
+              referralEmail: userEmail
+            }),
+          })
+        } catch (error) {
+          console.error('Failed to post referral:', error)
+        }
+      }
+      
+      await refreshSubscription();
       router.push('/profile')
     } else {
       setFormError(true)
@@ -66,7 +103,7 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
       <div className="flex flex-col w-full max-w-sm gap-4">
       { !isSubscribed && ( 
         <>
-            <GoogleLogin buttonText="request access" flowType="subscribe" />
+            <GoogleLogin buttonText="request access" flowType="subscribe" referral_id={effectiveReferralId} />
             {formSuccess && (
             <Alert>
                 <CheckCircle2Icon />
