@@ -63,7 +63,7 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
     const [companyRecommendations, setCompanyRecommendations] = useState<number[]>([])
     const [bookmarkedCompanies, setBookmarkedCompanies] = useState<number[]>([])
     const [verifiedToTheNiche, setVerifiedToTheNiche] = useState(false)
-    const [activeTab, setActiveTab] = useState<'recommended' | 'other'>('recommended')
+    const [activeTab, setActiveTab] = useState<'recommended' | 'bookmarks' | 'other'>('recommended')
     const [showNewFeaturesDialog, setShowNewFeaturesDialog] = useState(false)
 
     useEffect(() => {
@@ -122,14 +122,19 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
         }
     }, [isLoading, verifiedToTheNiche])
 
-    // Recommended: companies in recommendations OR bookmarks
-    const recommendedOpportunities = featuredOpportunities.filter(opportunity => 
-        companyRecommendations.includes(opportunity.company) || bookmarkedCompanies.includes(opportunity.company)
+    // Bookmarked companies
+    const bookmarkedOpportunities = featuredOpportunities.filter(opportunity => 
+        bookmarkedCompanies.includes(opportunity.company)
     );
 
-    // Other opportunities: all remaining companies
+    // Recommended: companies in recommendations but NOT bookmarked
+    const recommendedOpportunities = featuredOpportunities.filter(opportunity => 
+        companyRecommendations.includes(opportunity.company) && !bookmarkedCompanies.includes(opportunity.company)
+    );
+
+    // Other opportunities: companies not in recommendations and not bookmarked
     const otherOpportunities = featuredOpportunities.filter(opportunity => 
-        !recommendedOpportunities.includes(opportunity)
+        !companyRecommendations.includes(opportunity.company) && !bookmarkedCompanies.includes(opportunity.company)
     );
 
     const handleCloseNewFeaturesDialog = () => {
@@ -268,6 +273,16 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
                                   High Potential Mutual Interest ({recommendedOpportunities.length})
                                 </button>
                                 <button
+                                  onClick={() => setActiveTab('bookmarks')}
+                                  className={`px-6 py-3 text-base font-medium transition-colors duration-200 border-b-2 ${
+                                    activeTab === 'bookmarks'
+                                      ? 'border-black text-black'
+                                      : 'border-transparent text-neutral-500 hover:text-neutral-700'
+                                  }`}
+                                >
+                                  Your Bookmarks ({bookmarkedOpportunities.length})
+                                </button>
+                                <button
                                   onClick={() => setActiveTab('other')}
                                   className={`px-6 py-3 text-base font-medium transition-colors duration-200 border-b-2 ${
                                     activeTab === 'other'
@@ -294,6 +309,25 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
                                         <Info className="h-4 w-4" />
                                         <AlertDescription>
                                           Your recommendations are still generating and will be available in 24 hours. Expand your verified network and bookmark or connect with companies in &quot;Other Opportunities&quot; to get more personalized recommendations here.
+                                        </AlertDescription>
+                                      </Alert>
+                                    )}
+                                  </>
+                                )}
+
+                                {activeTab === 'bookmarks' && (
+                                  <>
+                                    {bookmarkedOpportunities.length > 0 ? (
+                                      <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-2">
+                                        {bookmarkedOpportunities.map((company) => (
+                                          <CompanyCard key={company._id} company={company} showHighMutualInterest={false} external={false}/>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <Alert className="max-w-4xl mx-auto">
+                                        <Info className="h-4 w-4" />
+                                        <AlertDescription>
+                                          You haven&apos;t bookmarked any companies yet. Bookmark companies from &quot;High Potential Mutual Interest&quot; or &quot;Other Opportunities&quot; to save them here for easy access.
                                         </AlertDescription>
                                       </Alert>
                                     )}
