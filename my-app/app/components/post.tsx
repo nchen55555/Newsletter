@@ -232,7 +232,7 @@ export default function Post({
             {isDemo 
               ? "✨ in demo mode, your post won't be published but will complete the tour step!" 
               : needsCompanySelection
-              ? "Choose a company and share your thoughts or questions about the company profile, your experience chatting with the team, or relevant industry insights!"
+              ? "Choose a company you have an offer at or are interviewing at and share your thoughts or questions about the company profile, your experience chatting with the team, or relevant industry insights!"
               : "Thoughts or questions about the company profile, your experience chatting with the team, or relevant industry insights? We want to hear your thoughts!"
             }
           </p>

@@ -21,7 +21,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   const router = useRouter();
   const { isSubscribed, loading } = useSubscriptionContext()
   const [, setEmailSent] = useState(false)
-  const [isVerified, setIsVerified] = useState(false)
 
   useEffect(() => {
     if (!loading && !isSubscribed) {
@@ -93,16 +92,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       setEmailSent(false);
     } 
     
-  };
-
-  const handleConfirmationClose = () => {    
-    if (isVerified) {
-      // For verified users, navigate to the tour page
-      router.push('/tour')
-    } else {
-      // For unverified users, go directly to profile page
-      router.push('/profile')
-    }
   };
 
 
@@ -218,7 +207,6 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     <ProfileInfoChatbot 
       form={form} 
       setForm={setForm} 
-      setIsVerified={setIsVerified}
       onComplete={(isComplete) => {
         setProfileFormComplete(isComplete);
         if (isComplete) {
@@ -226,6 +214,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
           handleStep1Submit({ preventDefault: () => {} } as React.FormEvent);
         }
       }}
+      initialStep={props.onboarding_step}
     />
 
     {formError && (
@@ -245,22 +234,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
             <DialogDescription className="text-lg mt-2">
               Hi {form.first_name}! 
               <br></br><br></br>
-              {isVerified ? (
-                <>
-                  Welcome to The Niche! We are so excited to <strong>directly intro you to</strong> some incredible high-talent startups and founders, <strong>curating your verified professional network</strong> personalized to your interests, skills, and the opportunities you have explored.
-                  <br></br>
-                  <br></br>
-                  Time for a quick tour of the platform! 
-                  <div className="flex flex-col gap-4 pt-4">
-                    <Button 
-                      onClick={handleConfirmationClose}
-                      className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-2 text-sm w-fit"
-                    >
-                      Access the Platform
-                    </Button>
-                  </div>
-                </>
-              ) : (
+             
                 <>
                   Congratulations on requesting access to The Niche! We are excited to review your profile for our private beta launch. <strong>If we believe there is mutual fit between our network of beta opportunities or if a founder reaches out to specifically connect with you, we will reach back out with an invitation to be officially a part of this network!</strong>
                   <br></br>
@@ -270,15 +244,14 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                   <br></br>
                   <div className="flex flex-col gap-4 pt-4">
                     <Button 
-                      onClick={handleConfirmationClose}
+                      onClick={() => router.push('/profile')}
                       className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-2 text-sm w-fit"
                     >
-                      The Network
+                      Your Profile
                     </Button>
                   </div>
                 </>
-                
-              )}              
+                             
             </DialogDescription>
           </DialogHeader>
         </DialogContent>

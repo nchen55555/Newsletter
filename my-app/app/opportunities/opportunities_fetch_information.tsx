@@ -6,12 +6,15 @@ import imageUrlBuilder from "@sanity/image-url"
 import { client } from "@/lib/sanity/client";
 import Image from "next/image"
 import Link from "next/link"
-import { Info, Repeat2, Send } from "lucide-react";
+import { Info, Repeat2, Send, Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VerificationProtectedContent } from "../components/verification-protected-content";
 import { CompanyCard } from "../companies/company-cards";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ReferralDialog } from "../components/referral-dialog";
+import Post from "../components/post";
+import ApplyCompanies from "../components/apply-companies";
 
 export interface CompanyData extends SanityDocument {
   company: number
@@ -65,6 +68,7 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
     const [verifiedToTheNiche, setVerifiedToTheNiche] = useState(false)
     const [activeTab, setActiveTab] = useState<'recommended' | 'bookmarks' | 'other'>('recommended')
     const [showNewFeaturesDialog, setShowNewFeaturesDialog] = useState(false)
+    const [showReferralDialog, setShowReferralDialog] = useState(false)
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -181,22 +185,28 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
             </DialogContent>
           </Dialog>
 
+          {/* Referral Dialog */}
+          <ReferralDialog 
+            open={showReferralDialog}
+            onOpenChange={setShowReferralDialog}
+          />
+
           <div className="animate-in fade-in-50 duration-700">
             {!isLoading && (
-                <div className="flex flex-col items-center gap-8">
+                <div className="flex flex-col items-center gap-4">
                     {/* Welcome Header */}
-                    <div className="text-center pt-16 pb-8">
+                    <div className="text-center pt-16 pb-2">
                         <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-black">
                             Welcome, {first_name}
                         </h1>
-                        <div className="max-w-8xl mx-auto mb-12">
+                        <div className="max-w-8xl mx-auto mb-6">
                             <p className="text-lg text-neutral-600 leading-relaxed font-light text-center mb-6">
                                 We have partnered with some of the highest-talent startups so that every connect is fast-tracked to the founder&apos;s inbox. 
                             </p>
                             
                             {/* Recent Posts Ticker */}
                             {posts && posts.length > 0 && (
-                                <div className="max-w-6xl mx-auto overflow-hidden whitespace-nowrap mb-8 py-4">
+                                <div className="max-w-6xl mx-auto overflow-hidden whitespace-nowrap mb-4 py-4">
                                     <div className="inline-block animate-scroll-x">
                                         {posts.map((post) => (
                                             <Link key={post._id} href={`/articles/${post.slug.current}`} className="inline-flex items-center bg-white border border-neutral-200 px-4 py-2 rounded-full shadow-sm mr-4 hover:shadow-md transition-shadow cursor-pointer">
@@ -260,6 +270,40 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
                         >
                           {verifiedToTheNiche && (
                             <div className="w-full">
+                              {/* Action Buttons */}
+                              <div className="flex justify-end mb-6 gap-2">
+                                <Button
+                                  onClick={() => setShowReferralDialog(true)}
+                                  size="sm"
+                                  className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
+                                >
+                                  <Users className="w-4 h-4" />
+                                  Refer Someone to The Niche
+                                </Button>
+                                <Post
+                                  triggerElement={
+                                    <Button
+                                      size="sm"
+                                      className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
+                                    >
+                                      <Repeat2 className="w-4 h-4" />
+                                      Thread Thoughts
+                                    </Button>
+                                  }
+                                />
+                                <ApplyCompanies
+                                  triggerElement={
+                                    <Button
+                                      size="sm"
+                                      className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
+                                    >
+                                      <Send className="w-4 h-4" />
+                                      Request an Intro to an Opportunity
+                                    </Button>
+                                  }
+                                />
+                              </div>
+                              
                               {/* Tab Navigation */}
                               <div className="flex border-b border-neutral-200 mb-8">
                                 <button

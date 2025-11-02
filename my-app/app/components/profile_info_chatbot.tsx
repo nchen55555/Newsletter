@@ -3,20 +3,21 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ProfileFormState, ProfileData, CompanyWithImageUrl, ConnectionData } from '@/app/types'
 import ProfileAvatar from './profile_avatar'
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { CheckCircle, Upload, Search, UserPlus, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { CompanyCard } from '@/app/companies/company-cards'
 import ProfileCard from './profile_card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ConnectionScale } from './connection-scale'
+import { ReferralDialog } from './referral-dialog'
 
 interface Question {
   id: string
+  index: number
   field: keyof ProfileFormState
   question: string
-  type: 'text' | 'textarea' | 'file' | 'toggle' | 'url' | 'tel' | 'companies' | 'networking' | 'network_recommendations' | 'welcome' | 'outreach_frequency'
+  type: 'text' | 'textarea' | 'file' | 'toggle' | 'url' | 'tel' | 'companies' | 'networking' | 'network_recommendations' | 'welcome' | 'outreach_frequency' | 'button'
   required: boolean
   placeholder?: string
   options?: string[] | { display: string; value: number }[]
@@ -26,14 +27,16 @@ interface Question {
 const questions: Question[] = [
   {
     id: 'welcome',
+    index: 0,
     field: 'first_name', // Using existing field as placeholder
     question: "Welcome to The Niche!",
-    description: "We are excited to get to know you better and explore if there's a mutual fit. Our goal is to introduce you directly to opportunities and founders at some of the highest growth startups while helping you curate a personalized, professional network that aligns with your interests, skillsets, and verified by your existing professional community. \nIf you've received a special access code, your profile has already been pre-verified. Once you complete your account setup, you'll gain access to our private beta experience. If you haven't received a code, please enter 'NA' to proceed and we will review your profile after you submit!",
-    type: 'welcome',
+    description: "We are excited to get to know you better. Our goal is to introduce you directly to opportunities and founders at some of the highest growth startups while helping you curate a personalized, professional network that aligns with your interests, skillsets, and verified by your existing professional community. \nIn the next coming steps, you will submit a profile pic, your transcript, resume, and write a quick bio about yourself. It takes us 2-3 days if there is a mutual fit for us to verify your profile to give you access to the network. Let's get started!",
+    type: 'button',
     required: true
   },
   {
     id: 'profile_image',
+    index: 1, 
     field: 'profile_image',
     question: "Let's start with your profile picture",
     description: "Upload a photo to help us get to know you better",
@@ -42,6 +45,7 @@ const questions: Question[] = [
   },
   {
     id: 'first_name',
+    index: 2, 
     field: 'first_name',
     question: "What's your first name?",
     type: 'text',
@@ -50,6 +54,7 @@ const questions: Question[] = [
   },
   {
     id: 'last_name',
+    index: 3, 
     field: 'last_name',
     question: "And your last name?",
     type: 'text',
@@ -58,6 +63,7 @@ const questions: Question[] = [
   },
   {
     id: 'school',
+    index: 4, 
     field: 'school',
     question: "Which school do you attend or did you graduate from?",
     type: 'text',
@@ -66,16 +72,8 @@ const questions: Question[] = [
     options: ['MIT', 'Harvard', 'Brown', 'Columbia', 'Georgia Tech', 'Stanford', 'Waterloo', 'UIUC', 'University of Michigan', 'UT Austin', 'Yale']
   },
   {
-    id: 'bio',
-    field: 'bio',
-    question: "Tell us about yourself",
-    description: "Give us an introduction of who you are, what you are interested in, and what you are currently doing!",
-    type: 'textarea',
-    required: true,
-    placeholder: 'I currently lead product at OpenMind, a Series A startup building out software to help robots learn from each other...'
-  },
-  {
     id: 'phone',
+    index: 5, 
     field: 'phone_number',
     question: "What's the best phone number to reach you at?",
     type: 'tel',
@@ -84,6 +82,7 @@ const questions: Question[] = [
   },
   {
     id: 'linkedin',
+    index: 6, 
     field: 'linkedin_url',
     question: "What's your LinkedIn profile URL?",
     type: 'url',
@@ -92,6 +91,7 @@ const questions: Question[] = [
   },
   {
     id: 'resume',
+    index: 7, 
     field: 'resume_file',
     question: "Please upload your resume",
     description: "PDF, DOC, or DOCX files only (max 5MB)",
@@ -100,6 +100,7 @@ const questions: Question[] = [
   },
   {
     id: 'transcript',
+    index: 8, 
     field: 'transcript_file',
     question: "Upload your transcript",
     description: "PDF, DOC, or DOCX files only (max 5MB)",
@@ -107,7 +108,18 @@ const questions: Question[] = [
     required: true
   },
   {
+    id: 'bio',
+    index: 9, 
+    field: 'bio',
+    question: "Tell us about yourself",
+    description: "Give us an introduction of who you are, what you are interested in, and what you are currently doing!",
+    type: 'textarea',
+    required: true,
+    placeholder: 'I currently lead product at OpenMind, a Series A startup building out software to help robots learn from each other...'
+  },
+  {
     id: 'website',
+    index: 10, 
     field: 'personal_website',
     question: "Do you have a personal website?",
     description: "Optional - share if you have one",
@@ -117,6 +129,7 @@ const questions: Question[] = [
   },
   {
     id: 'companies',
+    index: 11, 
     field: 'bookmarked_companies', 
     question: "Explore opportunities",
     description: "The Niche works with a select cohort of high-talent density startups. We want to get a better understanding of your interests. Please bookmark companies that interest you!",
@@ -124,54 +137,17 @@ const questions: Question[] = [
     required: false
   },
   {
-    id: 'networking',
-    field: 'pending_connections_new', 
-    question: "Build your verifiable professional network",
-    description: "Connect with 1-2 people that you would consider part of your closest verifiable professional network. We use your connections to tailor recommendations and opportunities for you.",
-    type: 'networking',
-    required: true
-  },
-  {
-    id: 'interests',
-    field: 'interests',
-    question: "What are your interests and areas of focus?",
-    description: "Tell us about your professional interests, technical areas, or industries you're passionate about",
-    type: 'textarea',
-    required: true,
-    placeholder: 'AI/ML, fintech, climate tech, product management, backend engineering...'
-  },
-  {
-    id: 'network_recommendations',
-    field: 'network_recommendations',
-    question: "Can you recommend 2 people from your network?",
-    description: "Build your professional network by recommending your 2 smartest friends",
-    type: 'network_recommendations',
-    required: true
-  },
-  {
     id: 'public_profile',
+    index: 12, 
     field: 'is_public_profile',
-    question: "Accept founder outreaches who are interested in your profile?",
-    description: "Allow partner companies to reach out to connect with you about their opportunities",
+    question: "Allow founders to view your Niche profile?",
+    description: "Allow your profile to be public to our partner companies so that when we warm intro, they can see your curated Niche profile.",
     type: 'toggle',
     required: true
   },
   {
-    id: 'outreach_frequency',
-    field: 'outreach_frequency',
-    question: "How many conversations per month would you want to have through The Niche?",
-    description: "Help us understand the outreach volume to a level you're comfortable with. We DONT want to be LinkedIn 2.0, spamming you with opportunities you aren't interested in",
-    type: 'outreach_frequency',
-    required: true,
-    options: [
-      { display: '<1', value: 1 },
-      { display: '<5', value: 5 },
-      { display: '<10', value: 10 },
-      { display: '10+', value: 15 }
-    ]
-  },
-  {
     id: 'newsletter',
+    index: 13, 
     field: 'newsletter_opt_in',
     question: "Stay updated with new company profiles?",
     description: "Get an email when we cover a new company. We drop a maximum of two company profiles each week.",
@@ -180,26 +156,51 @@ const questions: Question[] = [
   },
   {
     id: 'visa',
+    index: 14, 
     field: 'needs_visa_sponsorship',
     question: "Do you need visa sponsorship?",
     description: "For employment in the US",
     type: 'toggle',
     required: true
-  }
+  },
+  {
+    id: 'networking',
+    index: 15, 
+    field: 'pending_connections_new', 
+    question: "Build your verifiable professional network",
+    description: "Connect with 1-2 people that you would consider part of your closest verifiable professional network. We use your connections to tailor recommendations and opportunities for you.",
+    type: 'networking',
+    required: true
+  },
+  {
+    id: 'network_recommendations',
+    index: 16, 
+    field: 'network_recommendations',
+    question: "Recommend 2 or more of your smartest technical friends to The Niche.",
+    description: "Build your verified professional network on The Niche. We index on your network to recommend you opportunities.",
+    type: 'network_recommendations',
+    required: true
+  },
 ]
 
 export default function ProfileInfoChatbot({
   form,
   setForm,
-  setIsVerified,
   onComplete,
+  initialStep,
 }: {
   form: ProfileFormState,
   setForm: React.Dispatch<React.SetStateAction<ProfileFormState>>
-  setIsVerified: React.Dispatch<React.SetStateAction<boolean>>
   onComplete?: (isComplete: boolean) => void
+  initialStep?: number
 }) {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const initialQuestionIndex = useMemo(() => {
+    // Find the question index that matches the onboarding step
+    const questionIndex = questions.findIndex(q => q.index === initialStep);
+    return questionIndex !== -1 ? questionIndex : 0;
+  }, [initialStep]);
+  
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(initialQuestionIndex)
   const [inputValue, setInputValue] = useState('')
   const [showQuestion, setShowQuestion] = useState(false)
   const [showSchoolSuggestions, setShowSchoolSuggestions] = useState(false)
@@ -222,11 +223,10 @@ export default function ProfileInfoChatbot({
   const [uploadComplete, setUploadComplete] = useState<{[key: string]: boolean}>({})
   const [dialogOpen, setDialogOpen] = useState(false)
   const [currentUserData, setCurrentUserData] = useState<ProfileData | null>(null)
+  const [buttonClicked, setButtonClicked] = useState<{[key: string]: boolean}>({})
+  const [showNetworkReferralDialog, setShowNetworkReferralDialog] = useState(false)
+  const [userReferralsCount, setUserReferralsCount] = useState(0)
   
-  // Access code state
-  const [accessCode, setAccessCode] = useState('')
-  const [accessCodeError, setAccessCodeError] = useState<string | null>(null)
-  const [accessCodeVerified, setAccessCodeVerified] = useState(false)
   
   const inputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -243,9 +243,12 @@ export default function ProfileInfoChatbot({
     if (!question) return true
     if (!question.required) return true
     
-    // Handle welcome question - it's valid if an access code has been submitted or verified
-    if (question.type === 'welcome') {
-      return accessCodeVerified || accessCode.trim() !== ''
+    // If this question comes before the initialStep, consider it already completed
+    if (initialStep && question.index < initialStep) return true
+    
+    // Handle button type questions - valid only after clicked
+    if (question.type === 'button') {
+      return buttonClicked[question.id] || false
     }
     
     const field = question.field
@@ -262,14 +265,9 @@ export default function ProfileInfoChatbot({
       return !!form.profile_image || !!form.profile_image_url
     }
 
-    // Handle network recommendations - need all 3 fields filled for at least one recommendation
+    // Handle network recommendations - check if user has submitted 2+ referrals
     if (field === 'network_recommendations') {
-      const recommendations = form.network_recommendations || []
-      return recommendations.some(rec => 
-        rec && rec.name && rec.name.trim() !== '' && 
-        rec.email && rec.email.trim() !== '' && 
-        rec.connection && rec.connection.trim() !== ''
-      )
+      return userReferralsCount >= 2
     }
     
     // Handle networking - need at least 1 pending connection
@@ -287,7 +285,7 @@ export default function ProfileInfoChatbot({
     
     // Handle all other fields
     return !!value && value.toString().trim() !== ''
-  }, [form, currentUserData, accessCodeVerified, accessCode])
+  }, [form, currentUserData, buttonClicked, initialStep, userReferralsCount])
 
   // Validation function to check if current question is satisfied
   const isCurrentQuestionValid = () => {
@@ -322,6 +320,8 @@ export default function ProfileInfoChatbot({
       } else if (value !== null && value !== undefined) {
         formData.append(field as string, value.toString())
       }
+
+      formData.append('onboarding_step', String(questions[currentQuestionIndex + 1]?.index))
       
       const response = await fetch('/api/post_profile', {
         method: 'PATCH',
@@ -367,7 +367,7 @@ export default function ProfileInfoChatbot({
       const data = await response.json()
       const filteredCompanies = data.filter((company: CompanyWithImageUrl) => company.partner || company.pending_partner)
       const shuffled = filteredCompanies.sort(() => Math.random() - 0.5)
-      setCompanies(shuffled.slice(0, 10))
+      setCompanies(shuffled.slice(0, 5))
     } catch (error) {
       console.error('Error loading companies:', error)
     } finally {
@@ -407,7 +407,22 @@ export default function ProfileInfoChatbot({
     }
   }
 
-  // Load data when reaching companies or networking questions
+  const loadUserReferrals = async () => {
+    try {
+      const response = await fetch(`/api/get_user_referrals?user_id=${form.id}`, {
+        credentials: 'include'
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setUserReferralsCount(data.length || 0)
+      }
+    } catch (error) {
+      console.error('Error loading user referrals:', error)
+      setUserReferralsCount(0)
+    }
+  }
+
+  // Load data when reaching companies, networking, or network_recommendations questions
   useEffect(() => {
     if (currentQuestion?.type === 'companies' && companies.length === 0) {
       loadCompanies()
@@ -415,7 +430,10 @@ export default function ProfileInfoChatbot({
     if (currentQuestion?.type === 'networking' && allProfiles.length === 0) {
       loadAllProfiles()
     }
-  }, [currentQuestion?.type, companies.length, allProfiles.length])
+    if (currentQuestion?.type === 'network_recommendations') {
+      loadUserReferrals()
+    }
+  }, [currentQuestion?.type, companies.length, allProfiles.length, form.id])
 
   // Company Carousel Component
 function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
@@ -480,11 +498,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
           </Button>
         </div>
       )}
-      
-      {/* Progress indicator */}
-      <div className="text-center mt-4 text-sm text-neutral-600">
-        Company {currentIndex + 1} of {companies.length}
-      </div>
+    
     </div>
   )
 }
@@ -603,42 +617,6 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     }
   }
 
-  // Access code submission handler
-  const handleAccessCodeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Any input fulfills the requirement, but special handling for THENICHELIST
-    if (accessCode.trim() === 'THENICHELIST') {
-      // Special access code - mark as verified in database
-      const formData = new FormData()
-      formData.append('verified', 'true')
-      formData.append('id', form.id.toString())
-
-      try {
-        const response = await fetch('/api/post_profile', {
-          method: 'PATCH',
-          body: formData,
-        });
-        
-        if (response.ok) {
-          setAccessCodeVerified(true)
-          setAccessCodeError(null)
-          // Update the parent component's verification status
-          setIsVerified(true)
-          
-        } else {
-          setAccessCodeError('Failed to process access code')
-        }
-      } catch (error) {
-        setAccessCodeError(`Failed to process access code ${error}`)
-      }
-    } else {
-      // Any other input (including NA) - just proceed without verification
-      setAccessCodeVerified(false)
-      setAccessCodeError(null)
-      nextQuestion()
-    }
-  }
 
   // Typewriter effect hook
   const useTypewriter = (text: string, speed: number = 50) => {
@@ -922,6 +900,11 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
       {/* Progress Bar */}
       {showQuestion && (
         <div className="w-full max-w-6xl mx-auto px-8 mb-8">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-gray-600">
+              ~5 min to complete
+            </span>
+          </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
               className="bg-neutral-900 h-2 rounded-full transition-all duration-300 ease-out"
@@ -968,7 +951,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                   )}
 
                   {/* Next button */}
-                  {currentQuestionIndex < questions.length - 1 && (
+                  {currentQuestionIndex < questions.length - 1 && currentQuestion.type !== 'button' && (
                     <Button
                       onClick={nextQuestion}
                       disabled={!canProceedToNext()}
@@ -1254,14 +1237,14 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                                         const status = getConnectionStatus(profile);
                                         if (status === 'connected') {
                                           return (
-                                            <Button disabled className="inline-flex items-center gap-2 bg-green-100 text-green-800 border-green-300 whitespace-nowrap">
+                                            <Button disabled className="inline-flex items-center gap-2 whitespace-nowrap">
                                               <UserPlus className="w-4 h-4" />
                                               Connected
                                             </Button>
                                           );
                                         } else if (status === 'pending_sent') {
                                           return (
-                                            <Button disabled className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 border-yellow-300 whitespace-nowrap">
+                                            <Button disabled className="inline-flex items-center gap-2  whitespace-nowrap">
                                               <UserPlus className="w-4 h-4" />
                                               Request Sent
                                             </Button>
@@ -1278,7 +1261,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                                             }}>
                                               <DialogTrigger asChild>
                                                 {status === 'requested' ? (
-                                                  <Button className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200 whitespace-nowrap" onClick={() => handleConnectClick(profile)}>
+                                                  <Button className="inline-flex items-center gap-2 whitespace-nowrap" onClick={() => handleConnectClick(profile)}>
                                                     <UserPlus className="w-4 h-4" />
                                                     Accept Request
                                                   </Button>
@@ -1387,98 +1370,37 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
 
                   {currentQuestion.type === 'network_recommendations' && (
                     <div className="space-y-6">
-                      <div className="space-y-4">
-                        {[0, 1].map((index) => (
-                          <div key={index} className="border border-gray-200 rounded-lg p-4 space-y-3">
-                            <h4 className="font-medium text-gray-900">Person {index + 1}</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                              <Input
-                                placeholder="Full Name"
-                                value={form.network_recommendations?.[index]?.name || ''}
-                                onChange={(e) => {
-                                  const newRecommendations = [...(form.network_recommendations || [{ name: '', email: '', connection: '' }, { name: '', email: '', connection: '' }])]
-                                  newRecommendations[index] = { ...newRecommendations[index], name: e.target.value }
-                                  setForm(prev => ({ ...prev, network_recommendations: newRecommendations }))
-                                }}
-                                className="text-base"
-                              />
-                              <Input
-                                placeholder="Email"
-                                type="email"
-                                value={form.network_recommendations?.[index]?.email || ''}
-                                onChange={(e) => {
-                                  const newRecommendations = [...(form.network_recommendations || [{ name: '', email: '', connection: '' }, { name: '', email: '', connection: '' }])]
-                                  newRecommendations[index] = { ...newRecommendations[index], email: e.target.value }
-                                  setForm(prev => ({ ...prev, network_recommendations: newRecommendations }))
-                                }}
-                                className="text-base"
-                              />
-                              <Input
-                                placeholder="How do you know them?"
-                                value={form.network_recommendations?.[index]?.connection || ''}
-                                onChange={(e) => {
-                                  const newRecommendations = [...(form.network_recommendations || [{ name: '', email: '', connection: '' }, { name: '', email: '', connection: '' }])]
-                                  newRecommendations[index] = { ...newRecommendations[index], connection: e.target.value }
-                                  setForm(prev => ({ ...prev, network_recommendations: newRecommendations }))
-                                }}
-                                className="text-base"
-                              />
-                            </div>
-                          </div>
-                        ))}
+                      <div className="flex justify-start">
+                        <Button
+                          onClick={() => setShowNetworkReferralDialog(true)}
+                          className="px-8 py-4 text-lg bg-neutral-900 hover:bg-neutral-800 text-white"
+                        >
+                          Recommend a Friend
+                        </Button>
                       </div>
-                    
+                      
+                      {/* Show submitted recommendations count */}
+                      {userReferralsCount > 0 && (
+                        <div className="rounded-lg p-4">
+                          {userReferralsCount} recommendation(s) submitted
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {currentQuestion.type === 'welcome' && (
+                  {currentQuestion.type === 'button' && (
                     <div className="space-y-6">
-                      <form onSubmit={handleAccessCodeSubmit} className="mt-6 p-4 rounded-lg">
-                        <div className="flex flex-col gap-3">
-                          <label htmlFor="accessCode" className="text-sm font-medium text-gray-700">
-                            Special Access Code
-                          </label>
-                          <p className="text-sm">
-                            Enter your special access code if you have one, or type &quot;NA&quot; if you don&apos;t have one.
-                          </p>
-                          {accessCodeVerified ? (
-                            <Alert>
-                              <AlertDescription>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-5 h-5 bg-neutral-900 rounded-full flex items-center justify-center">
-                                    <span className="text-white text-xs">✓</span>
-                                  </div>
-                                  <div>
-                                    <span className="font-medium">Access Code Verified!</span>
-                                  </div>
-                                </div>
-                              </AlertDescription>
-                            </Alert>
-                          ) : (
-                            <>
-                              <div className="flex gap-2">
-                                <Input
-                                  id="accessCode"
-                                  type="text"
-                                  value={accessCode}
-                                  onChange={(e) => setAccessCode(e.target.value)}
-                                  placeholder="Enter access code or NA if you do not have one"
-                                  className="flex-1"
-                                />
-                                <Button
-                                  type="submit"
-                                  disabled={!accessCode.trim()}
-                                >
-                                  Submit
-                                </Button>
-                              </div>
-                              {accessCodeError && (
-                                <p className="text-sm text-red-600">{accessCodeError}</p>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </form>
+                      <div className="flex justify-start">
+                        <Button
+                          onClick={() => {
+                            setButtonClicked(prev => ({ ...prev, [currentQuestion.id]: true }))
+                            nextQuestion()
+                          }}
+                          className="px-12 py-6 text-lg bg-neutral-900 hover:bg-neutral-800 text-white"
+                        >
+                          Build my Niche Profile
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -1510,7 +1432,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                   </div>
                 )}
 
-                {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && currentQuestion.type !== 'welcome' && currentQuestion.type !== 'outreach_frequency' && (
+                {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && currentQuestion.type !== 'button' && currentQuestion.type !== 'outreach_frequency' && (
                   <form onSubmit={handleSubmit}>
                     <div className="relative">
                       <Input
@@ -1588,7 +1510,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                 )}
 
                 {/* Next button */}
-                {currentQuestionIndex < questions.length - 1 && (
+                {currentQuestionIndex < questions.length - 1 && currentQuestion.type !== 'button' && (
                   <Button
                     onClick={nextQuestion}
                     disabled={!canProceedToNext()}
@@ -1731,97 +1653,39 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
 
                   {currentQuestion.type === 'network_recommendations' && (
                     <div className="space-y-6">
-                      <div className="space-y-4">
-                        {[0, 1].map((index) => (
-                          <div key={index} className="border border-gray-200 rounded-lg p-4 space-y-3">
-                            <h4 className="font-medium text-gray-900">Person {index + 1}</h4>
-                            <div className="space-y-3">
-                              <Input
-                                placeholder="Full Name"
-                                value={form.network_recommendations?.[index]?.name || ''}
-                                onChange={(e) => {
-                                  const newRecommendations = [...(form.network_recommendations || [{ name: '', email: '', connection: '' }, { name: '', email: '', connection: '' }])]
-                                  newRecommendations[index] = { ...newRecommendations[index], name: e.target.value }
-                                  setForm(prev => ({ ...prev, network_recommendations: newRecommendations }))
-                                }}
-                                className="text-base"
-                              />
-                              <Input
-                                placeholder="Email"
-                                type="email"
-                                value={form.network_recommendations?.[index]?.email || ''}
-                                onChange={(e) => {
-                                  const newRecommendations = [...(form.network_recommendations || [{ name: '', email: '', connection: '' }, { name: '', email: '', connection: '' }])]
-                                  newRecommendations[index] = { ...newRecommendations[index], email: e.target.value }
-                                  setForm(prev => ({ ...prev, network_recommendations: newRecommendations }))
-                                }}
-                                className="text-base"
-                              />
-                              <Input
-                                placeholder="How do you know them?"
-                                value={form.network_recommendations?.[index]?.connection || ''}
-                                onChange={(e) => {
-                                  const newRecommendations = [...(form.network_recommendations || [{ name: '', email: '', connection: '' }, { name: '', email: '', connection: '' }])]
-                                  newRecommendations[index] = { ...newRecommendations[index], connection: e.target.value }
-                                  setForm(prev => ({ ...prev, network_recommendations: newRecommendations }))
-                                }}
-                                className="text-base"
-                              />
-                            </div>
-                          </div>
-                        ))}
+                      <div className="flex justify-start">
+                        <Button
+                          onClick={() => setShowNetworkReferralDialog(true)}
+                          className="px-8 py-4 text-lg bg-neutral-900 hover:bg-neutral-800 text-white"
+                        >
+                          Recommend a Friend
+                        </Button>
                       </div>
+                      
+                      {/* Show submitted recommendations count */}
+                      {userReferralsCount > 0 && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                          <p className="text-green-800">
+                            ✓ {userReferralsCount} recommendation(s) submitted
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {currentQuestion.type === 'welcome' && (
+                  {currentQuestion.type === 'button' && (
                     <div className="space-y-6">
-                      <form onSubmit={handleAccessCodeSubmit} className="mt-6 p-4 bg-gray-50 rounded-lg">
-                        <div className="flex flex-col gap-3">
-                          <label htmlFor="accessCode" className="text-sm font-medium text-gray-700">
-                            Special Access Code
-                          </label>
-                          <p className="text-sm text-gray-600">
-                            Enter your special access code if you have one, or type &quot;NA&quot; to bypass.
-                          </p>
-                          {accessCodeVerified ? (
-                            <Alert>
-                              <AlertDescription>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-5 h-5 bg-neutral-900 rounded-full flex items-center justify-center">
-                                    <span className="text-white text-xs">✓</span>
-                                  </div>
-                                  <div>
-                                    <span className="font-medium">Access Code Verified!</span>
-                                  </div>
-                                </div>
-                              </AlertDescription>
-                            </Alert>
-                          ) : (
-                            <>
-                              <div className="flex gap-2">
-                                <Input
-                                  id="accessCode"
-                                  type="text"
-                                  value={accessCode}
-                                  onChange={(e) => setAccessCode(e.target.value)}
-                                  placeholder="Enter access code or NA if you do not have one"
-                                  className="flex-1"
-                                />
-                                <Button
-                                  type="submit"
-                                  disabled={!accessCode.trim()}
-                                >
-                                  Submit
-                                </Button>
-                              </div>
-                              {accessCodeError && (
-                                <p className="text-sm text-red-600">{accessCodeError}</p>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </form>
+                      <div className="flex justify-start">
+                        <Button
+                          onClick={() => {
+                            setButtonClicked(prev => ({ ...prev, [currentQuestion.id]: true }))
+                            nextQuestion()
+                          }}
+                          className="px-12 py-6 text-lg bg-neutral-900 hover:bg-neutral-800 text-white"
+                        >
+                          Build my Niche Profile
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -1853,7 +1717,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                     </div>
                   )}
 
-                  {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && currentQuestion.type !== 'welcome' && currentQuestion.type !== 'outreach_frequency' && (
+                  {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && currentQuestion.type !== 'button' && currentQuestion.type !== 'outreach_frequency' && (
                     <form onSubmit={handleSubmit}>
                       <div className="relative">
                         <Input
@@ -1911,6 +1775,20 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
       ) : null}
 
       
+      {/* Network Referral Dialog */}
+      <ReferralDialog 
+        open={showNetworkReferralDialog}
+        onOpenChange={(open) => {
+          setShowNetworkReferralDialog(open)
+          // Refresh referrals count when dialog closes
+          if (!open && currentQuestion?.type === 'network_recommendations') {
+            loadUserReferrals()
+          }
+        }}
+        title="Recommend a Friend to The Niche"
+        description="Help us grow our network by recommending your smartest technical friends"
+        forceFormMode={true}
+      />
     </div>
   )
 }

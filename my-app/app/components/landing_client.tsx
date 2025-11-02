@@ -44,7 +44,9 @@ export default function LandingClient({ posts, mediaLibrary }: { posts: ArticleC
           const response = await fetch('/api/check_demo_status');
           if (response.ok) {
             const data = await response.json();
-            console.log('Demo status:', data);
+            if (!data.applied){
+              router.push('/profile')
+            }
             if (!data.demo_done && data.verified) {
               router.push('/tour');
             }

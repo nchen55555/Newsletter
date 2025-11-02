@@ -11,7 +11,7 @@ function ProfileCard({ profile, onClick, connectionStatus = 'none', connectionRa
     switch (connectionStatus) {
       case 'connected':
         badges.push(
-          <div key="status" className="bg-gradient-to-r from-purple-100 via-pink-100 to-yellow-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">
+          <div key="status" className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
             Connected
           </div>
         );

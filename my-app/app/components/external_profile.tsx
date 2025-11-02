@@ -1,7 +1,7 @@
 import { ProfileData, CompanyWithImageUrl, FeedItem, ReferralWithProfile } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Linkedin, Globe, Edit, Plus, Send, Users } from "lucide-react";
+import { FileText, Linkedin, Globe, Edit, Plus, Send, Users, AlertCircle } from "lucide-react";
 import { useEffect, useState, useCallback } from 'react';
 import ProfileAvatar from "./profile_avatar";
 import { CompanyCard } from "./company-card";
@@ -14,6 +14,7 @@ import { encodeSimple } from "../utils/simple-hash";
 import { ReferralDialog } from "./referral-dialog";
 import Post from "./post";
 import { ProjectsDialog } from "@/app/components/projects_dialog";
+import ApplyCompanies from "./apply-companies";
 
 interface ExternalProfileProps extends ProfileData {
   isExternalView?: boolean;
@@ -32,6 +33,10 @@ export function ExternalProfile(props: ExternalProfileProps) {
   const [userReferrals, setUserReferrals] = useState<ReferralWithProfile[]>([]);
   const [loadingReferrals, setLoadingReferrals] = useState(false);
 
+  // Connections state
+  const [connectionProfiles, setConnectionProfiles] = useState<ProfileData[]>([]);
+  const [loadingConnections, setLoadingConnections] = useState(false);
+
   // Projects state
   const [userProjects, setUserProjects] = useState<string[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
@@ -44,7 +49,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
   const [interestsValue, setInterestsValue] = useState(props.interests || '');
   const [saving, setSaving] = useState<'bio' | 'interests' | 'project_urls' | null>(null);
   const [showReferralDialog, setShowReferralDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState<'bookmarks' | 'threads' | 'referrals' | 'projects'>('bookmarks');
+  const [activeTab, setActiveTab] = useState<'bookmarks' | 'threads' | 'referrals' | 'projects' | 'connections'>('bookmarks');
 
   // Save field function
   const saveField = async (field: 'bio' | 'interests' | 'project_urls', value: string) => {
@@ -148,6 +153,43 @@ export function ExternalProfile(props: ExternalProfileProps) {
       setLoadingReferrals(false);
     }
   }, [props.id]);
+
+  // Fetch connection profiles
+  const fetchConnectionProfiles = useCallback(async () => {
+    if (!props.connections_new || props.connections_new.length === 0) {
+      setConnectionProfiles([]);
+      return;
+    }
+
+    setLoadingConnections(true);
+    try {
+      // Fetch profile data for each connection
+      const profilePromises = props.connections_new.map(async (connection) => {
+        try {
+          const response = await fetch(`/api/get_external_profile?id=${encodeSimple(connection.connect_id)}`, {
+            credentials: 'include'
+          });
+          if (response.ok) {
+            const profile = await response.json();
+            // Add the rating to the profile for easy access
+            return { ...profile, connectionRating: connection.rating };
+          }
+          return null;
+        } catch (error) {
+          console.error(`Failed to fetch profile for connection ${connection.connect_id}:`, error);
+          return null;
+        }
+      });
+
+      const profiles = await Promise.all(profilePromises);
+      setConnectionProfiles(profiles.filter(profile => profile !== null));
+    } catch (error) {
+      console.error('Error fetching connection profiles:', error);
+      setConnectionProfiles([]);
+    } finally {
+      setLoadingConnections(false);
+    }
+  }, [props.connections_new]);
   
   // Fetch bookmarked companies using API
   useEffect(() => {
@@ -187,7 +229,8 @@ export function ExternalProfile(props: ExternalProfileProps) {
     fetchUserThreads();
     fetchUserReferrals();
     fetchUserProjects();
-  }, [props.bookmarked_companies, props.company_recommendations, props.id, fetchUserReferrals, fetchUserThreads, fetchUserProjects  ]);
+    fetchConnectionProfiles();
+  }, [props.bookmarked_companies, props.company_recommendations, props.id, fetchUserReferrals, fetchUserThreads, fetchUserProjects, fetchConnectionProfiles]);
     if (!props) return <Skeleton className="h-12 w-full" />; // or customize size;
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -199,6 +242,12 @@ export function ExternalProfile(props: ExternalProfileProps) {
           {props.status}
           {props.is_public_profile && "Public Profile"}
           {props.newsletter_opt_in && " · Newsletter Opt-in"}
+          {props.needs_visa_sponsorship !== undefined && (
+            <span>
+              {(props.is_public_profile || props.newsletter_opt_in) && " · "}
+              {props.needs_visa_sponsorship ? "Needs Visa Sponsorship" : "No Visa Sponsorship Needed"}
+            </span>
+          )}
         </div>
       </div>
 
@@ -276,7 +325,12 @@ export function ExternalProfile(props: ExternalProfileProps) {
               {/* Interests Section */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-neutral-900">Interests</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-medium text-neutral-900">Interests</h3>
+                    {!props.isExternalView && (!interestsValue || interestsValue.trim() === '') && (
+                      <AlertCircle className="w-4 h-4 text-amber-500" />
+                    )}
+                  </div>
                   {!props.isExternalView && !editingInterests && (
                     <Button
                       onClick={() => setEditingInterests(true)}
@@ -421,7 +475,22 @@ export function ExternalProfile(props: ExternalProfileProps) {
                       : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
                   }`}
                 >
-                  {props.isExternalView ? `${props.first_name}'s Projects` : 'Your Projects'} ({userProjects.length})
+                  <div className="flex items-center gap-2">
+                    <span>{props.isExternalView ? `${props.first_name}'s Projects` : 'Your Projects'} ({userProjects.length})</span>
+                    {!props.isExternalView && userProjects.length === 0 && (
+                      <AlertCircle className="w-4 h-4 text-amber-500" />
+                    )}
+                  </div>
+                </button>
+                <button
+                  onClick={() => setActiveTab('connections')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === 'connections'
+                      ? 'border-neutral-900 text-neutral-900'
+                      : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+                  }`}
+                >
+                  {props.isExternalView ? `${props.first_name}'s Network` : 'Your Network'} ({connectionProfiles.length})
                 </button>
               </nav>
             </div>
@@ -434,14 +503,17 @@ export function ExternalProfile(props: ExternalProfileProps) {
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium text-neutral-900">Bookmarked and Recommended</h3>
                     {!props.isExternalView && (
-                      <Button
-                        onClick={() => window.location.href = '/opportunities'}
-                        size="sm"
-                        className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Opportunities
-                      </Button>
+                      <ApplyCompanies
+                          triggerElement={
+                              <Button
+                              size="sm"
+                              className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
+                          >
+                            <Send className="w-4 h-4" />
+                            Request an Intro to an Opportunity
+                          </Button>
+                        }
+                      />
                     )}
                   </div>
                   {loadingBookmarks ? (
@@ -525,8 +597,8 @@ export function ExternalProfile(props: ExternalProfileProps) {
                         size="sm"
                         className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
                       >
-                        <Send className="w-4 h-4" />
-                        Refer to The Niche Network
+                        <Users className="w-4 h-4" />
+                        Refer Someone to the Niche
                       </Button>
                     )}
                   </div>
@@ -616,6 +688,43 @@ export function ExternalProfile(props: ExternalProfileProps) {
                   )}
                 </div>
               )}
+
+              {/* Connections Tab */}
+              {activeTab === 'connections' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium text-neutral-900">Network Connections</h3>
+                  </div>
+                  {loadingConnections ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-32 w-full rounded-lg" />
+                      <Skeleton className="h-32 w-full rounded-lg" />
+                      <Skeleton className="h-32 w-full rounded-lg" />
+                    </div>
+                  ) : connectionProfiles.length > 0 ? (
+                    <div className="space-y-4">
+                      {connectionProfiles.map((profile) => (
+                        <ProfileCard
+                          key={profile.id}
+                          profile={profile}
+                          onClick={() => {
+                            if (profile.id) {
+                              const encodedId = encodeSimple(profile.id);
+                              router.push(`/people/${encodedId}`);
+                            }
+                          }}
+                          connectionStatus="connected"
+                          connectionRating={profile.connectionRating}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-neutral-500">
+                      {props.isExternalView ? `${props.first_name} hasn't connected with anyone yet.` : "You haven't connected with anyone yet."}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
       </section>
@@ -625,7 +734,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
         <ReferralDialog 
           open={showReferralDialog} 
           onOpenChange={setShowReferralDialog}
-          title="Refer Someone You Want to Bring To Your Verified Professional Network"
+          title="Refer Someone to The Niche"
           description="We are personal referral only and will verify if your referral is a good fit for our partner companies!"
         />
       )}

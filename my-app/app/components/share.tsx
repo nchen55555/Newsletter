@@ -126,7 +126,7 @@ export default function Share({
               : loading
               ? "Generating your personalized referral link..."
               : userId
-              ? "Share this personalized link to let others view the company profile. When they visit through your link, you'll get credit for the referral!"
+              ? "Share this personalized link to let others view the company profile. This link is specific to you to refer people onto the platform."
               : "Share this link to let others view the company profile and refer them to the opportunity!"
             }
           </p>

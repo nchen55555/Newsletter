@@ -252,6 +252,7 @@ async function handleProfileUpdate(req: NextRequest) {
     if (formData.get('verified') !== null) updateData.verified = String(formData.get('verified')) === 'true';
     if (formData.get('school')) updateData.school = String(formData.get('school'));
     if (formData.get('needs_visa_sponsorship') !== null) updateData.needs_visa_sponsorship = String(formData.get('needs_visa_sponsorship')) === 'true';
+    if (formData.get('onboarding_step') != null) updateData.onboarding_step = String(formData.get('onboarding_step'));
     
     // Handle new ProfileInfoChatbot fields
     if (formData.get('interests')) updateData.interests = String(formData.get('interests'));

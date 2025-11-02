@@ -38,6 +38,8 @@ export type ProfileData = {
     company_recommendations?: number[];
     network_recommendations?: NetworkRecommendation[];
     outreach_frequency?: number;
+    onboarding_step?: number;
+    connectionRating?: number;
   };
 
 export type ProfileFormState = {
@@ -68,6 +70,7 @@ export type ProfileFormState = {
   network_recommendations?: NetworkRecommendation[];
   verified?: boolean;
   outreach_frequency?: number;
+  onboarding_step?: number;
 };
 
 // Company-related types

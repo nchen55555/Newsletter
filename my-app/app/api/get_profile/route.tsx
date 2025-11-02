@@ -69,7 +69,8 @@ export async function GET(){
             requested_connections_new: subscriber?.requested_connections_new,
             needs_visa_sponsorship: subscriber?.needs_visa_sponsorship,
             bookmarked_companies: subscriber?.bookmarked_companies,
-            network_recommendations: subscriber?.network_recommendations
+            network_recommendations: subscriber?.network_recommendations, 
+            onboarding_step: subscriber?.onboarding_step
         })
 
     } catch (error) {

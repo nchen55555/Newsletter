@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ProfileData, CompanyData, ConnectionData } from "@/app/types";
-import { Linkedin, Globe, UserPlus, Info, Send } from "lucide-react";
+import { Linkedin, Globe, UserPlus, Info, Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ReferralDialog } from "@/app/components/referral-dialog";
 import ProfileAvatar from "../../components/profile_avatar";
@@ -501,7 +501,7 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                     className="inline-flex items-center gap-2 rounded-full border-neutral-300 text-neutral-700 hover:border-black hover:text-black transition-all duration-200"
                     onClick={() => setShowReferralDialog(true)}
                   >
-                    <Send className="w-2.5 h-2.5" />
+                  <Users className="w-2.5 h-2.5" />
                     Refer Someone To The Niche Network
                   </Button>
                 </div>
@@ -522,7 +522,7 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
       <ReferralDialog 
         open={showReferralDialog} 
         onOpenChange={setShowReferralDialog}
-        title="Refer Someone You Want to Bring To Your Verified Professional Network"
+        title="Refer Someone to The Niche"
         description="We are personal referral only and will verify if your referral is a good fit for our partner companies!"
       />
     </div>

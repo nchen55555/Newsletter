@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Container } from "@/app/components/container";
 import { CompanyData } from "@/app/types";
-import { ExternalLink, UserPlus, MapPin, Send } from "lucide-react";
+import { ExternalLink, UserPlus, MapPin, Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ReferralDialog } from "@/app/components/referral-dialog";
@@ -22,7 +22,6 @@ import imageUrlBuilder from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { encodeSimple } from "@/app/utils/simple-hash";
 import { VerificationProtectedContent } from "@/app/components/verification-protected-content";
-import { PaywallContent } from "@/app/components/paywall-content";
 
 const { projectId, dataset } = client.config();
 const urlFor = (source: SanityImageSource) =>
@@ -333,8 +332,8 @@ export default function CompanyPageClient({
                 className="inline-flex items-center gap-2 rounded-full border-neutral-300 text-neutral-700 hover:border-black hover:text-black transition-all duration-200"
                 onClick={() => setShowReferralDialog(true)}
               >
-                <Send className="w-2.5 h-2.5" />
-                Refer Someone You Think Would Be A Good Fit Here
+                <Users className="w-2.5 h-2.5" />
+                Refer Someone to The Niche
               </Button>
             </div>
 
