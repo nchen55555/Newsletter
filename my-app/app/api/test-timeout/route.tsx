@@ -76,7 +76,14 @@ export async function GET(request: NextRequest) {
         const modelPath = path.join(process.cwd(), 'app', 'models', 'candidate_matcher_id_only.pkl');
         const scriptPath = path.join(process.cwd(), 'app', 'lib', 'candidate_matcher.py');
         
-        const fileTests = {
+        const fileTests: {
+          modelExists: boolean;
+          scriptExists: boolean;
+          modelPath: string;
+          scriptPath: string;
+          cwd: string;
+          modelSize?: number;
+        } = {
           modelExists: fs.existsSync(modelPath),
           scriptExists: fs.existsSync(scriptPath),
           modelPath,
