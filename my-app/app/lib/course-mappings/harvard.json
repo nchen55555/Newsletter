@@ -1,0 +1,116 @@
+{
+  "name": "Harvard",
+  "courseMappings": {
+    "COMPSCI 61": {
+      "systems_infrastructure": 1.0,
+      "product": 0.8,
+      "grade_sensitivity": 1.1,
+      "year_weight": 1.1
+    },
+    "COMPSCI 153": {
+      "systems_infrastructure": 0.8,
+      "product": 0.8,
+      "grade_sensitivity": 0.7
+    },
+    "COMPSCI 161": {
+      "systems_infrastructure": 1.0,
+      "product": 0.8,
+      "grade_sensitivity": 0.6
+    },
+    "COMPSCI 262": {
+      "systems_infrastructure": 0.6,
+      "product": 0.6,
+      "grade_sensitivity": 0.7
+    },
+    "COMPSCI 165": {
+      "systems_infrastructure": 0.6,
+      "product": 0.6,
+      "grade_sensitivity": 0.7
+    },
+    "COMPSCI 181": {
+      "theory_statistics_ml": 1.0,
+      "grade_sensitivity": 0.8
+    },
+    "COMPSCI 184": {
+      "theory_statistics_ml": 1.0,
+      "grade_sensitivity": 0.6
+    },
+    "COMPSCI 121": {
+      "theory_statistics_ml": 1.0,
+      "grade_sensitivity": 0.5
+    },
+    "COMPSCI 124": {
+      "theory_statistics_ml": 1.2,
+      "systems_infrastructure": 0.4,
+      "product": 0.5,
+      "grade_sensitivity": 1.0
+    },
+    "STAT 110": {
+      "theory_statistics_ml": 1.2,
+      "grade_sensitivity": 0.9,
+      "year_weight": 1.1
+    },
+    "MATH 55A": {
+      "theory_statistics_ml": 0.9,
+      "grade_sensitivity": 0.5,
+      "year_weight": 1.2
+    },
+    "MATH 55B": {
+      "theory_statistics_ml": 0.9,
+      "grade_sensitivity": 0.5,
+      "year_weight": 1.2
+    },
+    "MATH 1B": {
+      "theory_statistics_ml": -0.5,
+      "systems_infrastructure": -0.5,
+      "grade_sensitivity": 0.5
+    },
+    "MATH 1A": {
+      "theory_statistics_ml": -0.5,
+      "systems_infrastructure": -0.5,
+      "grade_sensitivity": 0.5
+    },
+    "COMPSCI 1060": {
+      "product": 0.8,
+      "grade_sensitivity": 0.5
+    },
+    "COMPSCI 51": {
+      "product": 1.0,
+      "grade_sensitivity": 0.5
+    },
+    "COMPSCI 109A": {
+      "product": 1.0,
+      "grade_sensitivity": 0.7
+    },
+    "COMPSCI 109B": {
+      "product": 1.0,
+      "grade_sensitivity": 0.7
+    }
+  },
+  "scoreRanges": {
+    "systems_infrastructure": { "min": 9.4, "max": 17.0 },
+    "theory_statistics_ml": { "min": 9.4, "max": 20.7 },
+    "product": { "min": 10.0, "max": 21.3 }
+  },
+  "yearMultipliers": {
+    "1": 1.2,
+    "2": 1.0,
+    "3": 1.0,
+    "4": 1.0
+  },
+  "gradeWeights": {
+    "A+": 1.25,
+    "A": 1.2,
+    "A-": 1.0,
+    "B+": 0.9,
+    "B": 0.8,
+    "B-": 0.7,
+    "C+": 0.5,
+    "C": 0.4,
+    "C-": 0.4,
+    "D+": 0.4,
+    "D": 0.4,
+    "D-": 0.4,
+    "F": 0.0
+  }
+}

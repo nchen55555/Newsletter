@@ -5,7 +5,7 @@ import CompanyCards from '@/app/companies/company-cards';
 import { CompanyWithImageUrl, CompanyData } from '@/app/types';
 import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
+import { redirect } from 'next/navigation';
 import imageUrlBuilder from "@sanity/image-url";
 import { COMPANIES_QUERY, CACHE_OPTIONS } from '@/lib/sanity/queries';
 
@@ -18,7 +18,7 @@ export default async function Bookmarks() {
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !session) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+        redirect('/login');
     }
     const userEmail = session?.user?.email;
 
@@ -30,10 +30,8 @@ export default async function Bookmarks() {
 
     if (fetchError) {
         console.error('Bookmark update error:', fetchError);
-        return NextResponse.json({ 
-        error: 'Failed to bookmark', 
-        details: fetchError.message 
-        }, { status: 500 });
+        // For now, just continue with empty bookmarks if there's an error
+        // In a production app, you might want to show an error page
     }
 
     const bookmarks = data?.bookmarked_companies ?? [];

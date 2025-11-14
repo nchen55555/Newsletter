@@ -1,8 +1,11 @@
 import { ProfileData, CompanyWithImageUrl, FeedItem, ReferralWithProfile } from "@/app/types";
+import { SkillScores } from "@/app/types/candidate-matching";
+import { GitHubProfileAnalysis, AnalyzedRepository } from "@/app/types/github-analysis";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Linkedin, Globe, Edit, Plus, Send, Users, AlertCircle } from "lucide-react";
-import { useEffect, useState, useCallback } from 'react';
+import { Slider } from "@/components/ui/slider";
+import { FileText, Linkedin, Globe, Edit, Plus, Send, Users, AlertCircle, Github } from "lucide-react";
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import ProfileAvatar from "./profile_avatar";
 import { CompanyCard } from "./company-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,9 +18,16 @@ import { ReferralDialog } from "./referral-dialog";
 import Post from "./post";
 import { ProjectsDialog } from "@/app/components/projects_dialog";
 import ApplyCompanies from "./apply-companies";
+import SimilarCandidateCard from "./similar_candidate_card";
+import { calculateCandidateCompanyCompatibility } from "../utils/similarity";
+import { calculateSkillScores } from "../lib/course-scoring";
+
+type AvailableTab =  "scores" | "bookmarks" | "threads" | "referrals" | "projects" | "connections" | "similar";
 
 interface ExternalProfileProps extends ProfileData {
   isExternalView?: boolean;
+  client_id?: number;
+  is_client_specific?: boolean;
 }
 
 export function ExternalProfile(props: ExternalProfileProps) {
@@ -25,6 +35,105 @@ export function ExternalProfile(props: ExternalProfileProps) {
   const [bookmarkedCompanies, setBookmarkedCompanies] = useState<CompanyWithImageUrl[]>([]);
   const [loadingBookmarks, setLoadingBookmarks] = useState(false);
   
+  // GitHub analysis state
+  const [githubUrl, setGithubUrl] = useState<string>('');
+  const [githubAnalysis, setGithubAnalysis] = useState<GitHubProfileAnalysis | null>(() => {
+    try {
+      if (typeof props.github_url_data === 'string') {
+        return JSON.parse(props.github_url_data);
+      }
+      return props.github_url_data || null;
+    } catch {
+      return null;
+    }
+  });
+  const [loadingGithubAnalysis, setLoadingGithubAnalysis] = useState(false);
+  const [githubError, setGithubError] = useState<string>('');
+
+  // Function to analyze GitHub profile
+  const analyzeGithubProfile = async () => {
+    if (!githubUrl.trim()) {
+      setGithubError('Please enter a GitHub URL');
+      return;
+    }
+
+    // Extract username from GitHub URL
+    const githubUsername = githubUrl.replace('https://github.com/', '').replace('http://github.com/', '').split('/')[0];
+    
+    if (!githubUsername || githubUsername === githubUrl) {
+      setGithubError('Please enter a valid GitHub URL (e.g., https://github.com/username)');
+      return;
+    }
+
+    setLoadingGithubAnalysis(true);
+    setGithubError('');
+    
+    try {
+      const response = await fetch('/api/analyze-github-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          username: githubUsername,
+          id: props.id, 
+          store_to_user: true // Store analysis data to user's profile
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        setGithubError(result.error || 'Failed to analyze GitHub profile');
+        return;
+      }
+
+      if (result.success) {
+        setGithubAnalysis(result.data);
+      } else {
+        setGithubError(result.error || 'Failed to analyze GitHub profile');
+      }
+    } catch (error) {
+      setGithubError(`Network error occurred while analyzing profile ${error}`);
+    } finally {
+      setLoadingGithubAnalysis(false);
+    }
+  };
+  
+  // Client-specific configuration
+  const getClientConfig = (clientId?: number, isCompany?: boolean) => {
+    // If it's a company view, use company-specific config regardless of client_id
+    if (isCompany) {
+      return {
+        title: "Candidate Profile",
+        showTranscript: true,
+        showResume: true,
+        showSkillScores: true,
+        showConnections: false,
+        showReferrals: false,
+        showBookmarks: true,
+        showThreads: false,
+        showProjects: true,
+        highlightSections: ['bio', 'projects', 'bookmarks'],
+      };
+    }
+    else{
+      return {
+          title: "Profile",
+          showTranscript: true,
+          showResume: true,
+          showSkillScores: false,
+          showConnections: true,
+          showReferrals: true,
+          showBookmarks: true,
+          showThreads: true,
+          showProjects: true,
+          highlightSections: [],
+        };
+    }
+
+  };
   // Threads state
   const [userThreads, setUserThreads] = useState<FeedItem[]>([]);
   const [loadingThreads, setLoadingThreads] = useState(false);
@@ -42,6 +151,40 @@ export function ExternalProfile(props: ExternalProfileProps) {
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [projectsDialog, setProjectsDialog] = useState(false);
 
+  const [loadingCompatibility, setLoadingCompatibility] = useState(false);
+
+  // Check if current client_id is a valid company (determined during compatibility fetch)
+  const [isCompanyView, setIsCompanyView] = useState(false);
+
+  const clientConfig = getClientConfig(props.client_id, isCompanyView);
+
+  // Calculate skill scores from parsed_transcript_json
+  const [calculatedSkillScores, setCalculatedSkillScores] = useState<SkillScores | null>(null);
+  
+  useEffect(() => {
+    const calculateScores = async () => {
+      if (!props.parsed_transcript_json) {
+        setCalculatedSkillScores(null);
+        return;
+      }
+
+      try {
+        const transcriptData = typeof props.parsed_transcript_json === 'string' 
+          ? JSON.parse(props.parsed_transcript_json) 
+          : props.parsed_transcript_json;
+
+        const scores = await calculateSkillScores(transcriptData, props.school);
+        setCalculatedSkillScores(scores);
+      } catch (error) {
+        console.log("Error ", error)
+        setCalculatedSkillScores(null);
+      }
+    };
+    
+    calculateScores();
+  }, [props.parsed_transcript_json, props.school]);
+
+
   // Editing state
   const [editingBio, setEditingBio] = useState(false);
   const [editingInterests, setEditingInterests] = useState(false);
@@ -49,7 +192,23 @@ export function ExternalProfile(props: ExternalProfileProps) {
   const [interestsValue, setInterestsValue] = useState(props.interests || '');
   const [saving, setSaving] = useState<'bio' | 'interests' | 'project_urls' | null>(null);
   const [showReferralDialog, setShowReferralDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState<'bookmarks' | 'threads' | 'referrals' | 'projects' | 'connections'>('bookmarks');
+  const [activeTab, setActiveTab] = useState<AvailableTab>('bookmarks');
+
+  // Auto-switch to first available tab if current tab is not available for this client
+  useEffect(() => {
+    const availableTabs: AvailableTab[] = [];
+    if (clientConfig.showSkillScores) availableTabs.push('scores'); // Scores tab for skill evaluation
+    if (clientConfig.showBookmarks) availableTabs.push('bookmarks');
+    if (clientConfig.showThreads) availableTabs.push('threads');
+    if (clientConfig.showReferrals) availableTabs.push('referrals');
+    if (clientConfig.showProjects) availableTabs.push('projects');
+    if (clientConfig.showConnections) availableTabs.push('connections');
+    if (isCompanyView) availableTabs.push('similar'); // Similar candidates tab for company view
+    
+    if (availableTabs.length > 0 && !availableTabs.includes(activeTab)) {
+      setActiveTab(availableTabs[0]);
+    }
+  }, [activeTab, clientConfig, isCompanyView, calculatedSkillScores]);
 
   // Save field function
   const saveField = async (field: 'bio' | 'interests' | 'project_urls', value: string) => {
@@ -72,12 +231,10 @@ export function ExternalProfile(props: ExternalProfileProps) {
           setEditingInterests(false);
         }
       } else {
-        console.error('Failed to update', field);
         alert(`Failed to update ${field}. Please try again.`);
       }
     } catch (error) {
-      console.error('Error updating', field, error);
-      alert(`Error updating ${field}. Please try again.`);
+      alert(`Error updating ${field}. Please try again. ${error}`);
     } finally {
       setSaving(null);
     }
@@ -95,12 +252,11 @@ export function ExternalProfile(props: ExternalProfileProps) {
         const projects = await response.json();
         setUserProjects(projects.project_urls || []);
       } else {
-        console.error('Failed to fetch user projects');
         setUserProjects([]);
       }
     } catch (error) {
-      console.error('Error fetching user projects:', error);
       setUserProjects([]);
+      console.log("Error ", error)
     } finally {
       setLoadingProjects(false);
     }
@@ -121,12 +277,11 @@ export function ExternalProfile(props: ExternalProfileProps) {
         const threads = await response.json();
         setUserThreads(threads);
       } else {
-        console.error('Failed to fetch user threads');
         setUserThreads([]);
       }
     } catch (error) {
-      console.error('Error fetching user threads:', error);
       setUserThreads([]);
+      console.log("Error ", error)
     } finally {
       setLoadingThreads(false);
     }
@@ -143,12 +298,11 @@ export function ExternalProfile(props: ExternalProfileProps) {
         const referrals = await response.json();
         setUserReferrals(referrals);
       } else {
-        console.error('Failed to fetch user referrals');
         setUserReferrals([]);
       }
     } catch (error) {
-      console.error('Error fetching user referrals:', error);
       setUserReferrals([]);
+      console.log("error ", error)
     } finally {
       setLoadingReferrals(false);
     }
@@ -176,7 +330,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
           }
           return null;
         } catch (error) {
-          console.error(`Failed to fetch profile for connection ${connection.connect_id}:`, error);
+          console.log("Error ", error)
           return null;
         }
       });
@@ -184,22 +338,316 @@ export function ExternalProfile(props: ExternalProfileProps) {
       const profiles = await Promise.all(profilePromises);
       setConnectionProfiles(profiles.filter(profile => profile !== null));
     } catch (error) {
-      console.error('Error fetching connection profiles:', error);
+      console.log("Error ", error)
       setConnectionProfiles([]);
     } finally {
       setLoadingConnections(false);
     }
   }, [props.connections_new]);
+
+  // Store similar candidates from the main pipeline for company view display
+  const [similarCandidatesFromPipeline, setSimilarCandidatesFromPipeline] = useState<Array<{
+    candidate_id: string;
+    distance: number;
+    similarity: number;
+    similarity_percentage: number;
+    skills: SkillScores;
+    github_vector_embeddings?: number[];
+    profile?: {
+      id: number;
+      first_name: string;
+      last_name: string;
+      profile_image_url?: string;
+    };
+  }>>([]);
   
-  // Fetch bookmarked companies using API
+  // Helper function to construct skills object from available data sources
+  const getAvailableSkills = useCallback((): SkillScores | null => {
+    const skills: SkillScores = {
+      systems_infrastructure: 0,
+      theory_statistics_ml: 0,
+      product: 0,
+      github_similarity: 0
+    };
+    
+    let hasAnySkills = false;
+
+    // Add academic skills if available
+    if (calculatedSkillScores) {
+      if (typeof calculatedSkillScores.systems_infrastructure === 'number') {
+        skills.systems_infrastructure = calculatedSkillScores.systems_infrastructure;
+        hasAnySkills = true;
+      }
+      if (typeof calculatedSkillScores.theory_statistics_ml === 'number') {
+        skills.theory_statistics_ml = calculatedSkillScores.theory_statistics_ml;
+        hasAnySkills = true;
+      }
+      if (typeof calculatedSkillScores.product === 'number') {
+        skills.product = calculatedSkillScores.product;
+        hasAnySkills = true;
+      }
+    }
+
+    // Add GitHub similarity if available (user has GitHub embeddings)
+    if (githubAnalysis && props.github_vector_embeddings) {
+      // Note: github_similarity for the query user will be set to 1.0 in the API
+      // when they have GitHub data (perfect match to themselves)
+      skills.github_similarity = 1.0;
+      hasAnySkills = true;
+    }
+    return hasAnySkills ? skills : null;
+  }, [calculatedSkillScores, githubAnalysis, props.github_vector_embeddings]);
+
+  // Helper function to determine which dimensions are available for comparison (matches Python backend logic)
+  const getAvailableComparisonDimensions = useCallback(() => {
+    const availableSkills = getAvailableSkills();
+    if (!availableSkills) return [];
+
+    // Determine what type of data the query candidate has (same logic as Python backend)
+    const hasSkills = ['systems_infrastructure', 'theory_statistics_ml', 'product'].some(
+      dim => (availableSkills[dim as keyof SkillScores] || 0) > 0
+    );
+    const hasGithub = (availableSkills.github_similarity || 0) > 0;
+
+    if (hasSkills && hasGithub) {
+      // Query has both - compare along all 4 dimensions
+      return ['systems_infrastructure', 'theory_statistics_ml', 'product', 'github_similarity'];
+    } else if (hasSkills) {
+      // Query has only skills - compare along skills only
+      return ['systems_infrastructure', 'theory_statistics_ml', 'product'];
+    } else if (hasGithub) {
+      // Query has only github - compare along github only
+      return ['github_similarity'];
+    } else {
+      // Query has no data
+      return [];
+    }
+  }, [getAvailableSkills]);
+  
+  // Category weights state for similarity matching
+  const [categoryWeights, setCategoryWeights] = useState({
+    systems_infrastructure: 1.0,
+    theory_statistics_ml: 1.0,
+    product: 1.0,
+    ...(githubAnalysis && { github_similarity: 1.0 })
+  });
+
+  // Category weights state for company compatibility
+  const [companyWeights, setCompanyWeights] = useState({
+    systems_infrastructure: 1.0,
+    theory_statistics_ml: 1.0,
+    product: 1.0,
+    ...(githubAnalysis && { github_similarity: 1.0 })
+  });
+  
+  // Flag to prevent infinite loop when setting initial weights
+  const [hasInitializedWeights, setHasInitializedWeights] = useState(false);
+  
+  // Store company data separately from compatibility calculation
+  const [companyData, setCompanyData] = useState<{
+    match_profiles?: string[];
+    [key: string]: unknown;
+  } | null>(null);
+
+  // Auto-calculate company compatibility using useMemo to avoid state timing issues
+  const calculatedCompanyCompatibility = useMemo(() => {
+    // Get available skills for compatibility calculation
+    const availableSkills = getAvailableSkills();
+    
+    // Only proceed if we're in company view and have necessary data
+    if (!isCompanyView || !companyData || !availableSkills || !similarCandidatesFromPipeline.length) {
+      return null;
+    }
+
+    const matchProfiles = companyData.match_profiles;
+    if (!matchProfiles || matchProfiles.length === 0) {
+      return null;
+    }
+    
+    // Find skill scores from similar candidates data for our reference profiles
+    const referenceProfiles = matchProfiles
+      .map((profileId: string): { systems_infrastructure: number; theory_statistics_ml: number; product: number; github_similarity?: number; github_vector_embeddings?: number[] } | null => {
+       
+        const matchingCandidate = similarCandidatesFromPipeline.find(
+          candidate => candidate.candidate_id?.toString() === profileId.toString()
+        );
+
+       
+        if (matchingCandidate && matchingCandidate.skills) {
+          const profile: { systems_infrastructure: number; theory_statistics_ml: number; product: number; github_similarity?: number; github_vector_embeddings?: number[] } = {
+            systems_infrastructure: matchingCandidate.skills.systems_infrastructure,
+            theory_statistics_ml: matchingCandidate.skills.theory_statistics_ml,
+            product: matchingCandidate.skills.product
+          };
+          
+          // Include GitHub similarity if available
+          if (matchingCandidate.skills.github_similarity !== undefined) {
+            profile.github_similarity = matchingCandidate.skills.github_similarity;
+          }
+          
+          // Include GitHub vector embeddings if available
+          if (matchingCandidate.github_vector_embeddings) {
+            profile.github_vector_embeddings = matchingCandidate.github_vector_embeddings;
+          }
+          
+          return profile;
+        } else {
+          return null;
+        }
+      })
+      .filter((profile: { systems_infrastructure: number; theory_statistics_ml: number; product: number; github_similarity?: number } | null): profile is { systems_infrastructure: number; theory_statistics_ml: number; product: number; github_similarity?: number } => profile !== null);
+
+
+    if (referenceProfiles.length > 0) {
+      // Parse candidate's GitHub vector if it's stored as string
+      let candidateVector = props.github_vector_embeddings;
+      if (typeof props.github_vector_embeddings === 'string') {
+        try {
+          candidateVector = JSON.parse(props.github_vector_embeddings);
+        } catch (error) {
+          console.log("Error ", error)
+          candidateVector = undefined;
+        }
+      }
+
+      // Calculate cluster-based compatibility
+      const compatibility = calculateCandidateCompanyCompatibility(
+        availableSkills,
+        referenceProfiles,
+        candidateVector, // Pass parsed candidate's GitHub vector
+        companyWeights
+      );
+      
+      return {
+        company: companyData,
+        compatibility
+      };
+    } else {
+      return null;
+    }
+  }, [isCompanyView, companyData, getAvailableSkills, similarCandidatesFromPipeline, companyWeights, props.github_vector_embeddings]);
+
+  // Update company weights to match calculated cluster weights when compatibility data loads (only once)
   useEffect(() => {
-    const fetchBookmarkedCompanies = async () => {
+    if (!hasInitializedWeights && calculatedCompanyCompatibility?.compatibility.cluster_stats?.cluster_weights) {
+      const clusterWeights = calculatedCompanyCompatibility.compatibility.cluster_stats.cluster_weights;
+      setCompanyWeights({
+        systems_infrastructure: clusterWeights.systems_infrastructure,
+        theory_statistics_ml: clusterWeights.theory_statistics_ml,
+        product: clusterWeights.product
+      });
+      setHasInitializedWeights(true);
+    }
+  }, [calculatedCompanyCompatibility, hasInitializedWeights]);
+
+
+
+  // Fetch company compatibility and detect if this is a company view (single operation)
+  const fetchCompanyCompatibility = useCallback(async () => {
+    // Reset states
+    setIsCompanyView(false);
+    
+    // Need client_id to check for company
+    if (!props.client_id) {
+      return;
+    }
+
+    setLoadingCompatibility(true);
+    try {
+      // Try to fetch company data - this will tell us if it's a company view
+      const response = await fetch(`/api/get_company_skills?client_id=${props.client_id}`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success) {
+          // This IS a company view!
+          setIsCompanyView(true);
+          
+          // Store company data for later compatibility calculation
+          setCompanyData(data.company);
+          
+          // Compatibility will be automatically calculated via useMemo
+        }
+      }
+    }  finally {
+      setLoadingCompatibility(false);
+    }
+  }, [props.client_id]);
+
+
+  // Run company compatibility check and find similar candidates together to avoid race conditions
+    const runCompanyAndSimilar = useCallback(async () => {
+      // First, check if this is a company view and get company data
+      await fetchCompanyCompatibility();
+      
+      // Then run find similar candidates if we have client_id and any available skills
+      const availableSkills = getAvailableSkills();
+      if (props.client_id && availableSkills) {
+        try {
+        const response = await fetch('/api/find_similar_candidates', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            skills: availableSkills,
+            candidate_id: props.id.toString(),
+            top_k: 50, // Get all candidates to see weight effects
+            weights: categoryWeights
+          }),
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+
+            // Now call get_candidate_matches with the matches we just got
+            if (data.matches && data.matches.length > 0) {
+              try {
+                const matchesResponse = await fetch('/api/get_candidate_matches', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    matches: data.matches
+                  }),
+                  credentials: 'include'
+                });
+
+                if (matchesResponse.ok) {
+                  const matchesData = await matchesResponse.json();
+                  
+                  if (matchesData.success) {
+                    
+                    // Store the enriched matches for company view display
+                    setSimilarCandidatesFromPipeline(matchesData.matches || []);
+                    
+                    // Company compatibility will be automatically calculated via useMemo
+                  } 
+                } 
+              } catch (matchesError) {
+                console.error('Error calling get_candidate_matches:', matchesError);
+              }
+            }
+          } 
+        } 
+        } catch (error) {
+          console.error('Error running find_similar_candidates:', error);
+        }
+      }
+    }, [fetchCompanyCompatibility, getAvailableSkills, props.client_id, categoryWeights, props.id]);
+
+  const fetchBookmarkedCompanies = useCallback(async () => {
       if (!props.bookmarked_companies || props.bookmarked_companies.length === 0) {
         setBookmarkedCompanies([]);
         return;
       }
       setLoadingBookmarks(true);
-      console.log("loading bookmarks");
       try {
         const response = await fetch('/api/companies', {
           credentials: 'include'
@@ -207,47 +655,114 @@ export function ExternalProfile(props: ExternalProfileProps) {
         if (response.ok) {
           const allCompanies = await response.json();
 
-           console.log("all companies ", allCompanies);
-
           // Filter companies based on bookmarked company IDs
           const filteredCompanies = allCompanies.filter((company: CompanyWithImageUrl) =>
             props.bookmarked_companies?.includes(company.company) || props.company_recommendations?.includes(company.company)
           );
 
-          console.log("filtered companies ", filteredCompanies);
           setBookmarkedCompanies(filteredCompanies);
         }
       } catch (error) {
-        console.error('Error fetching bookmarked companies:', error);
+        console.log("Error ", error)
         setBookmarkedCompanies([]);
       } finally {
         setLoadingBookmarks(false);
       }
-    };
-    
+    }, [props.bookmarked_companies, props.company_recommendations]);
+  
+  // Fetch bookmarked companies and initial data
+  useEffect(() => {
     fetchBookmarkedCompanies();
     fetchUserThreads();
     fetchUserReferrals();
     fetchUserProjects();
     fetchConnectionProfiles();
-  }, [props.bookmarked_companies, props.company_recommendations, props.id, fetchUserReferrals, fetchUserThreads, fetchUserProjects, fetchConnectionProfiles]);
+
+    runCompanyAndSimilar();
+  }, [props.bookmarked_companies, props.company_recommendations, props.id, props.client_id, calculatedSkillScores, githubAnalysis, props.github_vector_embeddings]);
+  
+  // Separate effect for category weight changes - only recalculate similar candidates
+  useEffect(() => {
+    // Get available skills for recalculation
+    const availableSkills = getAvailableSkills();
+    
+    // Only run if we have client_id, skills, and we've already loaded initial data
+    if (props.client_id && availableSkills && similarCandidatesFromPipeline.length === 0) {
+      // Don't run if we haven't loaded initial data yet
+      return;
+    }
+    
+    if (props.client_id && availableSkills) {
+      // Recalculate similar candidates with new weights
+      const recalculateSimilarCandidates = async () => {
+        try {
+          const response = await fetch('/api/find_similar_candidates', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              skills: availableSkills,
+              candidate_id: props.id.toString(),
+              top_k: 50,
+              weights: categoryWeights
+            }),
+            credentials: 'include'
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.matches && data.matches.length > 0) {
+              // Only update similar candidates, don't refetch profiles
+              const matchesResponse = await fetch('/api/get_candidate_matches', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  matches: data.matches
+                }),
+                credentials: 'include'
+              });
+
+              if (matchesResponse.ok) {
+                const matchesData = await matchesResponse.json();
+                if (matchesData.success) {
+                  setSimilarCandidatesFromPipeline(matchesData.matches || []);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error recalculating similar candidates:', error);
+        }
+      };
+
+      // Debounce the recalculation to avoid too many API calls
+      const timeoutId = setTimeout(recalculateSimilarCandidates, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [categoryWeights, getAvailableSkills, props.client_id, props.id, similarCandidatesFromPipeline.length]);
     if (!props) return <Skeleton className="h-12 w-full" />; // or customize size;
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <>
+      <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-12">
         <h1 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-2">
           {props.first_name} {props.last_name}
         </h1>
-        <div className="text-base text-neutral-600">
-          {props.status}
-          {props.is_public_profile && "Public Profile"}
-          {props.newsletter_opt_in && " · Newsletter Opt-in"}
-          {props.needs_visa_sponsorship !== undefined && (
-            <span>
-              {(props.is_public_profile || props.newsletter_opt_in) && " · "}
-              {props.needs_visa_sponsorship ? "Needs Visa Sponsorship" : "No Visa Sponsorship Needed"}
-            </span>
-          )}
+        <div className="text-base text-neutral-600 space-y-1">
+          <div>
+            {props.status}
+            {props.is_public_profile && "Public Profile"}
+            {props.newsletter_opt_in && " · Newsletter Opt-in"}
+            {props.needs_visa_sponsorship !== undefined && (
+              <span>
+                {(props.is_public_profile || props.newsletter_opt_in) && " · "}
+                {props.needs_visa_sponsorship ? "Needs Visa Sponsorship" : "No Visa Sponsorship Needed"}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -383,7 +898,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
           </div>
 
           {/* Links and Documents */}
-          {(props.linkedin_url || props.personal_website || props.transcript_url || props.resume_url) && (
+          {(props.linkedin_url || props.personal_website || githubAnalysis?.username || (clientConfig.showTranscript && props.transcript_url) || (clientConfig.showResume && props.resume_url)) && (
             <div className="flex flex-wrap gap-3">
               {props.linkedin_url && (
                 <Button asChild variant="outline" size="sm">
@@ -401,7 +916,15 @@ export function ExternalProfile(props: ExternalProfileProps) {
                   </a>
                 </Button>
               )}
-              {props.transcript_url && (
+              {githubAnalysis?.username && (
+                <Button asChild variant="outline" size="sm">
+                  <a href={`https://github.com/${githubAnalysis.username}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
+                    <Github className="w-4 h-4 mr-2" />
+                    GitHub
+                  </a>
+                </Button>
+              )}
+              {clientConfig.showTranscript && props.transcript_url && (
                 <Button asChild variant="outline" size="sm">
                   <a href={props.transcript_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
                     <FileText className="w-4 h-4 mr-2" />
@@ -409,7 +932,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
                   </a>
                 </Button>
               )}
-              {props.resume_url && (
+              {clientConfig.showResume && props.resume_url && (
                 <Button asChild variant="outline" size="sm">
                   <a href={props.resume_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
                     <FileText className="w-4 h-4 mr-2" />
@@ -419,6 +942,257 @@ export function ExternalProfile(props: ExternalProfileProps) {
               )}
             </div>
           )}
+
+
+          {/* Profile Alignment - Only show for company view */}
+          {isCompanyView && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-neutral-900">
+                  Profile Alignment{calculatedCompanyCompatibility ? ` to ${calculatedCompanyCompatibility.company.name}` : ''}
+                </h3>
+                
+                {calculatedCompanyCompatibility && (
+                  <span className="bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm font-medium">
+                    {Math.round(calculatedCompanyCompatibility.compatibility.similarity_percentage)}% Match
+                  </span>
+                )}
+              </div>
+
+               <div className="bg-neutral-50 rounded-lg">
+                  <div className="text-sm text-neutral-700 whitespace-pre-line">
+                    Indexing on candidate profiles that have successfully accepted received or been offered a positions at {calculatedCompanyCompatibility ? String(calculatedCompanyCompatibility.company.name) : 'your company'}, we determine compatability. 
+                  </div>
+                </div>
+              
+              {/* Compatibility Result Display */}
+              {loadingCompatibility ? (
+                <div className="bg-neutral-50 rounded-lg p-4">
+                  <div className="text-sm text-neutral-500">Loading compatibility...</div>
+                </div>
+              ) : calculatedCompanyCompatibility ? (
+                <div>
+                  {/* Match Breakdown */}
+                  <div className="bg-white border border-neutral-200 rounded-lg p-4 space-y-4">
+                    <h4 className="text-sm font-medium text-neutral-700">Match Breakdown</h4>
+                    <div className="space-y-3">
+                      {[
+                        // Only include academic skills if candidate has data for them
+                        ...(calculatedCompanyCompatibility.compatibility.skills.systems_infrastructure > 0 ? [{ 
+                          key: 'systems_infrastructure', 
+                          name: 'Systems & Infrastructure',
+                          candidate: calculatedCompanyCompatibility.compatibility.skills.systems_infrastructure || 0,
+                          company: calculatedCompanyCompatibility.compatibility.company_requirements.systems_infrastructure || 0,
+                          difference: calculatedCompanyCompatibility.compatibility.skill_differences.systems_infrastructure || 0,
+                          weight: calculatedCompanyCompatibility.compatibility.cluster_stats.final_weights.systems_infrastructure || 0
+                        }] : []),
+                        ...(calculatedCompanyCompatibility.compatibility.skills.theory_statistics_ml > 0 ? [{ 
+                          key: 'theory_statistics_ml', 
+                          name: 'Theory & Statistics',
+                          candidate: calculatedCompanyCompatibility.compatibility.skills.theory_statistics_ml || 0,
+                          company: calculatedCompanyCompatibility.compatibility.company_requirements.theory_statistics_ml || 0,
+                          difference: calculatedCompanyCompatibility.compatibility.skill_differences.theory_statistics_ml || 0,
+                          weight: calculatedCompanyCompatibility.compatibility.cluster_stats.final_weights.theory_statistics_ml || 0
+                        }] : []),
+                        ...(calculatedCompanyCompatibility.compatibility.skills.product > 0 ? [{ 
+                          key: 'product', 
+                          name: 'Core Product Engineering',
+                          candidate: calculatedCompanyCompatibility.compatibility.skills.product || 0,
+                          company: calculatedCompanyCompatibility.compatibility.company_requirements.product || 0,
+                          difference: calculatedCompanyCompatibility.compatibility.skill_differences.product || 0,
+                          weight: calculatedCompanyCompatibility.compatibility.cluster_stats.final_weights.product || 0
+                        }] : []),
+                        // Include GitHub similarity if available and candidate has GitHub data
+                        ...(calculatedCompanyCompatibility.compatibility.skills.github_similarity !== undefined && calculatedCompanyCompatibility.compatibility.skills.github_similarity > 0 ? [{
+                          key: 'github_similarity', 
+                          name: 'GitHub Technical Similarity',
+                          candidate: calculatedCompanyCompatibility.compatibility.skills.github_similarity || 0,
+                          company: 0, // Not applicable for GitHub - it's a direct similarity measure
+                          difference: calculatedCompanyCompatibility.compatibility.skill_differences.github_similarity || 0,
+                          weight: calculatedCompanyCompatibility.compatibility.cluster_stats.final_weights.github_similarity || 0,
+                          isGithub: true // Flag to handle GitHub differently
+                        }] : [])
+                      ].map((skill) => (
+                        <div key={skill.key} className="flex items-center justify-between p-3 bg-neutral-50 rounded">
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium text-neutral-700">{skill.name}</span>
+                              <span className="text-xs text-neutral-500">Weight: {skill.weight.toFixed(2)}x</span>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs text-neutral-600">
+                              {skill.isGithub ? (
+                                <>
+                                  <span>Average similarity: {skill.candidate.toFixed(1)}% to company&apos;s requirements</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>You: {skill.candidate.toFixed(1)}</span>
+                                  <span>Company Avg: {skill.company.toFixed(1)}</span>
+                                  <span className={`font-medium ${skill.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {skill.difference >= 0 ? '+' : ''}{skill.difference.toFixed(1)}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Company Compatibility Weight Controls */}
+                  <div className="bg-neutral-50 rounded-lg p-4 space-y-4">
+                <h4 className="text-sm font-medium text-neutral-700">Adjust Weighted Focus</h4>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {/* Systems Infrastructure Weight - Only show if candidate has this skill */}
+                  {calculatedCompanyCompatibility.compatibility.skills.systems_infrastructure > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-neutral-600">Systems & Infrastructure</label>
+                      </div>
+                      <div className="relative px-1">
+                        <Slider
+                          value={[companyWeights.systems_infrastructure ?? 1.0]}
+                          onValueChange={(value) => setCompanyWeights(prev => ({
+                            ...prev,
+                            systems_infrastructure: value[0]
+                          }))}
+                          min={0}
+                          max={2}
+                          step={0.05}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-neutral-400 mt-1">
+                          <span>Ignored</span>
+                          <span>2x</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Theory & ML Weight - Only show if candidate has this skill */}
+                  {calculatedCompanyCompatibility.compatibility.skills.theory_statistics_ml > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-neutral-600">Theory & Statistics</label>
+                      </div>
+                      <div className="relative px-1">
+                        <Slider
+                          value={[companyWeights.theory_statistics_ml ?? 1.0]}
+                          onValueChange={(value) => setCompanyWeights(prev => ({
+                            ...prev,
+                            theory_statistics_ml: value[0]
+                          }))}
+                          min={0}
+                          max={2}
+                          step={0.05}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-neutral-400 mt-1">
+                          <span>Ignored</span>
+                          <span>2x</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Product Weight - Only show if candidate has this skill */}
+                  {calculatedCompanyCompatibility.compatibility.skills.product > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-neutral-600">Core Product Engineering</label>
+                       
+                      </div>
+                      <div className="relative px-1">
+                        <Slider
+                          value={[companyWeights.product ?? 1.0]}
+                          onValueChange={(value) => setCompanyWeights(prev => ({
+                            ...prev,
+                            product: value[0]
+                          }))}
+                          min={0}
+                          max={2}
+                          step={0.05}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-neutral-400 mt-1">
+                          <span>Ignored</span>
+                          <span>2x</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* GitHub Similarity Weight - Only show if user has GitHub data */}
+                  {githubAnalysis && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-neutral-600">GitHub Technical Similarity</label>
+                       
+                      </div>
+                      <div className="relative px-1">
+                        <Slider
+                          value={[companyWeights.github_similarity ?? 1.0]}
+                          onValueChange={(value) => setCompanyWeights(prev => ({
+                            ...prev,
+                            github_similarity: value[0]
+                          }))}
+                          min={0}
+                          max={2}
+                          step={0.05}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-neutral-400 mt-1">
+                          <span>Ignored</span>
+                          <span>2x</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex justify-center gap-3">
+                  <button
+                    onClick={() => {
+                      if (calculatedCompanyCompatibility?.compatibility.cluster_stats?.cluster_weights) {
+                        const clusterWeights = calculatedCompanyCompatibility.compatibility.cluster_stats.cluster_weights;
+                        setCompanyWeights({
+                          systems_infrastructure: clusterWeights.systems_infrastructure,
+                          theory_statistics_ml: clusterWeights.theory_statistics_ml,
+                          product: clusterWeights.product,
+                          github_similarity: clusterWeights.github_similarity || 1.0
+                        });
+                      } else {
+                        setCompanyWeights({
+                          systems_infrastructure: 1.0,
+                          theory_statistics_ml: 1.0,
+                          product: 1.0,
+                          ...(githubAnalysis && { github_similarity: 1.0 })
+                        });
+                      }
+                    }}
+                    className="px-4 py-2 text-xs bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg transition-colors font-medium"
+                  >
+                    Reset to Calculated
+                  </button>
+                </div>
+                  </div>
+                </div>
+
+                
+              ) : calculatedSkillScores ? (
+                <div className="bg-neutral-50 rounded-lg p-4">
+                  <div className="text-sm text-neutral-500">Unable to load company requirements</div>
+                </div>
+              ) : (
+                <div className="bg-neutral-50 rounded-lg p-4">
+                  <div className="text-sm text-neutral-500">Skill assessment required for compatibility analysis</div>
+                </div>
+              )}
+            </div>
+          )}
+        
 
           {/* Analysis from The Niche */}
           {props.generated_interest_profile && props.generated_interest_profile.length > 0 && (
@@ -437,68 +1211,102 @@ export function ExternalProfile(props: ExternalProfileProps) {
             {/* Tab Navigation */}
             <div className="border-b border-neutral-200 mb-6">
               <nav className="flex space-x-8">
-                <button
-                  onClick={() => setActiveTab('bookmarks')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === 'bookmarks'
-                      ? 'border-neutral-900 text-neutral-900'
-                      : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  {props.isExternalView ? `Companies ${props.first_name} Bookmarked` : 'Bookmarked Companies'} ({bookmarkedCompanies.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab('threads')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === 'threads'
-                      ? 'border-neutral-900 text-neutral-900'
-                      : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  {props.isExternalView ? `${props.first_name}'s Threads` : 'Your Threads'} ({userThreads.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab('referrals')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === 'referrals'
-                      ? 'border-neutral-900 text-neutral-900'
-                      : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  {props.isExternalView ? `${props.first_name}'s Referrals` : 'Your Referrals'} ({userReferrals.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab('projects')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === 'projects'
-                      ? 'border-neutral-900 text-neutral-900'
-                      : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>{props.isExternalView ? `${props.first_name}'s Projects` : 'Your Projects'} ({userProjects.length})</span>
-                    {!props.isExternalView && userProjects.length === 0 && (
-                      <AlertCircle className="w-4 h-4 text-amber-500" />
-                    )}
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('connections')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === 'connections'
-                      ? 'border-neutral-900 text-neutral-900'
-                      : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  {props.isExternalView ? `${props.first_name}'s Network` : 'Your Network'} ({connectionProfiles.length})
-                </button>
+                {clientConfig.showBookmarks && (
+                  <button
+                    onClick={() => setActiveTab('bookmarks')}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      activeTab === 'bookmarks'
+                        ? 'border-neutral-900 text-neutral-900'
+                        : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+                    }`}
+                  >
+                    {props.isExternalView ? `Companies ${props.first_name} Bookmarked` : 'Bookmarked Companies'} ({bookmarkedCompanies.length})
+                  </button>
+                )}
+                {clientConfig.showThreads && (
+                  <button
+                    onClick={() => setActiveTab('threads')}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      activeTab === 'threads'
+                        ? 'border-neutral-900 text-neutral-900'
+                        : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+                    }`}
+                  >
+                    {props.isExternalView ? `${props.first_name}'s Threads` : 'Your Threads'} ({userThreads.length})
+                  </button>
+                )}
+                {clientConfig.showReferrals && (
+                  <button
+                    onClick={() => setActiveTab('referrals')}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      activeTab === 'referrals'
+                        ? 'border-neutral-900 text-neutral-900'
+                        : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+                    }`}
+                  >
+                    {props.isExternalView ? `${props.first_name}'s Referrals` : 'Your Referrals'} ({userReferrals.length})
+                  </button>
+                )}
+                {clientConfig.showProjects && (
+                  <button
+                    onClick={() => setActiveTab('projects')}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      activeTab === 'projects'
+                        ? 'border-neutral-900 text-neutral-900'
+                        : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>{props.isExternalView ? `${props.first_name}'s Projects` : 'Your Projects'} ({userProjects.length})</span>
+                      {!props.isExternalView && userProjects.length === 0 && (
+                        <AlertCircle className="w-4 h-4 text-amber-500" />
+                      )}
+                    </div>
+                  </button>
+                )}
+                {clientConfig.showConnections && (
+                  <button
+                    onClick={() => setActiveTab('connections')}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      activeTab === 'connections'
+                        ? 'border-neutral-900 text-neutral-900'
+                        : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+                    }`}
+                  >
+                    {props.isExternalView ? `${props.first_name}'s Network` : 'Your Network'} ({connectionProfiles.length})
+                  </button>
+                )}
+                {isCompanyView && (
+                  <button
+                    onClick={() => setActiveTab('similar')}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      activeTab === 'similar'
+                        ? 'border-neutral-900 text-neutral-900'
+                        : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+                    }`}
+                  >
+                    Similar Candidates
+                  </button>
+                )}
+                {clientConfig.showSkillScores && (calculatedSkillScores || githubAnalysis) && (
+                  <button
+                    onClick={() => setActiveTab('scores')}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      activeTab === 'scores'
+                        ? 'border-neutral-900 text-neutral-900'
+                        : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+                    }`}
+                  >
+                    Profile Evaluation
+                  </button>
+                )}
               </nav>
             </div>
 
             {/* Tab Content */}
             <div className="space-y-6">
               {/* Bookmarked Companies Tab */}
-              {activeTab === 'bookmarks' && (
+              {activeTab === 'bookmarks' && clientConfig.showBookmarks && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium text-neutral-900">Bookmarked and Recommended</h3>
@@ -537,7 +1345,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
               )}
 
               {/* User Threads Tab */}
-              {activeTab === 'threads' && (
+              {activeTab === 'threads' && clientConfig.showThreads && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium text-neutral-900">Your Threads</h3>
@@ -587,7 +1395,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
               )}
 
               {/* User Referrals Tab */}
-              {activeTab === 'referrals' && (
+              {activeTab === 'referrals' && clientConfig.showReferrals && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium text-neutral-900">Your Referrals</h3>
@@ -653,8 +1461,8 @@ export function ExternalProfile(props: ExternalProfileProps) {
                 </div>
               )}
 
-              {/* User Threads Tab */}
-              {activeTab === 'projects' && (
+              {/* User Projects Tab */}
+              {activeTab === 'projects' && clientConfig.showProjects && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium text-neutral-900">Your Projects</h3>
@@ -690,7 +1498,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
               )}
 
               {/* Connections Tab */}
-              {activeTab === 'connections' && (
+              {activeTab === 'connections' && clientConfig.showConnections && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium text-neutral-900">Network Connections</h3>
@@ -725,6 +1533,483 @@ export function ExternalProfile(props: ExternalProfileProps) {
                   )}
                 </div>
               )}
+
+              {/* Similar Candidates Tab - Only for company view */}
+              {activeTab === 'similar' && isCompanyView && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium text-neutral-900">Similarity in Profiles</h3>
+                  </div>
+                  
+                  {/* Category Weight Controls */}
+                  <div className="bg-neutral-50 rounded-lg p-4 space-y-4">
+                    <h4 className="text-sm font-medium text-neutral-700">Adjust Weighted Focus</h4>
+                    <div className={`grid gap-4 ${getAvailableComparisonDimensions().length <= 1 ? 'grid-cols-1' : getAvailableComparisonDimensions().length <= 2 ? 'grid-cols-1 md:grid-cols-2' : getAvailableComparisonDimensions().length <= 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-4'}`}>
+                      {/* Systems Infrastructure Weight - Only show if included in comparison */}
+                      {getAvailableComparisonDimensions().includes('systems_infrastructure') && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-medium text-neutral-600">Systems & Infrastructure</label>
+                          </div>
+                          <div className="relative px-1">
+                            <Slider
+                              value={[categoryWeights.systems_infrastructure ?? 1.0]}
+                              onValueChange={(value) => setCategoryWeights(prev => ({
+                                ...prev,
+                                systems_infrastructure: value[0]
+                              }))}
+                              min={0}
+                              max={2}
+                              step={0.05}
+                              className="w-full"
+                            />
+                          <div className="flex justify-between text-xs text-neutral-400 mt-1">
+                            <span>Ignored</span>
+                            <span>2x</span>
+                          </div>
+                        </div>
+                      </div>
+                      )}
+                      
+                      {/* Theory & ML Weight - Only show if included in comparison */}
+                      {getAvailableComparisonDimensions().includes('theory_statistics_ml') && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-medium text-neutral-600">Theory, Statistics & ML</label>
+                            <span className="text-xs text-neutral-500">
+                              {categoryWeights.theory_statistics_ml === 1.0 ? 'Equal' : `${categoryWeights.theory_statistics_ml.toFixed(1)}x`}
+                            </span>
+                          </div>
+                          <div className="relative px-1">
+                            <Slider
+                              value={[categoryWeights.theory_statistics_ml ?? 1.0]}
+                              onValueChange={(value) => setCategoryWeights(prev => ({
+                                ...prev,
+                                theory_statistics_ml: value[0]
+                              }))}
+                              min={0}
+                              max={2}
+                              step={0.05}
+                              className="w-full"
+                            />
+                          <div className="flex justify-between text-xs text-neutral-400 mt-1">
+                            <span>Ignored</span>
+                            <span>2x</span>
+                          </div>
+                        </div>
+                      </div>
+                      )}
+                      
+                      {/* Product Weight - Only show if included in comparison */}
+                      {getAvailableComparisonDimensions().includes('product') && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-medium text-neutral-600">Product Development</label>
+                          </div>
+                          <div className="relative px-1">
+                            <Slider
+                              value={[categoryWeights.product ?? 1.0]}
+                              onValueChange={(value) => setCategoryWeights(prev => ({
+                                ...prev,
+                                product: value[0]
+                              }))}
+                              min={0}
+                              max={2}
+                              step={0.05}
+                              className="w-full"
+                            />
+                          <div className="flex justify-between text-xs text-neutral-400 mt-1">
+                            <span>Ignored</span>
+                            <span>2x</span>
+                          </div>
+                        </div>
+                      </div>
+                      )}
+                      
+                      {/* GitHub Similarity Weight - Only show if included in comparison */}
+                      {getAvailableComparisonDimensions().includes('github_similarity') && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-medium text-neutral-600">GitHub Technical Similarity</label>
+                          </div>
+                          <div className="relative px-1">
+                            <Slider
+                              value={[categoryWeights.github_similarity ?? 1.0]}
+                              onValueChange={(value) => setCategoryWeights(prev => ({
+                                ...prev,
+                                github_similarity: value[0]
+                              }))}
+                              min={0}
+                              max={2}
+                              step={0.05}
+                              className="w-full"
+                            />
+                            <div className="flex justify-between text-xs text-neutral-400 mt-1">
+                              <span>Ignored</span>
+                              <span>2x</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Reset Button */}
+                    <div className="flex justify-center">
+                      <button
+                        onClick={() => {
+                          const resetWeights: Record<string, number> = {};
+                          getAvailableComparisonDimensions().forEach(dim => {
+                            resetWeights[dim] = 1.0;
+                          });
+                          setCategoryWeights(prev => ({ ...prev, ...resetWeights }));
+                        }}
+                        className="px-4 py-2 text-xs bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg transition-colors font-medium"
+                      >
+                        Reset Weights
+                      </button>
+                    </div>
+                  </div>
+                  {similarCandidatesFromPipeline.length === 0 && props.client_id ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-32 w-full rounded-lg" />
+                      <Skeleton className="h-32 w-full rounded-lg" />
+                      <Skeleton className="h-32 w-full rounded-lg" />
+                    </div>
+                  ) : similarCandidatesFromPipeline.length > 0 ? (
+                    <div className="space-y-4">
+                      {similarCandidatesFromPipeline
+                        .filter(match => match.profile?.id !== props.id && match.profile) // Exclude self and ensure profile exists
+                        .slice(0, 5).map((match) => (
+                        <SimilarCandidateCard
+                          key={match.candidate_id}
+                          profile={match.profile as ProfileData}
+                          onClick={() => {
+                            if (match.profile?.id && props.client_id) {
+                              const encodedId = encodeSimple(match.profile.id);
+                              const clientEncodedId = encodeSimple(props.client_id);
+                              router.push(`/external_profile/${encodedId}_${clientEncodedId}`);
+                            }
+                            else if (match.profile?.id) {
+                              const encodedId = encodeSimple(match.profile.id);
+                              router.push(`/external_profile/${encodedId}`);
+                            }
+                          }}
+                          similarityPercentage={match.similarity_percentage}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-neutral-500">
+                      No similar candidates found.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Class Evaluation Tab - Only show for certain clients */}
+              {activeTab === 'scores' && clientConfig.showSkillScores && (calculatedSkillScores || githubAnalysis) && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium text-neutral-900">Class Evaluation</h3>
+                  </div>
+                  
+                  { calculatedSkillScores && (<div className="bg-neutral-50 rounded-lg p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {(() => {
+                        try {
+                          const scores = calculatedSkillScores;
+                          return [
+                            { name: 'Systems & Infrastructure', score: scores.systems_infrastructure || 0 },
+                            { name: 'Theory, Statistics & ML', score: scores.theory_statistics_ml || 0 },
+                            { name: 'Product Development', score: scores.product || 0 }
+                          ].map((skill) => (
+                            <div key={skill.name} className="text-center bg-white rounded-lg p-4">
+                              <div className="text-3xl font-bold text-neutral-900 mb-2">{skill.score.toFixed(1)}</div>
+                              <div className="text-sm font-medium text-neutral-600">{skill.name}</div>
+                            </div>
+                          ));
+                        } catch {
+                          return <div className="text-sm text-neutral-500 col-span-3 text-center">Skill scores not available</div>;
+                        }
+                      })()} 
+                    </div>
+                  </div>
+                  )}
+
+                  {/* GitHub Profile Analysis Section */}
+                  <div className="mt-8">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium text-neutral-900">Technical Project Analysis</h3>
+                    </div>
+                    
+                    <div>
+                      {githubAnalysis && (
+                        <div className="space-y-6 mb-8">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-md font-semibold text-neutral-900">Previous GitHub Analysis</h4>
+                            <button
+                              onClick={() => {
+                                setGithubAnalysis(null);
+                                setGithubUrl('');
+                              }}
+                              className="text-sm text-neutral-600 hover:text-neutral-800"
+                            >
+                              Clear Analysis
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Frameworks */}
+                            {githubAnalysis.overallTechnologies?.frameworks && githubAnalysis.overallTechnologies.frameworks.length > 0 && (
+                              <div className="bg-white rounded-lg p-4">
+                                <h5 className="font-semibold text-neutral-900 mb-3">Frameworks</h5>
+                                <div className="flex flex-wrap gap-2">
+                                  {githubAnalysis.overallTechnologies.frameworks.map((framework: string, index: number) => (
+                                    <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                                      {framework}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Languages */}
+                            {githubAnalysis.overallTechnologies?.languages && githubAnalysis.overallTechnologies.languages.length > 0 && (
+                              <div className="bg-white rounded-lg p-4">
+                                <h5 className="font-semibold text-neutral-900 mb-3">Languages</h5>
+                                <div className="flex flex-wrap gap-2">
+                                  {githubAnalysis.overallTechnologies.languages.map((language: string, index: number) => (
+                                    <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                                      {language}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Databases */}
+                            {githubAnalysis.overallTechnologies?.databases && githubAnalysis.overallTechnologies.databases.length > 0 && (
+                              <div className="bg-white rounded-lg p-4">
+                                <h5 className="font-semibold text-neutral-900 mb-3">Databases</h5>
+                                <div className="flex flex-wrap gap-2">
+                                  {githubAnalysis.overallTechnologies.databases.map((database: string, index: number) => (
+                                    <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                                      {database}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Cloud Services */}
+                            {githubAnalysis.overallTechnologies?.cloudServices && githubAnalysis.overallTechnologies.cloudServices.length > 0 && (
+                              <div className="bg-white rounded-lg p-4">
+                                <h5 className="font-semibold text-neutral-900 mb-3">Cloud Services</h5>
+                                <div className="flex flex-wrap gap-2">
+                                  {githubAnalysis.overallTechnologies.cloudServices.map((service: string, index: number) => (
+                                    <span key={index} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
+                                      {service}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* DevOps Tools */}
+                            {githubAnalysis.overallTechnologies?.devOps && githubAnalysis.overallTechnologies.devOps.length > 0 && (
+                              <div className="bg-white rounded-lg p-4">
+                                <h5 className="font-semibold text-neutral-900 mb-3">DevOps Tools</h5>
+                                <div className="flex flex-wrap gap-2">
+                                  {githubAnalysis.overallTechnologies.devOps.map((tool: string, index: number) => (
+                                    <span key={index} className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+                                      {tool}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Libraries */}
+                            {githubAnalysis.overallTechnologies?.libraries && githubAnalysis.overallTechnologies.libraries.length > 0 && (
+                              <div className="bg-white rounded-lg p-4">
+                                <h5 className="font-semibold text-neutral-900 mb-3">Libraries</h5>
+                                <div className="flex flex-wrap gap-2">
+                                  {githubAnalysis.overallTechnologies.libraries.map((library: string, index: number) => (
+                                    <span key={index} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
+                                      {library}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Architectural Patterns */}
+                            {githubAnalysis.overallTechnologies?.architecturalPatterns && githubAnalysis.overallTechnologies.architecturalPatterns.length > 0 && (
+                              <div className="bg-white rounded-lg p-4">
+                                <h5 className="font-semibold text-neutral-900 mb-3">Architectural Patterns</h5>
+                                <div className="flex flex-wrap gap-2">
+                                  {githubAnalysis.overallTechnologies.architecturalPatterns.map((pattern: string, index: number) => (
+                                    <span key={index} className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
+                                      {pattern}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Contribution Activity Section */}
+                          {githubAnalysis.contributionSummary && (
+                            <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+                              <h5 className="font-semibold text-neutral-900 mb-4 flex items-center">
+                                <span className="mr-2">🤝</span>
+                                Open Source & Collaboration Activity
+                              </h5>
+                              
+                              {/* Activity Summary */}
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div className="bg-blue-50 rounded-lg p-3 text-center">
+                                  <div className="text-2xl font-bold text-blue-700">
+                                    {githubAnalysis.contributionSummary.totalActivities}
+                                  </div>
+                                  <div className="text-sm text-blue-600">Total Activities</div>
+                                  <div className="text-xs text-neutral-500">{githubAnalysis.contributionSummary.recentActivityPeriod}</div>
+                                </div>
+                                <div className="bg-green-50 rounded-lg p-3 text-center">
+                                  <div className="text-2xl font-bold text-green-700">
+                                    {githubAnalysis.contributionSummary.openSourceContributions}
+                                  </div>
+                                  <div className="text-sm text-green-600">Open Source</div>
+                                  <div className="text-xs text-neutral-500">External projects</div>
+                                </div>
+                                <div className="bg-purple-50 rounded-lg p-3 text-center">
+                                  <div className="text-2xl font-bold text-purple-700">
+                                    {githubAnalysis.contributionSummary.ownRepositoryActivities}
+                                  </div>
+                                  <div className="text-sm text-purple-600">Own Projects</div>
+                                  <div className="text-xs text-neutral-500">Personal repos</div>
+                                </div>
+                              </div>
+
+                              {/* Activity Breakdown */}
+                              {Object.keys(githubAnalysis.contributionSummary.contributionsByType).length > 0 && (
+                                <div className="mb-4">
+                                  <h6 className="font-medium text-neutral-800 mb-2">Activity Breakdown</h6>
+                                  <div className="flex flex-wrap gap-2">
+                                    {Object.entries(githubAnalysis.contributionSummary.contributionsByType).map(([type, count]: [string, number], index: number) => {
+                                      const typeColors: Record<string, string> = {
+                                        push: 'bg-orange-100 text-orange-800',
+                                        pull_request: 'bg-blue-100 text-blue-800',
+                                        issue: 'bg-yellow-100 text-yellow-800',
+                                        review: 'bg-green-100 text-green-800',
+                                        fork: 'bg-purple-100 text-purple-800',
+                                        create: 'bg-gray-100 text-gray-800'
+                                      };
+                                      const colorClass = typeColors[type] || 'bg-neutral-100 text-neutral-800';
+                                      
+                                      return (
+                                        <span key={index} className={`px-3 py-1 rounded-full text-sm ${colorClass}`}>
+                                          {count} {type.replace('_', ' ')}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Open Source Projects */}
+                              {githubAnalysis.contributionSummary.activeRepositories && 
+                               githubAnalysis.contributionSummary.openSourceContributions > 0 && (
+                                <div>
+                                  <h6 className="font-medium text-neutral-800 mb-2">Contributing To</h6>
+                                  <div className="space-y-2">
+                                    {githubAnalysis.contributionSummary.activeRepositories
+                                      .filter((repo: string) => !githubAnalysis.analyzedRepositories?.some((own: AnalyzedRepository) => own.name === repo.split('/')[1]))
+                                      .slice(0, 6)
+                                      .map((repo: string, index: number) => (
+                                        <div key={index} className="flex items-center justify-between py-1">
+                                          <a 
+                                            href={`https://github.com/${repo}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 hover:text-blue-800 font-mono text-sm flex items-center"
+                                          >
+                                            <span className="mr-1">📁</span>
+                                            {repo}
+                                            <span className="ml-1">↗</span>
+                                          </a>
+                                        </div>
+                                      ))
+                                    }
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Repository Summary */}
+                          {githubAnalysis.analyzedRepositories && githubAnalysis.analyzedRepositories.length > 0 && (
+                            <div className="bg-white rounded-lg p-4">
+                              <h5 className="font-semibold text-neutral-900 mb-3">
+                                Analyzed Repositories ({githubAnalysis.analyzedRepositories.length})
+                              </h5>
+                              <div className="space-y-2">
+                                {githubAnalysis.analyzedRepositories.slice(0, 5).map((repo: AnalyzedRepository, index: number) => (
+                                  <div key={index} className="flex items-center justify-between py-2 border-b border-neutral-100 last:border-b-0">
+                                    <div>
+                                      <span className="font-medium text-neutral-900">{repo.name}</span>
+                                      {repo.description && (
+                                        <p className="text-sm text-neutral-600 mt-1">{repo.description}</p>
+                                      )}
+                                    </div>
+                                    <div className="text-sm text-neutral-500">
+                                      ⭐ {repo.stars || 0}
+                                    </div>
+                                  </div>
+                                ))}
+                                {githubAnalysis.analyzedRepositories.length > 5 && (
+                                  <div className="text-sm text-neutral-500 text-center pt-2">
+                                    And {githubAnalysis.analyzedRepositories.length - 5} more repositories...
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Always show the input section for new analysis */}
+                      <div className="space-y-4">
+                        <div>
+                          <label htmlFor="github-url" className="block text-sm font-medium text-neutral-700 mb-2">
+                            {githubAnalysis ? 'Analyze Different GitHub Profile' : 'GitHub Profile URL'}
+                          </label>
+                          <input
+                            id="github-url"
+                            type="url"
+                            placeholder="https://github.com/username"
+                            value={githubUrl}
+                            onChange={(e) => setGithubUrl(e.target.value)}
+                            className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500"
+                          />
+                        </div>
+                        {githubError && (
+                          <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-md p-3">
+                            {githubError}
+                          </div>
+                        )}
+                        <button
+                          onClick={analyzeGithubProfile}
+                          disabled={loadingGithubAnalysis || !githubUrl.trim()}
+                          className="px-4 py-2 text-xs bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loadingGithubAnalysis ? 'Analyzing...' : 'Analyze GitHub Profile'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
       </section>
@@ -748,6 +2033,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
           onProjectAdded={fetchUserProjects}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }

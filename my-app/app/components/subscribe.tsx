@@ -29,8 +29,6 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
     setShowSubscribeDialog,
   } = useSubscriptionContext();
 
-  console.log("Subscribe component received referral_id:", referral_id, "isSubscribed:", isSubscribed, "showSubscribeDialog:", showSubscribeDialog);
-
   // Handle localStorage referral_id in useEffect to avoid SSR issues
   useEffect(() => {
     if (typeof window !== 'undefined' && !referral_id) {

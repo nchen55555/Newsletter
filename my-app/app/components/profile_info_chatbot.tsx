@@ -30,7 +30,7 @@ const questions: Question[] = [
     index: 0,
     field: 'first_name', // Using existing field as placeholder
     question: "Welcome to The Niche!",
-    description: "We are excited to get to know you better. Our goal is to introduce you directly to opportunities and founders at some of the highest growth startups while helping you curate a personalized, professional network that aligns with your interests, skillsets, and verified by your existing professional community. \nIn the next coming steps, you will submit a profile pic, your transcript, resume, and write a quick bio about yourself. It takes us 2-3 days if there is a mutual fit for us to verify your profile to give you access to the network. Let's get started!",
+    description: "We are excited to get to know you better. Our goal is to introduce you directly to opportunities and founders at some of the highest growth startups while helping you curate a personalized, professional network that aligns with your interests, skillsets, and verified by your existing professional community. \nIn the next coming steps, we ask for a profile pic, your transcript, resume, and for you to write a quick bio about yourself. It takes us 2-3 days for us to verify your profile if there is a mutual fit to give you access to the network. Let's get started!",
     type: 'button',
     required: true
   },
@@ -1385,6 +1385,20 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                           {userReferralsCount} recommendation(s) submitted
                         </div>
                       )}
+                      
+                      {/* Show Next button when 2+ referrals submitted */}
+                      {userReferralsCount >= 2 && currentQuestionIndex < questions.length - 1 && (
+                        <div className="flex justify-end">
+                          <Button
+                            onClick={nextQuestion}
+                            variant="ghost"
+                            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0"
+                          >
+                            Next
+                            <ArrowRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1668,6 +1682,20 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                           <p className="text-green-800">
                             ✓ {userReferralsCount} recommendation(s) submitted
                           </p>
+                        </div>
+                      )}
+                      
+                      {/* Show Next button when 2+ referrals submitted */}
+                      {userReferralsCount >= 2 && currentQuestionIndex < questions.length - 1 && (
+                        <div className="flex justify-end">
+                          <Button
+                            onClick={nextQuestion}
+                            variant="ghost"
+                            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0"
+                          >
+                            Next
+                            <ArrowRight className="w-4 h-4" />
+                          </Button>
                         </div>
                       )}
                     </div>

@@ -4,7 +4,7 @@ import { Navigation } from "../../components/header";
 import { Container } from "../../components/container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileData } from "@/app/types";
-import { decodeSimple } from "@/app/utils/simple-hash";
+import { decodeSimple, decodeWithClient } from "@/app/utils/simple-hash";
 import { ExternalProfile } from "../../components/external_profile";
 
 export default function ExternalProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -17,17 +17,22 @@ export default function ExternalProfilePage({ params }: { params: Promise<{ id: 
       try {
         const { id } = await params;
         
-        // Decode the hashed ID to get the real database ID
-        const realId = decodeSimple(id);
-        if (!realId) {
-          console.error('Invalid profile ID format:', id);
+        // Decode URL encoding if present (e.g., %3D becomes =)
+        const decodedId = decodeURIComponent(id);
+        
+        // Try to decode the ID to validate format (API will handle the actual decoding)
+        const withClient = decodeWithClient(decodedId); // New: candidateId_clientId format
+        const simpleId = decodeSimple(decodedId); // Simple: just candidateId
+        
+        if (!withClient && !simpleId && isNaN(parseInt(decodedId))) {
+          console.error('Invalid profile ID format:', decodedId);
           setError('Invalid profile link');
           setData(null);
           return;
         }
         
-        // Fetch profile data using the external profile API with the hashed ID
-        const apiUrl = `/api/get_external_profile?id=${id}`;
+        // Fetch profile data using the external profile API with the decoded ID
+        const apiUrl = `/api/get_external_profile?id=${encodeURIComponent(decodedId)}`;
         
         const res = await fetch(apiUrl);
         if (res.ok) {
