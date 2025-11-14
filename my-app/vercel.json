@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "app/api/find_similar_candidates/route.tsx": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "builds": [
+    {
+      "src": "app/api/python-similarity/**/*.py",
+      "use": "@vercel/python"
+    }
+  ]
+}
