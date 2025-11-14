@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { spawn } from 'child_process';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import path from 'path';
 
 interface GitHubSimilarity {
   similarity: number;
@@ -104,116 +102,85 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       normalizedSkills.github_similarity = 1.0; // Perfect match to themselves
     }
 
-    // Path to the model file
-    const modelPath = path.join(process.cwd(), 'app', 'models', 'candidate_matcher_id_only.pkl');
-    const pythonScriptPath = path.join(process.cwd(), 'app', 'lib', 'candidate_matcher.py');
-
-    // Prepare Python command - use virtual environment if available
-    const queryData = {
+    // Prepare request data for Python API
+    const requestData = {
       skills: normalizedSkills,
-      top_k,  // Include top_k in the query data
+      top_k,
       weights: weights || null,
-      github_similarities: githubSimilarities // Include GitHub similarities for processing
+      github_similarities: githubSimilarities,
+      candidate_id: candidate_id || undefined
     };
-    const queryJson = JSON.stringify(queryData);
-    const pythonExecutable = process.env.NODE_ENV === 'production' ? 'python3' : path.join(process.cwd(), 'venv', 'bin', 'python');
-    
-    return new Promise<NextResponse>((resolve) => {
+
+    try {
       const pythonStartTime = Date.now();
-      console.log('🐍 Starting Python process at:', new Date().toISOString());
-      console.log('📍 Python executable:', pythonExecutable);
-      console.log('📄 Script path:', pythonScriptPath);
-      console.log('📊 Model path:', modelPath);
-      
-      const pythonProcess = spawn(pythonExecutable, [
-        pythonScriptPath,
-        'find_similar',
-        modelPath,
-        queryJson,
-        candidate_id || ''  // Pass candidate_id directly in the first call
-      ]);
+      console.log('🐍 Starting Python API call at:', new Date().toISOString());
+      console.log('📊 Request data:', JSON.stringify(requestData, null, 2));
 
-      let output = '';
-      let errorOutput = '';
-      
-      // Add timeout detection
-      const timeoutId = setTimeout(() => {
-        pythonProcess.kill();
-        console.log('⏰ Python process killed due to timeout after 9 seconds');
-        resolve(NextResponse.json({ 
-          error: 'Function timeout detected',
-          details: 'Process killed after 9 seconds to prevent Vercel timeout',
-          executionTime: Date.now() - startTime,
-          pythonExecutionTime: Date.now() - pythonStartTime,
-          partialOutput: output,
-          partialError: errorOutput
-        }, { status: 408 }));
-      }, 9000); // Kill after 9 seconds to avoid Vercel's 10-second limit
-
-      pythonProcess.stdout.on('data', (data) => {
-        output += data.toString();
-      });
-
-      pythonProcess.stderr.on('data', (data) => {
-        errorOutput += data.toString();
-      });
-
-      pythonProcess.on('close', (code) => {
-        clearTimeout(timeoutId); // Clear the timeout since process completed
-        const totalTime = Date.now() - startTime;
-        const pythonTime = Date.now() - pythonStartTime;
+      // Call the Python API endpoint consistently
+      const apiUrl = process.env.NODE_ENV === 'production' 
+        ? `https://${process.env.VERCEL_URL}/api/similarity`
+        : 'http://localhost:3000/api/similarity';
         
-        console.log('🏁 Python process finished with code:', code);
-        console.log('⏱️ Total execution time:', totalTime + 'ms');
-        console.log('🐍 Python execution time:', pythonTime + 'ms');
-        
-        if (code !== 0) {
-          console.error('Python script error (exit code', code, '):', errorOutput);
-          console.error('Python script output:', output);
-          resolve(NextResponse.json({ 
-            error: 'Failed to find similar candidates',
-            details: errorOutput,
-            pythonOutput: output,
-            exitCode: code,
-            executionTime: totalTime,
-            pythonExecutionTime: pythonTime
-          }, { status: 500 }));
-          return;
-        }
+      console.log('🌐 Calling API URL:', apiUrl);
 
-        try {
-          const result = JSON.parse(output);
-          
-          if (!result.success) {
-            resolve(NextResponse.json({ 
-              error: 'Candidate matching failed',
-              details: result.error 
-            }, { status: 500 }));
-            return;
-          }
-
-          // Return the result (candidate addition is handled in the Python script)
-          resolve(NextResponse.json({
-            success: true,
-            matches: result.matches || [],
-            database_size: result.database_size || 0,
-            query_skills: result.query_skills,
-            candidate_added: result.candidate_added || false,
-            candidate_action: result.candidate_action || 'none',
-            executionTime: totalTime,
-            pythonExecutionTime: pythonTime,
-            timestamp: new Date().toISOString()
-          }));
-
-        } catch (error) {
-          console.error('Error parsing Python output:', error);
-          resolve(NextResponse.json({ 
-            error: 'Failed to parse matching results',
-            details: output 
-          }, { status: 500 }));
-        }
+      const pythonResponse = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
       });
-    });
+
+      const totalTime = Date.now() - startTime;
+      const pythonTime = Date.now() - pythonStartTime;
+
+      console.log('🏁 Python API finished');
+      console.log('⏱️ Total execution time:', totalTime + 'ms');
+      console.log('🐍 Python execution time:', pythonTime + 'ms');
+
+      if (!pythonResponse.ok) {
+        const errorData = await pythonResponse.text();
+        console.error('Python API error:', errorData);
+        return NextResponse.json({ 
+          error: 'Failed to find similar candidates',
+          details: errorData,
+          executionTime: totalTime,
+          pythonExecutionTime: pythonTime
+        }, { status: 500 });
+      }
+
+      const result = await pythonResponse.json();
+      
+      if (!result.success) {
+        return NextResponse.json({ 
+          error: 'Candidate matching failed',
+          details: result.error 
+        }, { status: 500 });
+      }
+
+      // Return the result with timing information
+      return NextResponse.json({
+        success: true,
+        matches: result.matches || [],
+        database_size: result.database_size || 0,
+        query_skills: result.query_skills,
+        candidate_added: result.candidate_added || false,
+        candidate_action: result.candidate_action || 'none',
+        executionTime: totalTime,
+        pythonExecutionTime: pythonTime,
+        timestamp: new Date().toISOString(),
+        runtime: result.runtime || 'python'
+      });
+
+    } catch (fetchError) {
+      const totalTime = Date.now() - startTime;
+      console.error('Error calling Python API:', fetchError);
+      return NextResponse.json({ 
+        error: 'Failed to call Python similarity API',
+        details: fetchError instanceof Error ? fetchError.message : String(fetchError),
+        executionTime: totalTime
+      }, { status: 500 });
+    }
 
   } catch (error) {
     const totalTime = Date.now() - startTime;

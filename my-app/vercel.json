@@ -1,7 +1,1 @@
-{
-  "functions": {
-    "app/api/find_similar_candidates/route.tsx": {
-      "maxDuration": 10
-    }
-  }
-}
+{}
