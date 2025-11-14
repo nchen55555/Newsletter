@@ -10,6 +10,9 @@ interface GitHubSimilarity {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const startTime = Date.now();
+  console.log('🚀 Starting similarity calculation at:', new Date().toISOString());
+  
   try {
     // Parse request body
     const body = await request.json();
@@ -116,6 +119,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const pythonExecutable = process.env.NODE_ENV === 'production' ? 'python3' : path.join(process.cwd(), 'venv', 'bin', 'python');
     
     return new Promise<NextResponse>((resolve) => {
+      const pythonStartTime = Date.now();
+      console.log('🐍 Starting Python process at:', new Date().toISOString());
+      console.log('📍 Python executable:', pythonExecutable);
+      console.log('📄 Script path:', pythonScriptPath);
+      console.log('📊 Model path:', modelPath);
+      
       const pythonProcess = spawn(pythonExecutable, [
         pythonScriptPath,
         'find_similar',
@@ -126,6 +135,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
       let output = '';
       let errorOutput = '';
+      
+      // Add timeout detection
+      const timeoutId = setTimeout(() => {
+        pythonProcess.kill();
+        console.log('⏰ Python process killed due to timeout after 9 seconds');
+        resolve(NextResponse.json({ 
+          error: 'Function timeout detected',
+          details: 'Process killed after 9 seconds to prevent Vercel timeout',
+          executionTime: Date.now() - startTime,
+          pythonExecutionTime: Date.now() - pythonStartTime,
+          partialOutput: output,
+          partialError: errorOutput
+        }, { status: 408 }));
+      }, 9000); // Kill after 9 seconds to avoid Vercel's 10-second limit
 
       pythonProcess.stdout.on('data', (data) => {
         output += data.toString();
@@ -136,6 +159,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
 
       pythonProcess.on('close', (code) => {
+        clearTimeout(timeoutId); // Clear the timeout since process completed
+        const totalTime = Date.now() - startTime;
+        const pythonTime = Date.now() - pythonStartTime;
+        
+        console.log('🏁 Python process finished with code:', code);
+        console.log('⏱️ Total execution time:', totalTime + 'ms');
+        console.log('🐍 Python execution time:', pythonTime + 'ms');
+        
         if (code !== 0) {
           console.error('Python script error (exit code', code, '):', errorOutput);
           console.error('Python script output:', output);
@@ -143,7 +174,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             error: 'Failed to find similar candidates',
             details: errorOutput,
             pythonOutput: output,
-            exitCode: code
+            exitCode: code,
+            executionTime: totalTime,
+            pythonExecutionTime: pythonTime
           }, { status: 500 }));
           return;
         }
@@ -166,7 +199,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             database_size: result.database_size || 0,
             query_skills: result.query_skills,
             candidate_added: result.candidate_added || false,
-            candidate_action: result.candidate_action || 'none'
+            candidate_action: result.candidate_action || 'none',
+            executionTime: totalTime,
+            pythonExecutionTime: pythonTime,
+            timestamp: new Date().toISOString()
           }));
 
         } catch (error) {
@@ -180,10 +216,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
 
   } catch (error) {
-    console.error('Unexpected error:', error);
+    const totalTime = Date.now() - startTime;
+    console.error('Unexpected error after', totalTime + 'ms:', error);
     return NextResponse.json({ 
       error: 'Unexpected error occurred', 
-      details: error instanceof Error ? error.message : String(error) 
+      details: error instanceof Error ? error.message : String(error),
+      executionTime: totalTime
     }, { status: 500 });
   }
 }
