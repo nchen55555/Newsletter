@@ -7,7 +7,7 @@ import { AnalyzedRepository } from '../../types/github-analysis';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { username, store_to_user, id } = body;
+    const { username, store_to_user, id, first_name, last_name } = body;
 
     // Validate required fields
     if (!username || typeof username !== 'string') {
@@ -68,8 +68,17 @@ export async function POST(request: NextRequest) {
     // Initialize the analyzer
     const analyzer = new GitHubProfileAnalyzer(githubAppId, githubPrivateKey, geminiApiKey);
 
-    // Perform the analysis
-    const analysis = await analyzer.analyzeProfile(username);
+    // Get user's real name from parameters for better commit verification
+    let userRealName: string | undefined;
+    if (first_name || last_name) {
+      userRealName = [first_name, last_name].filter(Boolean).join(' ');
+      console.log(`[COMMIT VERIFICATION] Using provided name for commit verification: "${userRealName}"`);
+    } else {
+      console.log(`[COMMIT VERIFICATION] No name provided, using username only: "${username}"`);
+    }
+
+    // Perform the analysis with user's real name for better commit verification
+    const analysis = await analyzer.analyzeProfile(username, userRealName);
 
     // Track if embeddings were generated during this analysis
     let embeddingGenerated = false;
@@ -140,31 +149,38 @@ export async function POST(request: NextRequest) {
       username: analysis.username,
       totalRepositories: analysis.totalRepositories,
       overallTechnologies: analysis.overallTechnologies ? {
-        frameworks: analysis.overallTechnologies.frameworks || [],
-        databases: analysis.overallTechnologies.databases || [],
-        cloudServices: analysis.overallTechnologies.cloudServices || [],
-        devOps: analysis.overallTechnologies.devOps || [],
+        languages: analysis.overallTechnologies.languages || [],
+        webFrameworks: analysis.overallTechnologies.webFrameworks || [],
         libraries: analysis.overallTechnologies.libraries || [],
+        databases: analysis.overallTechnologies.databases || [],
+        dataProcessing: analysis.overallTechnologies.dataProcessing || [],
+        orm: analysis.overallTechnologies.orm || [],
+        containerization: analysis.overallTechnologies.containerization || [],
+        orchestration: analysis.overallTechnologies.orchestration || [],
+        cloudPlatforms: analysis.overallTechnologies.cloudPlatforms || [],
+        infrastructure: analysis.overallTechnologies.infrastructure || [],
+        distributedSystems: analysis.overallTechnologies.distributedSystems || [],
+        messagingQueues: analysis.overallTechnologies.messagingQueues || [],
+        consensus: analysis.overallTechnologies.consensus || [],
+        cicd: analysis.overallTechnologies.cicd || [],
+        monitoring: analysis.overallTechnologies.monitoring || [],
+        deployment: analysis.overallTechnologies.deployment || [],
         architecturalPatterns: analysis.overallTechnologies.architecturalPatterns || [],
-        languages: analysis.overallTechnologies.languages || []
+        designPatterns: analysis.overallTechnologies.designPatterns || [],
+        security: analysis.overallTechnologies.security || []
       } : {
-        frameworks: [], databases: [], cloudServices: [], devOps: [], 
-        libraries: [], architecturalPatterns: [], languages: []
+        languages: [], webFrameworks: [], libraries: [], databases: [], 
+        dataProcessing: [], orm: [], containerization: [], orchestration: [],
+        cloudPlatforms: [], infrastructure: [], distributedSystems: [], 
+        messagingQueues: [], consensus: [], cicd: [], monitoring: [], 
+        deployment: [], architecturalPatterns: [], designPatterns: [], security: []
       },
-      topRepositories: analysis.topRepositories ? analysis.topRepositories.map((repo: AnalyzedRepository) => ({
-        name: repo.name,
-        description: repo.description,
-        stars: repo.stars,
-        language: repo.language,
-        lastUpdated: repo.lastUpdated,
-        technologies: repo.technologies
-      })) : [],
       analyzedRepositories: analysis.analyzedRepositories ? analysis.analyzedRepositories.map((repo: AnalyzedRepository) => ({
         name: repo.name,
         description: repo.description,
-        stars: repo.stars,
+        url: repo.url,
+        size: repo.size,
         language: repo.language,
-        lastUpdated: repo.lastUpdated,
         technologies: repo.technologies
       })) : [],
       contributionSummary: analysis.contributionSummary ? {

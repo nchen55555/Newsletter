@@ -74,6 +74,7 @@ export type ProfileFormState = {
   verified?: boolean;
   outreach_frequency?: number;
   onboarding_step?: number;
+  github_url?: string;
 };
 
 // Company-related types

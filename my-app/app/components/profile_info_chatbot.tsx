@@ -128,8 +128,18 @@ const questions: Question[] = [
     placeholder: 'https://yourwebsite.com'
   },
   {
-    id: 'companies',
+    id: 'github_url',
     index: 11, 
+    field: 'github_url',
+    question: "Do you have a github?",
+    description: "Share the link - it should be of the format of https://github.com/username",
+    type: 'url',
+    required: true,
+    placeholder: 'https://github.com/username'
+  },
+  {
+    id: 'companies',
+    index: 12, 
     field: 'bookmarked_companies', 
     question: "Explore opportunities",
     description: "The Niche works with a select cohort of high-talent density startups. We want to get a better understanding of your interests. Please bookmark companies that interest you!",
@@ -138,7 +148,7 @@ const questions: Question[] = [
   },
   {
     id: 'public_profile',
-    index: 12, 
+    index: 13, 
     field: 'is_public_profile',
     question: "Allow founders to view your Niche profile?",
     description: "Allow your profile to be public to our partner companies so that when we warm intro, they can see your curated Niche profile.",
@@ -147,7 +157,7 @@ const questions: Question[] = [
   },
   {
     id: 'newsletter',
-    index: 13, 
+    index: 14, 
     field: 'newsletter_opt_in',
     question: "Stay updated with new company profiles?",
     description: "Get an email when we cover a new company. We drop a maximum of two company profiles each week.",
@@ -156,7 +166,7 @@ const questions: Question[] = [
   },
   {
     id: 'visa',
-    index: 14, 
+    index: 15, 
     field: 'needs_visa_sponsorship',
     question: "Do you need visa sponsorship?",
     description: "For employment in the US",
@@ -165,7 +175,7 @@ const questions: Question[] = [
   },
   {
     id: 'networking',
-    index: 15, 
+    index: 16, 
     field: 'pending_connections_new', 
     question: "Build your verifiable professional network",
     description: "Connect with 1-2 people that you would consider part of your closest verifiable professional network. We use your connections to tailor recommendations and opportunities for you.",
@@ -174,7 +184,7 @@ const questions: Question[] = [
   },
   {
     id: 'network_recommendations',
-    index: 16, 
+    index: 17, 
     field: 'network_recommendations',
     question: "Recommend 2 or more of your smartest technical friends to The Niche.",
     description: "Build your verified professional network on The Niche. We index on your network to recommend you opportunities.",
@@ -182,6 +192,7 @@ const questions: Question[] = [
     required: true
   },
 ]
+
 
 export default function ProfileInfoChatbot({
   form,

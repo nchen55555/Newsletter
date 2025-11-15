@@ -1,13 +1,47 @@
 // Shared types for GitHub profile analysis
 
+export interface TechnologyDetection {
+  name: string;
+  confidence: number; // 0.0 to 1.0 scale
+  source: 'commit' | 'file' | 'metadata'; // Detection source for debugging
+  repositorySource?: string; // Which repository this was detected in
+}
+
 export interface TechnologyProfile {
-  frameworks: string[];
-  databases: string[];
-  cloudServices: string[];
-  devOps: string[];
-  libraries: string[];
-  architecturalPatterns: string[];
-  languages: string[];
+  // Core programming languages
+  languages: TechnologyDetection[];
+  
+  // Web frameworks and libraries
+  webFrameworks: TechnologyDetection[];
+  libraries: TechnologyDetection[];
+  
+  // Data layer experience
+  databases: TechnologyDetection[];
+  dataProcessing: TechnologyDetection[];
+  orm: TechnologyDetection[];
+  
+  // Systems and infrastructure
+  containerization: TechnologyDetection[];
+  orchestration: TechnologyDetection[];
+  cloudPlatforms: TechnologyDetection[];
+  infrastructure: TechnologyDetection[];
+  
+  // Distributed systems
+  distributedSystems: TechnologyDetection[];
+  messagingQueues: TechnologyDetection[];
+  consensus: TechnologyDetection[];
+  
+  // DevOps and CI/CD
+  cicd: TechnologyDetection[];
+  monitoring: TechnologyDetection[];
+  deployment: TechnologyDetection[];
+  
+  // Architectural patterns
+  architecturalPatterns: TechnologyDetection[];
+  designPatterns: TechnologyDetection[];
+  
+  // Security
+  security: TechnologyDetection[];
 }
 
 export interface GitHubRepo {
@@ -54,13 +88,30 @@ export interface GitHubTree {
   truncated: boolean;
 }
 
+export interface GitHubCommit {
+  sha: string;
+  commit: {
+    message: string;
+    author: {
+      name: string;
+      email: string;
+      date: string;
+    };
+  };
+  files?: Array<{
+    filename: string;
+    additions: number;
+    deletions: number;
+    changes: number;
+    status: 'added' | 'removed' | 'modified' | 'renamed';
+  }>;
+}
+
 export interface AnalyzedRepository {
   name: string;
   description: string;
   url: string;
-  stars: number;
   technologies: TechnologyProfile;
-  lastUpdated: string;
   size: number;
   language?: string;
 }
@@ -88,7 +139,6 @@ export interface GitHubProfileAnalysis {
   totalRepositories: number;
   analyzedRepositories: AnalyzedRepository[];
   overallTechnologies: TechnologyProfile;
-  topRepositories: AnalyzedRepository[];
   contributionActivity?: ContributionActivity[];
   contributionSummary?: ContributionSummary;
   analysisDate: string;

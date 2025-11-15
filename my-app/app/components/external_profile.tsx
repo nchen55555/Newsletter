@@ -1,6 +1,6 @@
 import { ProfileData, CompanyWithImageUrl, FeedItem, ReferralWithProfile } from "@/app/types";
 import { SkillScores } from "@/app/types/candidate-matching";
-import { GitHubProfileAnalysis, AnalyzedRepository } from "@/app/types/github-analysis";
+import { GitHubProfileAnalysis, AnalyzedRepository, TechnologyDetection } from "@/app/types/github-analysis";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
@@ -1746,7 +1746,20 @@ export function ExternalProfile(props: ExternalProfileProps) {
                       {githubAnalysis && (
                         <div className="space-y-6 mb-8">
                           <div className="flex items-center justify-between">
-                            <h4 className="text-md font-semibold text-neutral-900">Previous GitHub Analysis</h4>
+                            <div>
+                              <h4 className="text-md font-semibold text-neutral-900">Previous GitHub Analysis</h4>
+                              {githubAnalysis.analysisDate && (
+                                <p className="text-sm text-neutral-500 mt-1">
+                                  Analyzed on {new Date(githubAnalysis.analysisDate).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long', 
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              )}
+                            </div>
                             <button
                               onClick={() => {
                                 setGithubAnalysis(null);
@@ -1758,105 +1771,53 @@ export function ExternalProfile(props: ExternalProfileProps) {
                             </button>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Frameworks */}
-                            {githubAnalysis.overallTechnologies?.frameworks && githubAnalysis.overallTechnologies.frameworks.length > 0 && (
-                              <div className="bg-white rounded-lg p-4">
-                                <h5 className="font-semibold text-neutral-900 mb-3">Frameworks</h5>
-                                <div className="flex flex-wrap gap-2">
-                                  {githubAnalysis.overallTechnologies.frameworks.map((framework: string, index: number) => (
-                                    <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                                      {framework}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+{(() => {
+                            const formatSectionTitle = (key: string) => {
+                              return key
+                                .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+                                .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+                                .trim();
+                            };
 
-                            {/* Languages */}
-                            {githubAnalysis.overallTechnologies?.languages && githubAnalysis.overallTechnologies.languages.length > 0 && (
-                              <div className="bg-white rounded-lg p-4">
-                                <h5 className="font-semibold text-neutral-900 mb-3">Languages</h5>
-                                <div className="flex flex-wrap gap-2">
-                                  {githubAnalysis.overallTechnologies.languages.map((language: string, index: number) => (
-                                    <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                                      {language}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                            const sectionsWithData = Object.entries(githubAnalysis.overallTechnologies || {})
+                              .filter(([, technologies]) => Array.isArray(technologies) && technologies.length > 0);
 
-                            {/* Databases */}
-                            {githubAnalysis.overallTechnologies?.databases && githubAnalysis.overallTechnologies.databases.length > 0 && (
-                              <div className="bg-white rounded-lg p-4">
-                                <h5 className="font-semibold text-neutral-900 mb-3">Databases</h5>
-                                <div className="flex flex-wrap gap-2">
-                                  {githubAnalysis.overallTechnologies.databases.map((database: string, index: number) => (
-                                    <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
-                                      {database}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                            if (sectionsWithData.length === 0) {
+                              return <div className="text-center py-8 text-neutral-500">No technology data available</div>;
+                            }
 
-                            {/* Cloud Services */}
-                            {githubAnalysis.overallTechnologies?.cloudServices && githubAnalysis.overallTechnologies.cloudServices.length > 0 && (
-                              <div className="bg-white rounded-lg p-4">
-                                <h5 className="font-semibold text-neutral-900 mb-3">Cloud Services</h5>
-                                <div className="flex flex-wrap gap-2">
-                                  {githubAnalysis.overallTechnologies.cloudServices.map((service: string, index: number) => (
-                                    <span key={index} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
-                                      {service}
-                                    </span>
-                                  ))}
-                                </div>
+                            return (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {sectionsWithData.map(([sectionKey, technologies]) => (
+                                  <div key={sectionKey} className="bg-white rounded-lg p-4">
+                                    <h5 className="font-semibold text-neutral-900 mb-3">{formatSectionTitle(sectionKey)}</h5>
+                                    <div className="flex flex-wrap gap-2">
+                                      {technologies.map((tech: TechnologyDetection | string, index: number) => {
+                                        const name = typeof tech === 'string' ? tech : tech.name;
+                                        const confidence = typeof tech === 'object' ? tech.confidence : null;
+                                        const source = typeof tech === 'object' ? tech.source : null;
+                                        
+                                        return (
+                                          <span 
+                                            key={index} 
+                                            className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm flex items-center gap-1"
+                                            title={confidence ? `${(confidence * 100).toFixed(0)}% confidence from ${source}` : undefined}
+                                          >
+                                            {name}
+                                            {confidence && (
+                                              <span className="text-xs opacity-75">
+                                                {(confidence * 100).toFixed(0)}%
+                                              </span>
+                                            )}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            )}
-
-                            {/* DevOps Tools */}
-                            {githubAnalysis.overallTechnologies?.devOps && githubAnalysis.overallTechnologies.devOps.length > 0 && (
-                              <div className="bg-white rounded-lg p-4">
-                                <h5 className="font-semibold text-neutral-900 mb-3">DevOps Tools</h5>
-                                <div className="flex flex-wrap gap-2">
-                                  {githubAnalysis.overallTechnologies.devOps.map((tool: string, index: number) => (
-                                    <span key={index} className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
-                                      {tool}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Libraries */}
-                            {githubAnalysis.overallTechnologies?.libraries && githubAnalysis.overallTechnologies.libraries.length > 0 && (
-                              <div className="bg-white rounded-lg p-4">
-                                <h5 className="font-semibold text-neutral-900 mb-3">Libraries</h5>
-                                <div className="flex flex-wrap gap-2">
-                                  {githubAnalysis.overallTechnologies.libraries.map((library: string, index: number) => (
-                                    <span key={index} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
-                                      {library}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Architectural Patterns */}
-                            {githubAnalysis.overallTechnologies?.architecturalPatterns && githubAnalysis.overallTechnologies.architecturalPatterns.length > 0 && (
-                              <div className="bg-white rounded-lg p-4">
-                                <h5 className="font-semibold text-neutral-900 mb-3">Architectural Patterns</h5>
-                                <div className="flex flex-wrap gap-2">
-                                  {githubAnalysis.overallTechnologies.architecturalPatterns.map((pattern: string, index: number) => (
-                                    <span key={index} className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
-                                      {pattern}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                            );
+                          })()}
                           
                           {/* Contribution Activity Section */}
                           {githubAnalysis.contributionSummary && (
@@ -1962,9 +1923,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
                                         <p className="text-sm text-neutral-600 mt-1">{repo.description}</p>
                                       )}
                                     </div>
-                                    <div className="text-sm text-neutral-500">
-                                      ⭐ {repo.stars || 0}
-                                    </div>
+
                                   </div>
                                 ))}
                                 {githubAnalysis.analyzedRepositories.length > 5 && (

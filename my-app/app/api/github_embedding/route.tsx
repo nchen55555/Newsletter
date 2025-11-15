@@ -2,64 +2,130 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { GitHubProfileAnalysis, AnalyzedRepository } from '../../types/github-analysis';
+import { GitHubProfileAnalysis, TechnologyDetection } from '../../types/github-analysis';
+
+const extractTechNames = (techs: (string | TechnologyDetection)[]) => 
+    techs.map(tech => typeof tech === 'string' ? tech : tech.name).filter(Boolean);
+
+// Enhanced function to group technologies by confidence and source for concise embedding
+const createGroupedTechStrings = (techs: (string | TechnologyDetection)[]) => {
+  const groups: Record<string, string[]> = {
+    'high confidence usage, from active development': [],
+    'high confidence usage, from codebase analysis': [],
+    'high confidence usage, from project metadata': [],
+    'strong evidence of usage, from active development': [],
+    'strong evidence of usage, from codebase analysis': [],
+    'strong evidence of usage, from project metadata': [],
+    'evidence of usage, from active development': [],
+    'evidence of usage, from codebase analysis': [],
+    'evidence of usage, from project metadata': [],
+    'potential usage, from project metadata': []
+  };
+
+  techs.forEach(tech => {
+    if (typeof tech === 'string') {
+      groups['evidence of usage, from project metadata'].push(tech);
+      return;
+    }
+    
+    if (tech && tech.name && tech.confidence) {
+      const confidenceLevel = tech.confidence >= 0.8 ? 'high confidence usage' : 
+                              tech.confidence >= 0.6 ? 'strong evidence of usage' : 
+                              tech.confidence >= 0.4 ? 'evidence of usage' : 'potential usage';
+      const source = tech.source === 'commit' ? 'active development' :
+                    tech.source === 'file' ? 'codebase analysis' : 'project metadata';
+      
+      const key = `${confidenceLevel}, from ${source}`;
+      if (groups[key]) {
+        groups[key].push(tech.name);
+      }
+    }
+  });
+
+  // Return formatted groups, filtering out empty ones
+  return Object.entries(groups)
+    .filter(([, techs]) => techs.length > 0)
+    .map(([groupKey, techs]) => `${groupKey}: ${techs.join(', ')}`);
+};
 
 function createEmbeddingText(data: GitHubProfileAnalysis): string {
-  const { username, totalRepositories, overallTechnologies, topRepositories, analyzedRepositories, contributionSummary } = data;
+  const { username, totalRepositories, overallTechnologies, analyzedRepositories, contributionSummary } = data;
+  
+  // Helper function to add tech category only if it has content
+  const addTechCategory = (label: string, techArray: (string | TechnologyDetection)[]) => {
+    const techGroups = createGroupedTechStrings(techArray);
+    if (techGroups.length > 0) {
+      return `${label}: ${techGroups.join('; ')}`;
+    }
+    return null;
+  };
   
   const embeddingParts = [
     `GitHub Profile: ${username}`,
     `Total Repositories: ${totalRepositories}`,
-    `Programming Languages: ${overallTechnologies.languages.join(', ')}`,
-    `Frameworks: ${overallTechnologies.frameworks.join(', ')}`,
-    `Libraries: ${overallTechnologies.libraries.join(', ')}`,
-    `Databases: ${overallTechnologies.databases.join(', ')}`,
-    `Cloud Services: ${overallTechnologies.cloudServices.join(', ')}`,
-    `DevOps Tools: ${overallTechnologies.devOps.join(', ')}`,
-    `Architectural Patterns: ${overallTechnologies.architecturalPatterns.join(', ')}`,
+    addTechCategory('Programming Languages', overallTechnologies.languages || []),
+    addTechCategory('Web Frameworks', overallTechnologies.webFrameworks || []),
+    addTechCategory('Libraries', overallTechnologies.libraries || []),
+    addTechCategory('Databases', overallTechnologies.databases || []),
+    addTechCategory('Data Processing', overallTechnologies.dataProcessing || []),
+    addTechCategory('ORM', overallTechnologies.orm || []),
+    addTechCategory('Containerization', overallTechnologies.containerization || []),
+    addTechCategory('Orchestration', overallTechnologies.orchestration || []),
+    addTechCategory('Cloud Platforms', overallTechnologies.cloudPlatforms || []),
+    addTechCategory('Infrastructure', overallTechnologies.infrastructure || []),
+    addTechCategory('Distributed Systems', overallTechnologies.distributedSystems || []),
+    addTechCategory('Messaging Queues', overallTechnologies.messagingQueues || []),
+    addTechCategory('Consensus', overallTechnologies.consensus || []),
+    addTechCategory('CI/CD', overallTechnologies.cicd || []),
+    addTechCategory('Monitoring', overallTechnologies.monitoring || []),
+    addTechCategory('Deployment', overallTechnologies.deployment || []),
+    addTechCategory('Architectural Patterns', overallTechnologies.architecturalPatterns || []),
+    addTechCategory('Design Patterns', overallTechnologies.designPatterns || []),
+    addTechCategory('Security', overallTechnologies.security || []),
   ];
 
-  if (topRepositories && topRepositories.length > 0) {
-    embeddingParts.push('Notable Projects:');
-    topRepositories.forEach(repo => {
+  if (analyzedRepositories && analyzedRepositories.length > 0) {
+    embeddingParts.push('Recent Projects:');
+    analyzedRepositories.slice(0, 5).forEach(repo => {
+      // Combine all technologies from the repository
+      const allRepoTechs = [
+        ...(repo.technologies.languages || []),
+        ...(repo.technologies.webFrameworks || []),
+        ...(repo.technologies.libraries || []),
+        ...(repo.technologies.databases || []),
+        ...(repo.technologies.cloudPlatforms || []),
+        ...(repo.technologies.architecturalPatterns || [])
+      ];
+      
+      const repoTechGroups = createGroupedTechStrings(allRepoTechs);
+      
       const repoInfo = [
         `${repo.name}${repo.description ? `: ${repo.description}` : ''}`,
-        `Technologies: ${[
-          ...repo.technologies.languages,
-          ...repo.technologies.frameworks,
-          ...repo.technologies.libraries,
-          ...repo.technologies.databases,
-          ...repo.technologies.cloudServices,
-          ...repo.technologies.architecturalPatterns
-        ].filter(Boolean).join(', ')}`,
-        repo.stars > 0 ? `Stars: ${repo.stars}` : '',
+        repoTechGroups.length > 0 ? `Technologies: ${repoTechGroups.join('; ')}` : null
       ].filter(Boolean).join(' | ');
       
-      embeddingParts.push(repoInfo);
+      if (repoInfo.trim()) {
+        embeddingParts.push(repoInfo);
+      }
     });
   }
 
-  const recentActivity = analyzedRepositories
-    .map(repo => new Date(repo.lastUpdated))
-    .sort((a, b) => b.getTime() - a.getTime())[0];
-  
-  if (recentActivity) {
-    embeddingParts.push(`Most Recent Activity: ${recentActivity.toDateString()}`);
-  }
+  // Skip recent activity since we removed lastUpdated field
+  // Focus on technology expertise instead
 
-  const totalStars = analyzedRepositories.reduce((sum, repo) => sum + repo.stars, 0);
-  if (totalStars > 0) {
-    embeddingParts.push(`Total GitHub Stars: ${totalStars}`);
+  // Skip star count since we removed stars field
+  if (analyzedRepositories.length > 0) {
+    embeddingParts.push(`Total Active Projects: ${analyzedRepositories.length}`);
   }
 
   // Add contribution activity information
-  if (contributionSummary) {
+  if (contributionSummary && (contributionSummary.totalActivities > 0 || contributionSummary.openSourceContributions > 0)) {
     embeddingParts.push(`Open Source Activity:`);
     embeddingParts.push(`Total Recent Activities: ${contributionSummary.totalActivities}`);
     embeddingParts.push(`Open Source Contributions: ${contributionSummary.openSourceContributions}`);
     
     if (contributionSummary.openSourceContributions > 0) {
-      const activityTypes = Object.entries(contributionSummary.contributionsByType)
+      const activityTypes = Object.entries(contributionSummary.contributionsByType || {})
         .filter(([, count]) => count > 0)
         .map(([type, count]) => `${count} ${type.replace('_', ' ')}${count > 1 ? 's' : ''}`)
         .join(', ');
@@ -69,7 +135,7 @@ function createEmbeddingText(data: GitHubProfileAnalysis): string {
       }
 
       // Include notable open source repositories they've contributed to
-      const openSourceRepos = contributionSummary.activeRepositories
+      const openSourceRepos = (contributionSummary.activeRepositories || [])
         .filter(repo => !data.analyzedRepositories.some(own => own.name === repo.split('/')[1]))
         .slice(0, 5); // Limit to top 5 external repos
         
@@ -124,21 +190,21 @@ export async function POST(request: NextRequest) {
     const model = genAI.getGenerativeModel({ model: 'gemini-embedding-001' });
 
     const result = await model.embedContent(embeddingText);
-    const embedding = result.embedding;
+    const embedding = result.embedding.values.slice(0, 1536);
 
     const metadata = {
       username: data.username,
       totalRepositories: data.totalRepositories,
-      languages: data.overallTechnologies?.languages || [],
-      frameworks: data.overallTechnologies?.frameworks || [],
-      libraries: data.overallTechnologies?.libraries || [],
-      databases: data.overallTechnologies?.databases || [],
-      cloudServices: data.overallTechnologies?.cloudServices || [],
-      devOps: data.overallTechnologies?.devOps || [],
-      architecturalPatterns: data.overallTechnologies?.architecturalPatterns || [],
-      totalStars: data.analyzedRepositories?.reduce((sum: number, repo: AnalyzedRepository) => sum + repo.stars, 0) || 0,
+      languages: extractTechNames(data.overallTechnologies?.languages || []),
+      webFrameworks: extractTechNames(data.overallTechnologies?.webFrameworks || []),
+      libraries: extractTechNames(data.overallTechnologies?.libraries || []),
+      databases: extractTechNames(data.overallTechnologies?.databases || []),
+      cloudPlatforms: extractTechNames(data.overallTechnologies?.cloudPlatforms || []),
+      containerization: extractTechNames(data.overallTechnologies?.containerization || []),
+      distributedSystems: extractTechNames(data.overallTechnologies?.distributedSystems || []),
+      architecturalPatterns: extractTechNames(data.overallTechnologies?.architecturalPatterns || []),
+      totalActiveProjects: data.analyzedRepositories?.length || 0,
       analysisDate: data.analysisDate,
-      topRepositoriesCount: data.topRepositories?.length || 0,
       openSourceContributions: data.contributionSummary?.openSourceContributions || 0,
       totalActivities: data.contributionSummary?.totalActivities || 0,
       contributionTypes: data.contributionSummary?.contributionsByType || {},
@@ -149,7 +215,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase
       .from('subscribers')
       .update({
-        github_vector_embeddings: embedding.values,
+        github_vector_embeddings: embedding,
         embedding_text: embeddingText,
         embedding_metadata: metadata
         
@@ -163,7 +229,7 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    const queryVector = result.embedding.values as number[];
+    const queryVector = embedding; 
 
     const { data: matches, error: rpcError } = await supabase.rpc('github_match_subscribers', {
       q: queryVector,

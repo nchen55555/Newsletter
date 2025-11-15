@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-import { TechnologyProfile, CodeFile, RepositorySummary } from '../types/github-analysis';
+import { TechnologyProfile, TechnologyDetection, CodeFile, RepositorySummary } from '../types/github-analysis';
 
 export class GeminiCodeAnalyzer {
   private genAI: GoogleGenerativeAI;
@@ -35,7 +35,7 @@ export class GeminiCodeAnalyzer {
     const snippet = content.substring(0, 4000);
 
     const prompt = `
-You are analyzing a SINGLE code file.
+You are analyzing a SINGLE code file to identify technologies used.
 
 Extract ONLY technologies that are EXPLICITLY referenced in this file via:
 - import/require/use statements
@@ -43,11 +43,20 @@ Extract ONLY technologies that are EXPLICITLY referenced in this file via:
 - configuration files / keys
 - explicit client/SDK usage
 - URLs/hostnames that clearly indicate a specific service
+- Docker/container configurations
+- Database connection strings or schemas
+- Infrastructure as code definitions
+
+For each technology detected, provide a confidence score:
+- 0.9-1.0: Direct imports, explicit usage, configuration keys
+- 0.7-0.8: Strong contextual evidence (URLs, connection strings)
+- 0.5-0.6: Configuration patterns or naming conventions
+- 0.3-0.4: Weak evidence (comments, variable names)
 
 Rules:
-- DO NOT guess based on what is "commonly" used with a language.
-- DO NOT include databases, cloud providers, tools, or frameworks unless there is direct textual evidence.
-- If unsure, leave it out.
+- DO NOT guess based on what is "commonly" used with a language
+- DO NOT include technologies unless there is direct textual evidence
+- Each array should contain objects with "name" and "confidence" properties
 - Output must be STRICTLY valid JSON. No prose, no markdown, no comments.
 
 Filename: ${filename}
@@ -59,13 +68,25 @@ ${snippet}${content.length > 4000 ? '\n...[truncated]' : ''}
 
 Return ONLY valid JSON in this exact format:
 {
-  "frameworks": [],
-  "databases": [],
-  "cloudServices": [],
-  "devOps": [],
-  "libraries": [],
-  "architecturalPatterns": [],
-  "languages": []
+  "languages": [{"name": "language", "confidence": 0.9}],
+  "webFrameworks": [{"name": "framework", "confidence": 0.8}],
+  "libraries": [{"name": "library", "confidence": 0.9}],
+  "databases": [{"name": "database", "confidence": 0.7}],
+  "dataProcessing": [{"name": "tool", "confidence": 0.6}],
+  "orm": [{"name": "orm", "confidence": 0.8}],
+  "containerization": [{"name": "container", "confidence": 0.9}],
+  "orchestration": [{"name": "orchestrator", "confidence": 0.7}],
+  "cloudPlatforms": [{"name": "platform", "confidence": 0.8}],
+  "infrastructure": [{"name": "infra", "confidence": 0.6}],
+  "distributedSystems": [{"name": "system", "confidence": 0.7}],
+  "messagingQueues": [{"name": "queue", "confidence": 0.8}],
+  "consensus": [{"name": "algorithm", "confidence": 0.5}],
+  "cicd": [{"name": "tool", "confidence": 0.9}],
+  "monitoring": [{"name": "monitor", "confidence": 0.7}],
+  "deployment": [{"name": "deploy", "confidence": 0.8}],
+  "architecturalPatterns": [{"name": "pattern", "confidence": 0.6}],
+  "designPatterns": [{"name": "pattern", "confidence": 0.5}],
+  "security": [{"name": "security", "confidence": 0.7}]
 }
     `.trim();
 
@@ -95,7 +116,7 @@ Return ONLY valid JSON in this exact format:
         const result = await this.analyzeCodeFile(file.content, file.name);
         if (result) analysisResults.push(result);
       } catch (error) {
-        console.error(`Error analyzing file ${file.name}:`, error);
+        console.error(`[GEMINI ANALYSIS] Error analyzing file ${file.name}:`, error);
       }
     }
 
@@ -119,25 +140,45 @@ Topics: ${repoSummary.topics?.join(', ') || 'None'}
 Languages: ${Object.keys(repoSummary.languages || {}).join(', ')}
 Key Files: ${repoSummary.keyFiles?.join(', ') || 'None'}
 
+Identify technologies based on clear evidence in:
+- Repository topics and keywords
+- File names and extensions
+- Configuration file patterns
+- Description keywords
+
+For each technology detected, provide a confidence score:
+- 0.8-1.0: Explicit mentions in topics, description, or clear file patterns
+- 0.6-0.7: Strong file extension patterns or naming conventions
+- 0.4-0.5: Weak textual evidence or language associations
+- 0.2-0.3: Very weak evidence
+
 Rules:
-- Only include a technology if there is a CLEAR textual indication in this metadata.
-- Examples:
-    - "nextjs" topic or "next.config.js" -> Next.js
-    - "docker-compose.yml"/"Dockerfile" -> Docker
-    - "postgres" in description/topics -> PostgreSQL
-- DO NOT infer based purely on language (e.g. don't assume AWS or MongoDB).
-- If no evidence, leave arrays empty.
+- Only include a technology if there is CLEAR textual evidence in the metadata
+- DO NOT infer technologies based purely on programming language
+- Each array should contain objects with "name" and "confidence" properties
 - Output must be STRICTLY valid JSON. No extra text.
 
 Return ONLY JSON:
 {
-  "frameworks": [],
-  "databases": [],
-  "cloudServices": [],
-  "devOps": [],
-  "libraries": [],
-  "architecturalPatterns": [],
-  "languages": []
+  "languages": [{"name": "language", "confidence": 0.8}],
+  "webFrameworks": [{"name": "framework", "confidence": 0.7}],
+  "libraries": [{"name": "library", "confidence": 0.6}],
+  "databases": [{"name": "database", "confidence": 0.8}],
+  "dataProcessing": [{"name": "tool", "confidence": 0.5}],
+  "orm": [{"name": "orm", "confidence": 0.7}],
+  "containerization": [{"name": "container", "confidence": 0.9}],
+  "orchestration": [{"name": "orchestrator", "confidence": 0.6}],
+  "cloudPlatforms": [{"name": "platform", "confidence": 0.8}],
+  "infrastructure": [{"name": "infra", "confidence": 0.5}],
+  "distributedSystems": [{"name": "system", "confidence": 0.6}],
+  "messagingQueues": [{"name": "queue", "confidence": 0.7}],
+  "consensus": [{"name": "algorithm", "confidence": 0.4}],
+  "cicd": [{"name": "tool", "confidence": 0.8}],
+  "monitoring": [{"name": "monitor", "confidence": 0.6}],
+  "deployment": [{"name": "deploy", "confidence": 0.7}],
+  "architecturalPatterns": [{"name": "pattern", "confidence": 0.4}],
+  "designPatterns": [{"name": "pattern", "confidence": 0.3}],
+  "security": [{"name": "security", "confidence": 0.6}]
 }
     `.trim();
 
@@ -151,7 +192,7 @@ Return ONLY JSON:
       const verified = this.verifyTechnologies(json, [], repoSummary);
       return verified;
     }).catch(error => {
-      console.error('Error analyzing repository summary with all Gemini models:', error);
+      console.error('[GEMINI SUMMARY] Error analyzing repository summary with all Gemini models:', error);
       return this.getEmptyProfile();
     });
   }
@@ -241,18 +282,30 @@ Return ONLY JSON:
 
     const corpus = textParts.join('\n').toLowerCase();
 
-    const strongFilter = (items: string[]): string[] =>
-      items.filter(item => corpus.includes(item.toLowerCase()));
+    const strongFilter = (items: TechnologyDetection[]): TechnologyDetection[] =>
+      items.filter(item => corpus.includes(item.name.toLowerCase()));
 
     // Apply strict evidence filter ONLY where hallucinations are common.
     return {
-      frameworks: merged.frameworks, // trust prompt + per-file evidence
-      languages: merged.languages,   // trust prompt + per-file evidence
+      languages: merged.languages,
+      webFrameworks: merged.webFrameworks,
       libraries: strongFilter(merged.libraries),
       databases: strongFilter(merged.databases),
-      cloudServices: strongFilter(merged.cloudServices),
-      devOps: strongFilter(merged.devOps),
+      dataProcessing: strongFilter(merged.dataProcessing),
+      orm: strongFilter(merged.orm),
+      containerization: strongFilter(merged.containerization),
+      orchestration: strongFilter(merged.orchestration),
+      cloudPlatforms: strongFilter(merged.cloudPlatforms),
+      infrastructure: strongFilter(merged.infrastructure),
+      distributedSystems: strongFilter(merged.distributedSystems),
+      messagingQueues: strongFilter(merged.messagingQueues),
+      consensus: strongFilter(merged.consensus),
+      cicd: strongFilter(merged.cicd),
+      monitoring: strongFilter(merged.monitoring),
+      deployment: strongFilter(merged.deployment),
       architecturalPatterns: merged.architecturalPatterns || [],
+      designPatterns: merged.designPatterns || [],
+      security: strongFilter(merged.security),
     };
   }
 
@@ -267,9 +320,17 @@ Return ONLY JSON:
 
       const parsed = JSON.parse(jsonText);
 
+      // Validate that each array contains proper TechnologyDetection objects
       const empty = this.getEmptyProfile();
       (Object.keys(empty) as (keyof TechnologyProfile)[]).forEach(key => {
-        if (!Array.isArray(parsed[key])) parsed[key] = [];
+        if (!Array.isArray(parsed[key])) {
+          parsed[key] = [];
+        } else {
+          // Validate each detection has required fields
+          parsed[key] = parsed[key].filter((item: TechnologyDetection) => 
+            item && typeof item === 'object' && item.name && typeof item.confidence === 'number'
+          );
+        }
       });
 
       return parsed as TechnologyProfile;
@@ -281,13 +342,25 @@ Return ONLY JSON:
 
   private getEmptyProfile(): TechnologyProfile {
     return {
-      frameworks: [],
-      databases: [],
-      cloudServices: [],
-      devOps: [],
+      languages: [],
+      webFrameworks: [],
       libraries: [],
+      databases: [],
+      dataProcessing: [],
+      orm: [],
+      containerization: [],
+      orchestration: [],
+      cloudPlatforms: [],
+      infrastructure: [],
+      distributedSystems: [],
+      messagingQueues: [],
+      consensus: [],
+      cicd: [],
+      monitoring: [],
+      deployment: [],
       architecturalPatterns: [],
-      languages: []
+      designPatterns: [],
+      security: []
     };
   }
 
@@ -299,10 +372,8 @@ Return ONLY JSON:
     for (let i = 0; i < this.models.length; i++) {
       const modelIndex = (this.currentModelIndex + i) % this.models.length;
       const model = this.models[modelIndex];
-      const modelName = this.modelNames[modelIndex];
 
       try {
-        console.log(`Trying Gemini model: ${modelName}`);
         const result = await operation(model);
         
         // Success! Update current model to this working one
@@ -311,10 +382,6 @@ Return ONLY JSON:
         
       } catch (error: unknown) {
         lastError = error;
-        console.log(
-          `Model ${modelName} failed: ${(error as Error).message || error}. Trying next model...`
-        );
-        
         // If this is a non-retryable error (like invalid API key), don't try other models
         const errorObj = error as { message?: string };
         if (

@@ -158,7 +158,7 @@ export async function GET(request: NextRequest) {
             let result = null;
             try {
               result = JSON.parse(output);
-            } catch (e) {
+            } catch {
               result = { error: 'Failed to parse output', rawOutput: output };
             }
             

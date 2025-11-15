@@ -253,6 +253,8 @@ async function handleProfileUpdate(req: NextRequest) {
     if (formData.get('school')) updateData.school = String(formData.get('school'));
     if (formData.get('needs_visa_sponsorship') !== null) updateData.needs_visa_sponsorship = String(formData.get('needs_visa_sponsorship')) === 'true';
     if (formData.get('onboarding_step') != null) updateData.onboarding_step = String(formData.get('onboarding_step'));
+    if (formData.get('github_url') != null) updateData.github_url = String(formData.get('github_url'));
+
     
     // Handle new ProfileInfoChatbot fields
     if (formData.get('interests')) updateData.interests = String(formData.get('interests'));
@@ -265,8 +267,6 @@ async function handleProfileUpdate(req: NextRequest) {
       }
     }
 
-    console.log("PROFIEL ", updateData)
-
     // Update file URLs if new files were uploaded
     if (resume_url) updateData.resume_url = resume_url;
     if (transcript_url) updateData.transcript_url = transcript_url;
@@ -275,33 +275,36 @@ async function handleProfileUpdate(req: NextRequest) {
     // Reset parsed_resume_json if new resume was uploaded
     if (resume_url) updateData.parsed_resume_json = "";
 
-    // Only proceed with update if there are fields to update
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ success: true, message: 'No fields to update' });
-    }
-
-    // Update subscriber profile using authenticated user's email
-    // This ensures we update the correct user even if formData ID is missing/invalid
-    const { error: dbError } = await supabase
-      .from('subscribers')
-      .update(updateData)
-      .eq('email', user.email);
-
-    if (dbError) {
-      console.error('Profile update error:', dbError);
-      return NextResponse.json({ 
-        error: 'Failed to update profile', 
-        details: dbError.message 
-      }, { status: 500 });
-    }
-
-    return NextResponse.json({ 
+    // Return response immediately with file URLs
+    const response = NextResponse.json({ 
       success: true, 
       resumeUrl: resume_url, 
       transcriptUrl: transcript_url,
       profileImageUrl: profile_image_url,
       updatedFields: Object.keys(updateData)
     });
+
+    // Update database asynchronously (don't await this)
+    if (Object.keys(updateData).length > 0) {
+      (async () => {
+        try {
+          const { error: dbError } = await supabase
+            .from('subscribers')
+            .update(updateData)
+            .eq('email', user.email);
+          
+          if (dbError) {
+            console.error('Async profile update error:', dbError);
+          } else {
+            console.log('Profile updated successfully for:', user.email);
+          }
+        } catch (error) {
+          console.error('Unexpected async update error:', error);
+        }
+      })();
+    }
+
+    return response;
 
   } catch (error) {
     console.error('Unexpected error:', error);

@@ -1,8 +1,8 @@
 import { App } from '@octokit/app';
-import { GitHubRepo, GitHubFileContent, GitHubTree } from '../types/github-analysis';
+import { GitHubRepo, GitHubFileContent, GitHubTree, GitHubCommit } from '../types/github-analysis';
 
 interface OctokitInstance {
-  request: <T>(route: string, params?: Record<string, string | number>) => Promise<{ data: T }>;
+  request: <T>(route: string, params?: Record<string, string | number | undefined>) => Promise<{ data: T }>;
 }
 
 export class GitHubAPI {
@@ -186,6 +186,59 @@ export class GitHubAPI {
       return Buffer.from(content, 'base64').toString('utf-8');
     }
     return content;
+  }
+
+  /**
+   * Get recent commits for a repository
+   */
+  async getRepositoryCommits(owner: string, repo: string, since?: string, until?: string): Promise<GitHubCommit[]> {
+    try {
+      const octokit = await this.getOctokit();
+      let allCommits: GitHubCommit[] = [];
+      let page = 1;
+      const perPage = 100;
+
+      while (true) {
+        const response = await octokit.request<GitHubCommit[]>('GET /repos/{owner}/{repo}/commits', {
+          owner,
+          repo,
+          since,
+          until,
+          per_page: perPage,
+          page: page
+        });        
+        const commits = response.data;
+        if (commits.length === 0) break;
+
+        allCommits = allCommits.concat(commits);
+        if (commits.length < perPage) break;
+        
+        page++;
+        if (page > 10) break; // Limit to prevent excessive API calls
+      }
+
+      return allCommits;
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Get detailed commit information including file changes
+   */
+  async getCommitDetails(owner: string, repo: string, sha: string): Promise<GitHubCommit | null> {
+    try {
+      const octokit = await this.getOctokit();
+      const response = await octokit.request<GitHubCommit>('GET /repos/{owner}/{repo}/commits/{ref}', {
+        owner,
+        repo,
+        ref: sha
+      });
+
+      return response.data;
+    } catch {
+      return null;
+    }
   }
 
   /**
