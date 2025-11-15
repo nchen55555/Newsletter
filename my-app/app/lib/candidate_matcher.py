@@ -25,8 +25,45 @@ import json
 import sys
 import os
 from datetime import datetime
-from sklearn.preprocessing import StandardScaler
-from scipy.spatial.distance import euclidean, cosine
+
+import numpy as np
+
+# Lightweight StandardScaler replacement using only numpy
+class SimpleScaler:
+    """Minimal StandardScaler replacement using only numpy"""
+    def __init__(self):
+        self.mean_ = None
+        self.scale_ = None
+        self.n_features_in_ = None
+    
+    def fit(self, X):
+        """Compute mean and standard deviation for scaling"""
+        X = np.array(X)
+        self.n_features_in_ = X.shape[1]
+        self.mean_ = np.mean(X, axis=0)
+        self.scale_ = np.std(X, axis=0)
+        # Avoid division by zero
+        self.scale_[self.scale_ == 0] = 1.0
+        return self
+    
+    def transform(self, X):
+        """Scale features using computed mean and std"""
+        X = np.array(X)
+        return (X - self.mean_) / self.scale_
+
+# Lightweight distance functions using numpy only (no scipy)
+def euclidean_distance(a, b):
+    """Calculate Euclidean distance using numpy only."""
+    return np.sqrt(np.sum((np.array(a) - np.array(b)) ** 2))
+
+def cosine_distance(a, b):
+    """Calculate cosine distance using numpy only."""
+    a, b = np.array(a), np.array(b)
+    dot_product = np.dot(a, b)
+    norms = np.linalg.norm(a) * np.linalg.norm(b)
+    if norms == 0:
+        return 1.0  # Maximum distance for zero vectors
+    return 1 - (dot_product / norms)
 
 
 class CandidateMatcher:
@@ -40,7 +77,7 @@ class CandidateMatcher:
     def __init__(self):
         self.candidates = []
         self.skill_matrix = None
-        self.scaler = StandardScaler()
+        self.scaler = SimpleScaler()
         self.skill_dims = ['systems_infrastructure', 'theory_statistics_ml', 'product', 'github_similarity']
         self.normalized_dims = ['systems_infrastructure', 'theory_statistics_ml', 'product']  # Exclude GitHub
         self.raw_dims = ['github_similarity']  # Keep GitHub raw (already 0-1)
@@ -95,7 +132,7 @@ class CandidateMatcher:
         ])
         
         # Fit scaler only on normalized dimensions (create new one to avoid conflicts)
-        self.scaler = StandardScaler()
+        self.scaler = SimpleScaler()
         self.scaler.fit(self.normalized_matrix)
         
         self.fitted = True
@@ -240,10 +277,10 @@ class CandidateMatcher:
                 
                 # Calculate distance
                 if metric == 'euclidean':
-                    distance = euclidean(query_weighted, candidate_weighted)
+                    distance = euclidean_distance(query_weighted, candidate_weighted)
                     similarity = 1 / (1 + distance)  # Convert to similarity (0-1)
                 elif metric == 'cosine':
-                    distance = cosine(query_weighted, candidate_weighted)
+                    distance = cosine_distance(query_weighted, candidate_weighted)
                     similarity = 1 - distance  # Cosine similarity
                 else:
                     raise ValueError(f"Unknown metric: {metric}")
