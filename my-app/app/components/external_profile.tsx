@@ -590,7 +590,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
                     // IMMEDIATELY call company compatibility API if this is a company view
                     if (isCompany && company) {
                       try {
-                        const availableSkills = getAvailableSkills();
+                        // Reuse the SAME availableSkills that worked for similar candidates
                         
                         // Build reference profiles from company data and similar candidates
                         const matchProfiles = company.match_profiles;
