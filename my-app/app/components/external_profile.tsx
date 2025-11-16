@@ -479,8 +479,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
   // Flag to prevent infinite loop when setting initial weights
   const [hasInitializedWeights, setHasInitializedWeights] = useState(false);
   
-  // Store company data separately from compatibility calculation
-  const [companyData, setCompanyData] = useState<CompanyData | null>(null);
+  // Note: Company data is fetched fresh and used directly, no state needed
 
   // Store company compatibility results from API call
   const [calculatedCompanyCompatibility, setCalculatedCompanyCompatibility] = useState<{
@@ -526,15 +525,9 @@ export function ExternalProfile(props: ExternalProfileProps) {
         if (data.success) {
           // This IS a company view!
           setIsCompanyView(true);
-          
-          // Store company data for later compatibility calculation
-          setCompanyData(data.company);
           return { isCompanyView: true, company: data.company };
-          
-          // Compatibility will be automatically calculated via useMemo
         }
         setIsCompanyView(false);
-        setCompanyData(null);
         return { isCompanyView: false, company: null };
       }
     }  finally {
@@ -662,10 +655,10 @@ export function ExternalProfile(props: ExternalProfileProps) {
                             if (companyCompatResponse.ok) {
                               const compatData = await companyCompatResponse.json();
                               console.log("🎯 Company compatibility response:", compatData);
-                              if (compatData.success && companyData) {
-                                console.log("📊 Setting compatibility data:", { company: companyData, compatibility: compatData.compatibility });
+                              if (compatData.success && company) {
+                                console.log("📊 Setting compatibility data:", { company: company, compatibility: compatData.compatibility });
                                 setCalculatedCompanyCompatibility({
-                                  company: companyData,
+                                  company: company,
                                   compatibility: compatData.compatibility
                                 });
                               } else {
