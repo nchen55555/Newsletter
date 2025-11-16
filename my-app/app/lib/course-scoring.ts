@@ -199,6 +199,8 @@ export async function calculateSkillScores(transcript: Course[], school?: string
        (schoolConfig.scoreRanges.product.max - schoolConfig.scoreRanges.product.min)) * 100
     ))
   };
+
+  console.log("Sending over standardized scores ", standardizedScores)
   
   return standardizedScores;
 }
