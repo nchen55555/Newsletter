@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { FileText, Linkedin, Globe, Edit, Plus, Send, Users, AlertCircle, Github } from "lucide-react";
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import ProfileAvatar from "./profile_avatar";
 import { CompanyCard } from "./company-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,10 +19,46 @@ import Post from "./post";
 import { ProjectsDialog } from "@/app/components/projects_dialog";
 import ApplyCompanies from "./apply-companies";
 import SimilarCandidateCard from "./similar_candidate_card";
-import { calculateCandidateCompanyCompatibility } from "../utils/similarity";
 import { calculateSkillScores } from "../lib/course-scoring";
 
 type AvailableTab =  "scores" | "bookmarks" | "threads" | "referrals" | "projects" | "connections" | "similar";
+
+interface CompanyCompatibilityResponse {
+  distance: number;
+  similarity: number;
+  similarity_percentage: number;
+  skills: SkillScores;
+  company_requirements: SkillScores;
+  skill_differences: SkillScores;
+  cluster_stats: {
+    center: SkillScores;
+    std_dev: SkillScores;
+    cluster_weights: SkillScores;
+    final_weights: SkillScores;
+    sample_size: number;
+  };
+}
+
+interface CompanyData {
+  name?: string;
+  match_profiles?: string[];
+  [key: string]: unknown;
+}
+
+interface MatchingCandidate {
+  candidate_id: string;
+  skills: SkillScores;
+  github_vector_embeddings?: number[];
+  [key: string]: unknown;
+}
+
+interface ReferenceProfile {
+  systems_infrastructure: number;
+  theory_statistics_ml: number;
+  product: number;
+  github_similarity?: number;
+  github_vector_embeddings?: number[];
+}
 
 interface ExternalProfileProps extends ProfileData {
   isExternalView?: boolean;
@@ -444,88 +480,13 @@ export function ExternalProfile(props: ExternalProfileProps) {
   const [hasInitializedWeights, setHasInitializedWeights] = useState(false);
   
   // Store company data separately from compatibility calculation
-  const [companyData, setCompanyData] = useState<{
-    match_profiles?: string[];
-    [key: string]: unknown;
+  const [companyData, setCompanyData] = useState<CompanyData | null>(null);
+
+  // Store company compatibility results from API call
+  const [calculatedCompanyCompatibility, setCalculatedCompanyCompatibility] = useState<{
+    company: CompanyData;
+    compatibility: CompanyCompatibilityResponse;
   } | null>(null);
-
-  // Auto-calculate company compatibility using useMemo to avoid state timing issues
-  const calculatedCompanyCompatibility = useMemo(() => {
-    // Get available skills for compatibility calculation
-    const availableSkills = getAvailableSkills();
-    
-    // Only proceed if we're in company view and have necessary data
-    if (!isCompanyView || !companyData || !availableSkills || !similarCandidatesFromPipeline.length) {
-      return null;
-    }
-
-    const matchProfiles = companyData.match_profiles;
-    if (!matchProfiles || matchProfiles.length === 0) {
-      return null;
-    }
-    
-    // Find skill scores from similar candidates data for our reference profiles
-    const referenceProfiles = matchProfiles
-      .map((profileId: string): { systems_infrastructure: number; theory_statistics_ml: number; product: number; github_similarity?: number; github_vector_embeddings?: number[] } | null => {
-       
-        const matchingCandidate = similarCandidatesFromPipeline.find(
-          candidate => candidate.candidate_id?.toString() === profileId.toString()
-        );
-
-       
-        if (matchingCandidate && matchingCandidate.skills) {
-          const profile: { systems_infrastructure: number; theory_statistics_ml: number; product: number; github_similarity?: number; github_vector_embeddings?: number[] } = {
-            systems_infrastructure: matchingCandidate.skills.systems_infrastructure,
-            theory_statistics_ml: matchingCandidate.skills.theory_statistics_ml,
-            product: matchingCandidate.skills.product
-          };
-          
-          // Include GitHub similarity if available
-          if (matchingCandidate.skills.github_similarity !== undefined) {
-            profile.github_similarity = matchingCandidate.skills.github_similarity;
-          }
-          
-          // Include GitHub vector embeddings if available
-          if (matchingCandidate.github_vector_embeddings) {
-            profile.github_vector_embeddings = matchingCandidate.github_vector_embeddings;
-          }
-          
-          return profile;
-        } else {
-          return null;
-        }
-      })
-      .filter((profile: { systems_infrastructure: number; theory_statistics_ml: number; product: number; github_similarity?: number } | null): profile is { systems_infrastructure: number; theory_statistics_ml: number; product: number; github_similarity?: number } => profile !== null);
-
-
-    if (referenceProfiles.length > 0) {
-      // Parse candidate's GitHub vector if it's stored as string
-      let candidateVector = props.github_vector_embeddings;
-      if (typeof props.github_vector_embeddings === 'string') {
-        try {
-          candidateVector = JSON.parse(props.github_vector_embeddings);
-        } catch (error) {
-          console.log("Error ", error)
-          candidateVector = undefined;
-        }
-      }
-
-      // Calculate cluster-based compatibility
-      const compatibility = calculateCandidateCompanyCompatibility(
-        availableSkills,
-        referenceProfiles,
-        candidateVector, // Pass parsed candidate's GitHub vector
-        companyWeights
-      );
-      
-      return {
-        company: companyData,
-        compatibility
-      };
-    } else {
-      return null;
-    }
-  }, [isCompanyView, companyData, getAvailableSkills, similarCandidatesFromPipeline, companyWeights, props.github_vector_embeddings]);
 
   // Update company weights to match calculated cluster weights when compatibility data loads (only once)
   useEffect(() => {
@@ -568,9 +529,13 @@ export function ExternalProfile(props: ExternalProfileProps) {
           
           // Store company data for later compatibility calculation
           setCompanyData(data.company);
+          return { isCompanyView: true, company: data.company };
           
           // Compatibility will be automatically calculated via useMemo
         }
+        setIsCompanyView(false);
+        setCompanyData(null);
+        return { isCompanyView: false, company: null };
       }
     }  finally {
       setLoadingCompatibility(false);
@@ -581,7 +546,9 @@ export function ExternalProfile(props: ExternalProfileProps) {
   // Run company compatibility check and find similar candidates together to avoid race conditions
     const runCompanyAndSimilar = useCallback(async () => {
       // First, check if this is a company view and get company data
-      await fetchCompanyCompatibility();
+      const compatInfo = await fetchCompanyCompatibility();
+      const isCompany: boolean | undefined = compatInfo?.isCompanyView;
+      const company: CompanyData = compatInfo?.company;
       
       // Then run find similar candidates if we have client_id and any available skills
       const availableSkills = getAvailableSkills();
@@ -627,7 +594,92 @@ export function ExternalProfile(props: ExternalProfileProps) {
                     // Store the enriched matches for company view display
                     setSimilarCandidatesFromPipeline(matchesData.matches || []);
                     
-                    // Company compatibility will be automatically calculated via useMemo
+                    // IMMEDIATELY call company compatibility API if this is a company view
+                    if (isCompany && company) {
+                      try {
+                        const availableSkills = getAvailableSkills();
+                        
+                        // Build reference profiles from company data and similar candidates
+                        const matchProfiles = company.match_profiles;
+                        if (matchProfiles && matchProfiles.length > 0 && availableSkills) {
+                          const referenceProfiles = matchProfiles
+                            .map((profileId: string) => {
+                              const matchingCandidate = matchesData.matches?.find(
+                                (candidate: MatchingCandidate) => candidate.candidate_id?.toString() === profileId.toString()
+                              );
+
+                              if (matchingCandidate && matchingCandidate.skills) {
+                                const profile: ReferenceProfile = {
+                                  systems_infrastructure: matchingCandidate.skills.systems_infrastructure,
+                                  theory_statistics_ml: matchingCandidate.skills.theory_statistics_ml,
+                                  product: matchingCandidate.skills.product
+                                };
+                                
+                                // Include GitHub similarity if available
+                                if (matchingCandidate.skills.github_similarity !== undefined) {
+                                  profile.github_similarity = matchingCandidate.skills.github_similarity;
+                                }
+                                
+                                // Include GitHub vector embeddings if available
+                                if (matchingCandidate.github_vector_embeddings) {
+                                  profile.github_vector_embeddings = matchingCandidate.github_vector_embeddings;
+                                }
+                                
+                                return profile;
+                              }
+                              return null;
+                            })
+                            .filter(profile => profile !== null);
+
+                          if (referenceProfiles.length > 0) {
+                            // Parse candidate's GitHub vector if it's stored as string
+                            let candidateVector = props.github_vector_embeddings;
+                            if (typeof props.github_vector_embeddings === 'string') {
+                              try {
+                                candidateVector = JSON.parse(props.github_vector_embeddings);
+                              } catch (error) {
+                                console.log("Error parsing GitHub vector:", error);
+                                candidateVector = undefined;
+                              }
+                            }
+
+                            // Call company similarity API
+                            console.log("STARTING COMPANY SIMILARITY CALL ")
+                            const companyCompatResponse = await fetch('/api/company-similarity', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({
+                                candidate_skills: availableSkills,
+                                reference_profiles: referenceProfiles,
+                                candidate_github_vector: candidateVector,
+                                weights: companyWeights
+                              }),
+                              credentials: 'include'
+                            });
+
+                            if (companyCompatResponse.ok) {
+                              const compatData = await companyCompatResponse.json();
+                              console.log("🎯 Company compatibility response:", compatData);
+                              if (compatData.success && companyData) {
+                                console.log("📊 Setting compatibility data:", { company: companyData, compatibility: compatData.compatibility });
+                                setCalculatedCompanyCompatibility({
+                                  company: companyData,
+                                  compatibility: compatData.compatibility
+                                });
+                              } else {
+                                console.error('Company similarity API error:', compatData.error || 'Missing company data');
+                              }
+                            } else {
+                              console.error('Company similarity API failed:', companyCompatResponse.status);
+                            }
+                          }
+                        }
+                      } catch (companyError) {
+                        console.error('Error calculating company compatibility:', companyError);
+                      }
+                    }
                   } 
                 } 
               } catch (matchesError) {
@@ -949,7 +1001,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-neutral-900">
-                  Profile Alignment{calculatedCompanyCompatibility ? ` to ${calculatedCompanyCompatibility.company.name}` : ''}
+                  Profile Alignment{calculatedCompanyCompatibility?.company?.name ? ` to ${calculatedCompanyCompatibility.company.name}` : ''}
                 </h3>
                 
                 {calculatedCompanyCompatibility && (
@@ -961,7 +1013,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
 
                <div className="bg-neutral-50 rounded-lg">
                   <div className="text-sm text-neutral-700 whitespace-pre-line">
-                    Indexing on candidate profiles that have successfully accepted received or been offered a positions at {calculatedCompanyCompatibility ? String(calculatedCompanyCompatibility.company.name) : 'your company'}, we determine compatability. 
+                    Indexing on candidate profiles that have successfully accepted received or been offered a positions at {calculatedCompanyCompatibility?.company?.name ? String(calculatedCompanyCompatibility.company.name) : 'your company'}, we determine compatability. 
                   </div>
                 </div>
               

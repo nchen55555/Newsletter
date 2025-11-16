@@ -9,7 +9,6 @@ interface GitHubSimilarity {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
-  console.log('🚀 Starting similarity calculation at:', new Date().toISOString());
   
   try {
     // Parse request body
@@ -75,13 +74,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           );
           
           githubSimilarities = validSimilarities;
-          console.log(`Found ${githubSimilarities.length} valid GitHub similarities for candidate ${candidate_id} (from ${(matches || []).length} total)`);
-          
-          if (githubSimilarities.length > 0) {
-            console.log('Sample valid GitHub similarity:', githubSimilarities[0]);
-          } else {
-            console.log('No valid GitHub similarities found - proceeding without GitHub matching');
-          }
+        
         }
       } catch (error) {
         console.error('Error fetching GitHub similarities:', error);
@@ -116,10 +109,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log('🐍 Starting Python API call at:', new Date().toISOString());
       console.log('📊 Request data:', JSON.stringify(requestData, null, 2));
 
-      // Call the Python API endpoint consistently
-      const apiUrl = process.env.NODE_ENV === 'production' 
-        ? `https://${process.env.VERCEL_URL}/api/similarity`
-        : 'http://localhost:3000/api/similarity';
+      // Call the candidate similarity proxy endpoint
+      // Use localhost for development, production URL for production
+      const isProduction = process.env.NODE_ENV === 'production';
+      const baseUrl = isProduction 
+        ? (process.env.NEXT_PUBLIC_BASE_URL || 'https://theniche.tech')
+        : 'http://localhost:3000';
+      const apiUrl = `${baseUrl}/api/candidate-similarity`;
         
       console.log('🌐 Calling API URL:', apiUrl);
 

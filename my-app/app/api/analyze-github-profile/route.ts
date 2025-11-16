@@ -72,9 +72,6 @@ export async function POST(request: NextRequest) {
     let userRealName: string | undefined;
     if (first_name || last_name) {
       userRealName = [first_name, last_name].filter(Boolean).join(' ');
-      console.log(`[COMMIT VERIFICATION] Using provided name for commit verification: "${userRealName}"`);
-    } else {
-      console.log(`[COMMIT VERIFICATION] No name provided, using username only: "${username}"`);
     }
 
     // Perform the analysis with user's real name for better commit verification

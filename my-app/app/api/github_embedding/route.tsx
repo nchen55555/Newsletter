@@ -178,7 +178,6 @@ export async function POST(request: NextRequest) {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         serviceKey
       );
-      console.log('Using service role client for embedding generation');
     } else {
       // Fallback to regular authenticated client
       supabase = createRouteHandlerClient({ cookies });

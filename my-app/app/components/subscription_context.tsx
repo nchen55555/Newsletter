@@ -26,7 +26,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
   const refreshSubscription = useCallback(async () => {
     try {
-      const res = await fetch("/api/subscription");
+      const res = await fetch("/api/check-subscription");
       const data = await res.json();
       console.log("Subscription API response:", data);
       setIsSubscribed(data.isSubscribed);
