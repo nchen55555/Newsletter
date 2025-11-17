@@ -48,11 +48,15 @@ export async function GET(request: Request){
         .from('subscribers')
         .select('*')
         .eq('id', realId)
-        .single();
+        .maybeSingle(); // Use maybeSingle() to handle 0 or 1 rows gracefully
     
-      
-        // For other errors, throw them
+        // Handle database errors
         if (subError) throw subError
+        
+        // Handle the case where no profile is found
+        if (!subscriber) {
+          return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+        }
 
         return NextResponse.json({ 
             isSubscribed: subscriber !== null,

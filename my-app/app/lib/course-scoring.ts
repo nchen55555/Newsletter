@@ -84,7 +84,6 @@ async function getSchoolConfig(school?: string): Promise<SchoolConfig | null> {
   // Add more schools here as needed
   
   if (!configFile) {
-    console.log('⚠️ No course mapping found for school:', school);
     schoolConfigCache.set(normalizedSchool, null);
     return null;
   }
@@ -94,7 +93,6 @@ async function getSchoolConfig(school?: string): Promise<SchoolConfig | null> {
     const config = await import(`./course-mappings/${configFile}.json`);
     const schoolConfig: SchoolConfig = config.default || config;
     
-    console.log(`📚 Loaded course mapping for ${schoolConfig.name}`);
     schoolConfigCache.set(normalizedSchool, schoolConfig);
     return schoolConfig;
   } catch (error) {
@@ -106,18 +104,14 @@ async function getSchoolConfig(school?: string): Promise<SchoolConfig | null> {
 
 export async function calculateSkillScores(transcript: Course[], school?: string): Promise<SkillScores | null> {
   if (!school) {
-    console.log('⚠️ No school provided, skipping skill calculation');
     return null;
   }
 
   // Load school configuration
   const schoolConfig = await getSchoolConfig(school);
   if (!schoolConfig) {
-    console.log(`⚠️ No course mapping found for school: ${school}, skipping skill calculation`);
     return null;
   }
-
-  console.log(`📊 Calculating skill scores using ${schoolConfig.name} mappings`);
 
   // Initialize with baseline
   const scores: SkillScores = {
@@ -199,8 +193,6 @@ export async function calculateSkillScores(transcript: Course[], school?: string
        (schoolConfig.scoreRanges.product.max - schoolConfig.scoreRanges.product.min)) * 100
     ))
   };
-
-  console.log("Sending over standardized scores ", standardizedScores)
   
   return standardizedScores;
 }

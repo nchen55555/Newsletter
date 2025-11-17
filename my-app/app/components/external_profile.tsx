@@ -1,9 +1,18 @@
-import { ProfileData, CompanyWithImageUrl, FeedItem, ReferralWithProfile } from "@/app/types";
-import { SkillScores } from "@/app/types/candidate-matching";
-import { GitHubProfileAnalysis, AnalyzedRepository, TechnologyDetection } from "@/app/types/github-analysis";
+import { ProfileData, CompanyWithImageUrl, FeedItem, ReferralWithProfile } from "../types";
+import { GitHubProfileAnalysis, AnalyzedRepository, TechnologyDetection } from "../types/github-analysis";
+import { 
+  AvailableTab, 
+  CompanyCompatibilityResponse, 
+  CompanyData, 
+  MatchingCandidate, 
+  ReferenceProfile, 
+  ExternalProfileProps,
+  CandidateMatch,
+  SkillScores,
+  SimilarityWeights
+} from "../types/match-types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
 import { FileText, Linkedin, Globe, Edit, Plus, Send, Users, AlertCircle, Github } from "lucide-react";
 import { useEffect, useState, useCallback } from 'react';
 import ProfileAvatar from "./profile_avatar";
@@ -16,55 +25,11 @@ import { useRouter } from "next/navigation";
 import { encodeSimple } from "../utils/simple-hash";
 import { ReferralDialog } from "./referral-dialog";
 import Post from "./post";
-import { ProjectsDialog } from "@/app/components/projects_dialog";
+import { ProjectsDialog } from "./projects_dialog";
 import ApplyCompanies from "./apply-companies";
 import SimilarCandidateCard from "./similar_candidate_card";
 import { calculateSkillScores } from "../lib/course-scoring";
-
-type AvailableTab =  "scores" | "bookmarks" | "threads" | "referrals" | "projects" | "connections" | "similar";
-
-interface CompanyCompatibilityResponse {
-  distance: number;
-  similarity: number;
-  similarity_percentage: number;
-  skills: SkillScores;
-  company_requirements: SkillScores;
-  skill_differences: SkillScores;
-  cluster_stats: {
-    center: SkillScores;
-    std_dev: SkillScores;
-    cluster_weights: SkillScores;
-    final_weights: SkillScores;
-    sample_size: number;
-  };
-}
-
-interface CompanyData {
-  name?: string;
-  match_profiles?: string[];
-  [key: string]: unknown;
-}
-
-interface MatchingCandidate {
-  candidate_id: string;
-  skills: SkillScores;
-  github_vector_embeddings?: number[];
-  [key: string]: unknown;
-}
-
-interface ReferenceProfile {
-  systems_infrastructure: number;
-  theory_statistics_ml: number;
-  product: number;
-  github_similarity?: number;
-  github_vector_embeddings?: number[];
-}
-
-interface ExternalProfileProps extends ProfileData {
-  isExternalView?: boolean;
-  client_id?: number;
-  is_client_specific?: boolean;
-}
+import { WeightSliders } from "./weight-sliders";
 
 export function ExternalProfile(props: ExternalProfileProps) {
   const router = useRouter();
@@ -196,11 +161,15 @@ export function ExternalProfile(props: ExternalProfileProps) {
 
   // Calculate skill scores from parsed_transcript_json
   const [calculatedSkillScores, setCalculatedSkillScores] = useState<SkillScores | null>(null);
+  const [skillsLoading, setSkillsLoading] = useState(true);
   
   useEffect(() => {
     const calculateScores = async () => {
+      setSkillsLoading(true);
+      
       if (!props.parsed_transcript_json) {
         setCalculatedSkillScores(null);
+        setSkillsLoading(false);
         return;
       }
 
@@ -215,6 +184,8 @@ export function ExternalProfile(props: ExternalProfileProps) {
         console.log("Error ", error)
         setCalculatedSkillScores(null);
       }
+      
+      setSkillsLoading(false);
     };
     
     calculateScores();
@@ -382,20 +353,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
   }, [props.connections_new]);
 
   // Store similar candidates from the main pipeline for company view display
-  const [similarCandidatesFromPipeline, setSimilarCandidatesFromPipeline] = useState<Array<{
-    candidate_id: string;
-    distance: number;
-    similarity: number;
-    similarity_percentage: number;
-    skills: SkillScores;
-    github_vector_embeddings?: number[];
-    profile?: {
-      id: number;
-      first_name: string;
-      last_name: string;
-      profile_image_url?: string;
-    };
-  }>>([]);
+  const [similarCandidatesFromPipeline, setSimilarCandidatesFromPipeline] = useState<CandidateMatch[]>([]);
   
   // Helper function to construct skills object from available data sources
   const getAvailableSkills = useCallback((): SkillScores | null => {
@@ -461,7 +419,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
   }, [getAvailableSkills]);
   
   // Category weights state for similarity matching
-  const [categoryWeights, setCategoryWeights] = useState({
+  const [categoryWeights, setCategoryWeights] = useState<SimilarityWeights>({
     systems_infrastructure: 1.0,
     theory_statistics_ml: 1.0,
     product: 1.0,
@@ -469,7 +427,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
   });
 
   // Category weights state for company compatibility
-  const [companyWeights, setCompanyWeights] = useState({
+  const [companyWeights, setCompanyWeights] = useState<SimilarityWeights>({
     systems_infrastructure: 1.0,
     theory_statistics_ml: 1.0,
     product: 1.0,
@@ -489,6 +447,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
 
   // Update company weights to match calculated cluster weights when compatibility data loads (only once)
   useEffect(() => {
+    
     if (!hasInitializedWeights && calculatedCompanyCompatibility?.compatibility.cluster_stats?.cluster_weights) {
       const clusterWeights = calculatedCompanyCompatibility.compatibility.cluster_stats.cluster_weights;
       setCompanyWeights({
@@ -637,7 +596,6 @@ export function ExternalProfile(props: ExternalProfileProps) {
                             }
 
                             // Call company similarity API
-                            console.log("STARTING COMPANY SIMILARITY CALL ")
                             const companyCompatResponse = await fetch('/api/company-similarity', {
                               method: 'POST',
                               headers: {
@@ -654,9 +612,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
 
                             if (companyCompatResponse.ok) {
                               const compatData = await companyCompatResponse.json();
-                              console.log("🎯 Company compatibility response:", compatData);
                               if (compatData.success && company) {
-                                console.log("📊 Setting compatibility data:", { company: company, compatibility: compatData.compatibility });
                                 setCalculatedCompanyCompatibility({
                                   company: company,
                                   compatibility: compatData.compatibility
@@ -685,7 +641,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
           console.error('Error running find_similar_candidates:', error);
         }
       }
-    }, [fetchCompanyCompatibility, getAvailableSkills, props.client_id, categoryWeights, props.id]);
+    }, [fetchCompanyCompatibility, getAvailableSkills, props.client_id, categoryWeights, props.id, companyWeights, props.github_vector_embeddings]);
 
   const fetchBookmarkedCompanies = useCallback(async () => {
       if (!props.bookmarked_companies || props.bookmarked_companies.length === 0) {
@@ -723,8 +679,11 @@ export function ExternalProfile(props: ExternalProfileProps) {
     fetchUserProjects();
     fetchConnectionProfiles();
 
-    runCompanyAndSimilar();
-  }, [props.bookmarked_companies, props.company_recommendations, props.id, props.client_id, calculatedSkillScores, githubAnalysis, props.github_vector_embeddings]);
+    // Only run company compatibility when skills are fully loaded
+    if (!skillsLoading) {
+      runCompanyAndSimilar();
+    }
+  }, [props.bookmarked_companies, props.company_recommendations, props.id, props.client_id, calculatedSkillScores, githubAnalysis, props.github_vector_embeddings, skillsLoading]);
   
   // Separate effect for category weight changes - only recalculate similar candidates
   useEffect(() => {
@@ -788,6 +747,109 @@ export function ExternalProfile(props: ExternalProfileProps) {
       return () => clearTimeout(timeoutId);
     }
   }, [categoryWeights, getAvailableSkills, props.client_id, props.id, similarCandidatesFromPipeline.length]);
+
+  // Separate effect for company weight changes - recalculate company compatibility
+  useEffect(() => {
+    // Get available skills for recalculation
+    const availableSkills = getAvailableSkills();
+    
+    // Only run if we have company data, skills, and we've already loaded initial data
+    if (!isCompanyView || !calculatedCompanyCompatibility || !hasInitializedWeights) {
+      // Don't run if we haven't loaded initial company data yet
+      return;
+    }
+    
+    if (availableSkills && similarCandidatesFromPipeline.length > 0) {
+      // Recalculate company compatibility with new weights
+      const recalculateCompanyCompatibility = async () => {
+        try {
+          const company = calculatedCompanyCompatibility.company;
+          
+          // Build reference profiles from company data and similar candidates
+          const matchProfiles = company.match_profiles;
+          if (matchProfiles && matchProfiles.length > 0) {
+            const referenceProfiles = matchProfiles
+              .map((profileId: string) => {
+                const matchingCandidate = similarCandidatesFromPipeline.find(
+                  (candidate: CandidateMatch) => candidate.candidate_id?.toString() === profileId.toString()
+                );
+
+                if (matchingCandidate && matchingCandidate.skills) {
+                  const profile: ReferenceProfile = {
+                    systems_infrastructure: matchingCandidate.skills.systems_infrastructure,
+                    theory_statistics_ml: matchingCandidate.skills.theory_statistics_ml,
+                    product: matchingCandidate.skills.product
+                  };
+                  
+                  // Include GitHub similarity if available
+                  if (matchingCandidate.skills.github_similarity !== undefined) {
+                    profile.github_similarity = matchingCandidate.skills.github_similarity;
+                  }
+                  
+                  // Include GitHub vector embeddings if available
+                  if (matchingCandidate.github_vector_embeddings) {
+                    profile.github_vector_embeddings = matchingCandidate.github_vector_embeddings;
+                  }
+                  
+                  return profile;
+                }
+                return null;
+              })
+              .filter(profile => profile !== null);
+
+            if (referenceProfiles.length > 0) {
+              // Parse candidate's GitHub vector if it's stored as string
+              let candidateVector = props.github_vector_embeddings;
+              if (typeof props.github_vector_embeddings === 'string') {
+                try {
+                  candidateVector = JSON.parse(props.github_vector_embeddings);
+                } catch (error) {
+                  console.log("Error parsing GitHub vector:", error);
+                  candidateVector = undefined;
+                }
+              }
+
+              // Call company similarity API with updated weights
+              const companyCompatResponse = await fetch('/api/company-similarity', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  candidate_skills: availableSkills,
+                  reference_profiles: referenceProfiles,
+                  candidate_github_vector: candidateVector,
+                  weights: companyWeights
+                }),
+                credentials: 'include'
+              });
+
+              if (companyCompatResponse.ok) {
+                const compatData = await companyCompatResponse.json();
+                if (compatData.success && company) {
+                  setCalculatedCompanyCompatibility({
+                    company: company,
+                    compatibility: compatData.compatibility
+                  });
+                } else {
+                  console.error('Company similarity API error:', compatData.error || 'Missing company data');
+                }
+              } else {
+                console.error('Company similarity API failed:', companyCompatResponse.status);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error recalculating company compatibility:', error);
+        }
+      };
+
+      // Debounce the recalculation to avoid too many API calls
+      const timeoutId = setTimeout(recalculateCompanyCompatibility, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [companyWeights, getAvailableSkills, isCompanyView, calculatedCompanyCompatibility, hasInitializedWeights, similarCandidatesFromPipeline, props.github_vector_embeddings]);
+    
     if (!props) return <Skeleton className="h-12 w-full" />; // or customize size;
   return (
     <>
@@ -1006,7 +1068,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
 
                <div className="bg-neutral-50 rounded-lg">
                   <div className="text-sm text-neutral-700 whitespace-pre-line">
-                    Indexing on candidate profiles that have successfully accepted received or been offered a positions at {calculatedCompanyCompatibility?.company?.name ? String(calculatedCompanyCompatibility.company.name) : 'your company'}, we determine compatability. 
+                    Indexing on candidate profiles that we believe would be successful at {calculatedCompanyCompatibility?.company?.name ? String(calculatedCompanyCompatibility.company.name) : 'your company'}, we determine compatability. 
                   </div>
                 </div>
               
@@ -1029,7 +1091,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
                           candidate: calculatedCompanyCompatibility.compatibility.skills.systems_infrastructure || 0,
                           company: calculatedCompanyCompatibility.compatibility.company_requirements.systems_infrastructure || 0,
                           difference: calculatedCompanyCompatibility.compatibility.skill_differences.systems_infrastructure || 0,
-                          weight: calculatedCompanyCompatibility.compatibility.cluster_stats.final_weights.systems_infrastructure || 0
+                          weight: companyWeights.systems_infrastructure || 0
                         }] : []),
                         ...(calculatedCompanyCompatibility.compatibility.skills.theory_statistics_ml > 0 ? [{ 
                           key: 'theory_statistics_ml', 
@@ -1037,7 +1099,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
                           candidate: calculatedCompanyCompatibility.compatibility.skills.theory_statistics_ml || 0,
                           company: calculatedCompanyCompatibility.compatibility.company_requirements.theory_statistics_ml || 0,
                           difference: calculatedCompanyCompatibility.compatibility.skill_differences.theory_statistics_ml || 0,
-                          weight: calculatedCompanyCompatibility.compatibility.cluster_stats.final_weights.theory_statistics_ml || 0
+                          weight: companyWeights.theory_statistics_ml || 0
                         }] : []),
                         ...(calculatedCompanyCompatibility.compatibility.skills.product > 0 ? [{ 
                           key: 'product', 
@@ -1045,7 +1107,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
                           candidate: calculatedCompanyCompatibility.compatibility.skills.product || 0,
                           company: calculatedCompanyCompatibility.compatibility.company_requirements.product || 0,
                           difference: calculatedCompanyCompatibility.compatibility.skill_differences.product || 0,
-                          weight: calculatedCompanyCompatibility.compatibility.cluster_stats.final_weights.product || 0
+                          weight: companyWeights.product || 0
                         }] : []),
                         // Include GitHub similarity if available and candidate has GitHub data
                         ...(calculatedCompanyCompatibility.compatibility.skills.github_similarity !== undefined && calculatedCompanyCompatibility.compatibility.skills.github_similarity > 0 ? [{
@@ -1054,7 +1116,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
                           candidate: calculatedCompanyCompatibility.compatibility.skills.github_similarity || 0,
                           company: 0, // Not applicable for GitHub - it's a direct similarity measure
                           difference: calculatedCompanyCompatibility.compatibility.skill_differences.github_similarity || 0,
-                          weight: calculatedCompanyCompatibility.compatibility.cluster_stats.final_weights.github_similarity || 0,
+                          weight: 1.00,
                           isGithub: true // Flag to handle GitHub differently
                         }] : [])
                       ].map((skill) => (
@@ -1086,120 +1148,19 @@ export function ExternalProfile(props: ExternalProfileProps) {
                   </div>
 
                   {/* Company Compatibility Weight Controls */}
-                  <div className="bg-neutral-50 rounded-lg p-4 space-y-4">
-                <h4 className="text-sm font-medium text-neutral-700">Adjust Weighted Focus</h4>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  {/* Systems Infrastructure Weight - Only show if candidate has this skill */}
-                  {calculatedCompanyCompatibility.compatibility.skills.systems_infrastructure > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-neutral-600">Systems & Infrastructure</label>
-                      </div>
-                      <div className="relative px-1">
-                        <Slider
-                          value={[companyWeights.systems_infrastructure ?? 1.0]}
-                          onValueChange={(value) => setCompanyWeights(prev => ({
-                            ...prev,
-                            systems_infrastructure: value[0]
-                          }))}
-                          min={0}
-                          max={2}
-                          step={0.05}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                          <span>Ignored</span>
-                          <span>2x</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Theory & ML Weight - Only show if candidate has this skill */}
-                  {calculatedCompanyCompatibility.compatibility.skills.theory_statistics_ml > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-neutral-600">Theory & Statistics</label>
-                      </div>
-                      <div className="relative px-1">
-                        <Slider
-                          value={[companyWeights.theory_statistics_ml ?? 1.0]}
-                          onValueChange={(value) => setCompanyWeights(prev => ({
-                            ...prev,
-                            theory_statistics_ml: value[0]
-                          }))}
-                          min={0}
-                          max={2}
-                          step={0.05}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                          <span>Ignored</span>
-                          <span>2x</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Product Weight - Only show if candidate has this skill */}
-                  {calculatedCompanyCompatibility.compatibility.skills.product > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-neutral-600">Core Product Engineering</label>
-                       
-                      </div>
-                      <div className="relative px-1">
-                        <Slider
-                          value={[companyWeights.product ?? 1.0]}
-                          onValueChange={(value) => setCompanyWeights(prev => ({
-                            ...prev,
-                            product: value[0]
-                          }))}
-                          min={0}
-                          max={2}
-                          step={0.05}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                          <span>Ignored</span>
-                          <span>2x</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* GitHub Similarity Weight - Only show if user has GitHub data */}
-                  {githubAnalysis && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-neutral-600">GitHub Technical Similarity</label>
-                       
-                      </div>
-                      <div className="relative px-1">
-                        <Slider
-                          value={[companyWeights.github_similarity ?? 1.0]}
-                          onValueChange={(value) => setCompanyWeights(prev => ({
-                            ...prev,
-                            github_similarity: value[0]
-                          }))}
-                          min={0}
-                          max={2}
-                          step={0.05}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                          <span>Ignored</span>
-                          <span>2x</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex justify-center gap-3">
-                  <button
-                    onClick={() => {
+                  <WeightSliders
+                    title="Adjust Weighted Focus"
+                    weights={companyWeights}
+                    onWeightChange={(newWeights) => setCompanyWeights(prev => ({ ...prev, ...newWeights }))}
+                    availableDimensions={[
+                      ...(calculatedCompanyCompatibility.compatibility.skills.systems_infrastructure > 0 ? ['systems_infrastructure'] : []),
+                      ...(calculatedCompanyCompatibility.compatibility.skills.theory_statistics_ml > 0 ? ['theory_statistics_ml'] : []),
+                      ...(calculatedCompanyCompatibility.compatibility.skills.product > 0 ? ['product'] : []),
+                      ...(githubAnalysis ? ['github_similarity'] : [])
+                    ]}
+                    showCurrentValues={true}
+                    resetButtonText="Reset to Calculated"
+                    onReset={() => {
                       if (calculatedCompanyCompatibility?.compatibility.cluster_stats?.cluster_weights) {
                         const clusterWeights = calculatedCompanyCompatibility.compatibility.cluster_stats.cluster_weights;
                         setCompanyWeights({
@@ -1217,12 +1178,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
                         });
                       }
                     }}
-                    className="px-4 py-2 text-xs bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg transition-colors font-medium"
-                  >
-                    Reset to Calculated
-                  </button>
-                </div>
-                  </div>
+                  />
                 </div>
 
                 
@@ -1586,134 +1542,19 @@ export function ExternalProfile(props: ExternalProfileProps) {
                     <h3 className="text-lg font-medium text-neutral-900">Similarity in Profiles</h3>
                   </div>
                   
-                  {/* Category Weight Controls */}
-                  <div className="bg-neutral-50 rounded-lg p-4 space-y-4">
-                    <h4 className="text-sm font-medium text-neutral-700">Adjust Weighted Focus</h4>
-                    <div className={`grid gap-4 ${getAvailableComparisonDimensions().length <= 1 ? 'grid-cols-1' : getAvailableComparisonDimensions().length <= 2 ? 'grid-cols-1 md:grid-cols-2' : getAvailableComparisonDimensions().length <= 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-4'}`}>
-                      {/* Systems Infrastructure Weight - Only show if included in comparison */}
-                      {getAvailableComparisonDimensions().includes('systems_infrastructure') && (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs font-medium text-neutral-600">Systems & Infrastructure</label>
-                          </div>
-                          <div className="relative px-1">
-                            <Slider
-                              value={[categoryWeights.systems_infrastructure ?? 1.0]}
-                              onValueChange={(value) => setCategoryWeights(prev => ({
-                                ...prev,
-                                systems_infrastructure: value[0]
-                              }))}
-                              min={0}
-                              max={2}
-                              step={0.05}
-                              className="w-full"
-                            />
-                          <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                            <span>Ignored</span>
-                            <span>2x</span>
-                          </div>
-                        </div>
-                      </div>
-                      )}
-                      
-                      {/* Theory & ML Weight - Only show if included in comparison */}
-                      {getAvailableComparisonDimensions().includes('theory_statistics_ml') && (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs font-medium text-neutral-600">Theory, Statistics & ML</label>
-                            <span className="text-xs text-neutral-500">
-                              {categoryWeights.theory_statistics_ml === 1.0 ? 'Equal' : `${categoryWeights.theory_statistics_ml.toFixed(1)}x`}
-                            </span>
-                          </div>
-                          <div className="relative px-1">
-                            <Slider
-                              value={[categoryWeights.theory_statistics_ml ?? 1.0]}
-                              onValueChange={(value) => setCategoryWeights(prev => ({
-                                ...prev,
-                                theory_statistics_ml: value[0]
-                              }))}
-                              min={0}
-                              max={2}
-                              step={0.05}
-                              className="w-full"
-                            />
-                          <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                            <span>Ignored</span>
-                            <span>2x</span>
-                          </div>
-                        </div>
-                      </div>
-                      )}
-                      
-                      {/* Product Weight - Only show if included in comparison */}
-                      {getAvailableComparisonDimensions().includes('product') && (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs font-medium text-neutral-600">Product Development</label>
-                          </div>
-                          <div className="relative px-1">
-                            <Slider
-                              value={[categoryWeights.product ?? 1.0]}
-                              onValueChange={(value) => setCategoryWeights(prev => ({
-                                ...prev,
-                                product: value[0]
-                              }))}
-                              min={0}
-                              max={2}
-                              step={0.05}
-                              className="w-full"
-                            />
-                          <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                            <span>Ignored</span>
-                            <span>2x</span>
-                          </div>
-                        </div>
-                      </div>
-                      )}
-                      
-                      {/* GitHub Similarity Weight - Only show if included in comparison */}
-                      {getAvailableComparisonDimensions().includes('github_similarity') && (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs font-medium text-neutral-600">GitHub Technical Similarity</label>
-                          </div>
-                          <div className="relative px-1">
-                            <Slider
-                              value={[categoryWeights.github_similarity ?? 1.0]}
-                              onValueChange={(value) => setCategoryWeights(prev => ({
-                                ...prev,
-                                github_similarity: value[0]
-                              }))}
-                              min={0}
-                              max={2}
-                              step={0.05}
-                              className="w-full"
-                            />
-                            <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                              <span>Ignored</span>
-                              <span>2x</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Reset Button */}
-                    <div className="flex justify-center">
-                      <button
-                        onClick={() => {
-                          const resetWeights: Record<string, number> = {};
-                          getAvailableComparisonDimensions().forEach(dim => {
-                            resetWeights[dim] = 1.0;
-                          });
-                          setCategoryWeights(prev => ({ ...prev, ...resetWeights }));
-                        }}
-                        className="px-4 py-2 text-xs bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg transition-colors font-medium"
-                      >
-                        Reset Weights
-                      </button>
-                    </div>
-                  </div>
+                  <WeightSliders
+                    title="Adjust Weighted Focus"
+                    weights={categoryWeights}
+                    onWeightChange={(newWeights) => setCategoryWeights(prev => ({ ...prev, ...newWeights }))}
+                    availableDimensions={getAvailableComparisonDimensions()}
+                    onReset={() => {
+                      const resetWeights: Record<string, number> = {};
+                      getAvailableComparisonDimensions().forEach(dim => {
+                        resetWeights[dim] = 1.0;
+                      });
+                      setCategoryWeights(prev => ({ ...prev, ...resetWeights }));
+                    }}
+                  />
                   {similarCandidatesFromPipeline.length === 0 && props.client_id ? (
                     <div className="space-y-4">
                       <Skeleton className="h-32 w-full rounded-lg" />

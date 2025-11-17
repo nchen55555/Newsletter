@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { 
-  EnrichedCandidateMatch,
+  CandidateMatch,
   SkillScores,
-} from '@/app/types/candidate-matching';
+} from '@/app/types/match-types';
+
+// Type alias for backward compatibility
+type EnrichedCandidateMatch = CandidateMatch;
 
 interface MatchRequest {
   matches: Array<{
@@ -62,7 +65,7 @@ export async function POST(request: NextRequest) {
       if (!candidateProfile) {
         return {
           ...match,
-          profile: null,
+          profile: undefined,
           error: 'Profile not found'
         };
       }
