@@ -1,0 +1,65 @@
+{
+  "name": "MIT",
+  "courseMappings": {
+    "6.1220": {
+      "systems_infrastructure": 1.1,
+      "theory_statistics_ml": 0.0,
+      "product": 0.9,
+      "grade_sensitivity": 1.3
+    },
+    "6.1210": {
+      "systems_infrastructure": 1.0,
+      "theory_statistics_ml": 0.0,
+      "product": 0.8,
+      "grade_sensitivity": 1.3
+    },
+    "6.3900": {
+      "systems_infrastructure": 0.6,
+      "theory_statistics_ml": 0.0,
+      "product": 1.0,
+      "grade_sensitivity": 1.3
+    },
+    "6.1010": {
+      "systems_infrastructure": 0.7,
+      "theory_statistics_ml": 0.0,
+      "product": 0.9,
+      "grade_sensitivity": 1.3
+    },
+    "6.1020": {
+      "systems_infrastructure": 0.8,
+      "theory_statistics_ml": 0.0,
+      "product": 1.2,
+      "grade_sensitivity": 1.0
+    },
+    "6.861": {
+      "systems_infrastructure": 1.2,
+      "theory_statistics_ml": 0.8,
+      "product": 0.8,
+      "grade_sensitivity": 1.0
+    },
+    "6.S058": {
+      "systems_infrastructure": 1.2,
+      "theory_statistics_ml": 0.8,
+      "product": 0.8,
+      "grade_sensitivity": 1.0
+    },
+    "6.S191": {
+      "systems_infrastructure": 1.2,
+      "theory_statistics_ml": 0.9,
+      "product": 0.8,
+      "grade_sensitivity": 1.0
+    },
+    "6.7920": {
+      "systems_infrastructure": 1.3,
+      "theory_statistics_ml": 0.9,
+      "product": 0.8,
+      "grade_sensitivity": 1.0
+    },
+    "MARL": {
+      "systems_infrastructure": 1.3,
+      "theory_statistics_ml": 1.0,
+      "product": 0.8,
+      "grade_sensitivity": 1.0
+    }
+  }
+}

@@ -10,9 +10,9 @@ import { Info, Repeat2, Send, Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VerificationProtectedContent } from "../components/verification-protected-content";
 import { CompanyCard } from "../companies/company-cards";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ReferralDialog } from "../components/referral-dialog";
+import { CommitmentPledgeDialog } from "../components/commitment-pledge-dialog";
 import Post from "../components/post";
 import ApplyCompanies from "../components/apply-companies";
 
@@ -67,7 +67,7 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
     const [bookmarkedCompanies, setBookmarkedCompanies] = useState<number[]>([])
     const [verifiedToTheNiche, setVerifiedToTheNiche] = useState(false)
     const [activeTab, setActiveTab] = useState<'recommended' | 'bookmarks' | 'other'>('recommended')
-    const [showNewFeaturesDialog, setShowNewFeaturesDialog] = useState(false)
+    const [hasAcceptedCommitment, setHasAcceptedCommitment] = useState(false)
     const [showReferralDialog, setShowReferralDialog] = useState(false)
 
     useEffect(() => {
@@ -85,6 +85,7 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
                     setGeneratedInterestProfile(profile.generated_interest_profile || "")
                     setCompanyRecommendations(profile.company_recommendations || [])
                     setVerifiedToTheNiche(profile.verified)
+                    setHasAcceptedCommitment(profile.professional_agreement || false);
                     
                 }
             } catch (e) {
@@ -110,21 +111,17 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
 
         const fetchData = async () => {
             await Promise.all([fetchProfile(), fetchBookmarks()]);
+            
             setIsLoading(false);
         }
 
         fetchData()
     }, [first_name, generated_interest_profile, profile_image_url])
 
-    // Show new features dialog when page loads and user is verified
-    useEffect(() => {
-        if (!isLoading && verifiedToTheNiche) {
-            const hasSeenNewFeatures = localStorage.getItem('hasSeenNewFeatures')
-            if (!hasSeenNewFeatures) {
-                setShowNewFeaturesDialog(true)
-            }
-        }
-    }, [isLoading, verifiedToTheNiche])
+    const handleAcceptCommitment = () => {
+      console.log("accepted commitment")
+      setHasAcceptedCommitment(true);
+  };
 
     // Bookmarked companies
     const bookmarkedOpportunities = featuredOpportunities.filter(opportunity => 
@@ -141,49 +138,17 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
         !companyRecommendations.includes(opportunity.company) && !bookmarkedCompanies.includes(opportunity.company)
     );
 
-    const handleCloseNewFeaturesDialog = () => {
-        setShowNewFeaturesDialog(false)
-        localStorage.setItem('hasSeenNewFeatures', 'true')
-    }
 
     return (
       
         <div >
-          {/* New Features Dialog */}
-          <Dialog open={showNewFeaturesDialog} onOpenChange={setShowNewFeaturesDialog}>
-            <DialogContent className="sm:max-w-2xl">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-semibold text-center mb-4">
-                  An Update on The Niche
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-6 py-4">
-                <Alert className="bg-gradient-to-r from-yellow-50 via-orange-50 to-pink-50 border border-yellow-200">
-                  <Repeat2 className="h-5 w-5 text-orange-600" />
-                  <AlertDescription>
-                    <span className="text-neutral-700">
-                      We are now introducing <strong>Thought Threads</strong>. Once you have received an offer from an opportunity on The Niche, you can thread into the community feed to get opinions on the company, connect with others that have also received an offer and are deliberating, as well as share your experiences! 
-                    </span>
-                  </AlertDescription>
-                </Alert>
-                
-                <Alert className="bg-gradient-to-r from-yellow-50 via-orange-50 to-pink-50 border border-yellow-200">
-                  <Send className="h-5 w-5 text-orange-600" />
-                  <AlertDescription>
-                    <span className="text-neutral-700">
-                      We are now introducing <strong>Organic Referrals</strong>. Click share to send the company profile with a customized link tied to your profile to people who you think would be a good fit for the opportunity and refer them to apply!
-                    </span>
-                  </AlertDescription>
-                </Alert>
-              </div>
-              
-              <div className="flex justify-center pt-4">
-                <Button onClick={handleCloseNewFeaturesDialog} className="px-8">
-                  Got it, thanks!
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          {/* Commitment Pledge Dialog - Non-cancellable until accepted */}
+          {verifiedToTheNiche && !hasAcceptedCommitment && (
+            <CommitmentPledgeDialog
+              open={true}
+              onAccept={handleAcceptCommitment}
+            />
+          )}
 
           {/* Referral Dialog */}
           <ReferralDialog 
@@ -191,8 +156,10 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
             onOpenChange={setShowReferralDialog}
           />
 
-          <div className="animate-in fade-in-50 duration-700">
-            {!isLoading && (
+          {/* Only show opportunities content after commitment is accepted */}
+          {hasAcceptedCommitment && (
+            <div className="animate-in fade-in-50 duration-700">
+              {!isLoading && (
                 <div className="flex flex-col items-center gap-4">
                     {/* Welcome Header */}
                     <div className="text-center pt-16 pb-2">
@@ -409,7 +376,8 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
                     <p className="text-sm font-medium text-neutral-700">Loading your opportunities database</p>
                 </div>
             )}
-            </div> 
+            </div>
+          )}
         </div>
           
     );

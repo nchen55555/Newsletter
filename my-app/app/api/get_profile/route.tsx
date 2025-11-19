@@ -70,7 +70,12 @@ export async function GET(){
             needs_visa_sponsorship: subscriber?.needs_visa_sponsorship,
             bookmarked_companies: subscriber?.bookmarked_companies,
             network_recommendations: subscriber?.network_recommendations, 
-            onboarding_step: subscriber?.onboarding_step
+            onboarding_step: subscriber?.onboarding_step, 
+            professional_agreement: subscriber?.professional_agreement || false,
+            interview_status_updated_at: subscriber?.interview_status_updated_at,
+            check_in_status: subscriber?.check_in_status,
+            timeline_of_search: subscriber?.timeline_of_search,
+            outreach_frequency: subscriber?.outreach_frequency
         })
 
     } catch (error) {

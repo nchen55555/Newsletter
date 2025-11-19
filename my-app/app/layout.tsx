@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SubscriptionProvider } from "./components/subscription_context";
+import { LayoutDialogs } from "./components/layout-dialogs";
+import { StatusCheckinProvider } from "./components/status-checkin-context";
 
 export const metadata: Metadata = {
   title: "the niche",
@@ -19,7 +21,10 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased font-sans bg-[#FFFCF8] min-h-screen">
           <SubscriptionProvider>
-            {children}
+            <StatusCheckinProvider>
+              {children}
+              <LayoutDialogs />
+            </StatusCheckinProvider>
           </SubscriptionProvider>
       </body>
     </html>

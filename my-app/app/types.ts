@@ -43,6 +43,9 @@ export type ProfileData = {
     parsed_transcript_json?: string;
     github_url_data?: string; 
     github_vector_embeddings?: number[];
+    check_in_status?: string;
+    interview_status_updated_at?: string;
+    timeline_of_search?: string;  
   };
 
 export type ProfileFormState = {

@@ -33,7 +33,6 @@ export async function GET(request: NextRequest) {
 
   // Get the email addresses of all referrals
   const referralEmails = referrals.map(referral => referral.referral_email);
-  console.log("referral emails ", referralEmails);
 
   // Look up subscribers that match the referral emails
   const { data: subscribers, error: subscribersError } = await supabase

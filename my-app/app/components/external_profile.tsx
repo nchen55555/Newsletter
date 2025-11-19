@@ -12,7 +12,6 @@ import {
   SimilarityWeights
 } from "../types/match-types";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { FileText, Linkedin, Globe, Edit, Plus, Send, Users, AlertCircle, Github } from "lucide-react";
 import { useEffect, useState, useCallback } from 'react';
 import ProfileAvatar from "./profile_avatar";
@@ -28,8 +27,11 @@ import Post from "./post";
 import { ProjectsDialog } from "./projects_dialog";
 import ApplyCompanies from "./apply-companies";
 import SimilarCandidateCard from "./similar_candidate_card";
+import { StatusCheckinTriggerButton } from "./status-checkin-context";
 import { calculateSkillScores } from "../lib/course-scoring";
 import { WeightSliders } from "./weight-sliders";
+import ProfileInfo from "./profile_info";
+import { ProfileFormState } from "../types";
 
 export function ExternalProfile(props: ExternalProfileProps) {
   const router = useRouter();
@@ -116,6 +118,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
         showBookmarks: true,
         showThreads: false,
         showProjects: true,
+        showTimeline: true, 
         highlightSections: ['bio', 'projects', 'bookmarks'],
       };
     }
@@ -130,6 +133,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
           showBookmarks: true,
           showThreads: true,
           showProjects: true,
+          showTimeline: true,
           highlightSections: [],
         };
     }
@@ -192,12 +196,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
   }, [props.parsed_transcript_json, props.school]);
 
 
-  // Editing state
-  const [editingBio, setEditingBio] = useState(false);
-  const [editingInterests, setEditingInterests] = useState(false);
-  const [bioValue, setBioValue] = useState(props.bio || '');
-  const [interestsValue, setInterestsValue] = useState(props.interests || '');
-  const [saving, setSaving] = useState<'bio' | 'interests' | 'project_urls' | null>(null);
+  // Project editing state
   const [showReferralDialog, setShowReferralDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<AvailableTab>('bookmarks');
 
@@ -210,6 +209,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
     if (clientConfig.showReferrals) availableTabs.push('referrals');
     if (clientConfig.showProjects) availableTabs.push('projects');
     if (clientConfig.showConnections) availableTabs.push('connections');
+    if (clientConfig.showTimeline) availableTabs.push('timeline');
     if (isCompanyView) availableTabs.push('similar'); // Similar candidates tab for company view
     
     if (availableTabs.length > 0 && !availableTabs.includes(activeTab)) {
@@ -217,35 +217,6 @@ export function ExternalProfile(props: ExternalProfileProps) {
     }
   }, [activeTab, clientConfig, isCompanyView, calculatedSkillScores]);
 
-  // Save field function
-  const saveField = async (field: 'bio' | 'interests' | 'project_urls', value: string) => {
-    setSaving(field);
-    try {
-      const formData = new FormData();
-      formData.append('id', props.id.toString());
-      formData.append(field, value);
-
-      const response = await fetch('/api/post_profile', {
-        method: 'PATCH',
-        body: formData,
-      });
-
-      if (response.ok) {
-        // Update was successful
-        if (field === 'bio') {
-          setEditingBio(false);
-        } else {
-          setEditingInterests(false);
-        }
-      } else {
-        alert(`Failed to update ${field}. Please try again.`);
-      }
-    } catch (error) {
-      alert(`Error updating ${field}. Please try again. ${error}`);
-    } finally {
-      setSaving(null);
-    }
-  };
 
 
   // Fetch user posts
@@ -436,6 +407,39 @@ export function ExternalProfile(props: ExternalProfileProps) {
   
   // Flag to prevent infinite loop when setting initial weights
   const [hasInitializedWeights, setHasInitializedWeights] = useState(false);
+
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+  
+  // Edit form state - initialized with current profile data
+  const [editForm, setEditForm] = useState<ProfileFormState>({
+    id: props.id,
+    email: props.email,
+    first_name: props.first_name || "",
+    last_name: props.last_name || "",
+    school: props.school || "",
+    linkedin_url: props.linkedin_url || "",
+    resume_url: props.resume_url || "",
+    personal_website: props.personal_website || "",
+    phone_number: props.phone_number || "",
+    resume_file: null,
+    profile_image_url: props.profile_image_url || null,
+    profile_image: null,
+    bio: props.bio || "",
+    is_public_profile: props.is_public_profile || false,
+    newsletter_opt_in: props.newsletter_opt_in || false,
+    status: props.status || "",
+    transcript_file: null,
+    transcript_url: props.transcript_url || "",
+    parsed_resume_json: "",
+    needs_visa_sponsorship: props.needs_visa_sponsorship || false,
+    interests: props.interests || "",
+    network_recommendations: props.network_recommendations || [],
+    verified: props.verified || false,
+  });
+  
+  const [editFormError, setEditFormError] = useState<string | null>(null);
+  const [editFormLoading, setEditFormLoading] = useState(false);
   
   // Note: Company data is fetched fresh and used directly, no state needed
 
@@ -851,23 +855,161 @@ export function ExternalProfile(props: ExternalProfileProps) {
   }, [companyWeights, getAvailableSkills, isCompanyView, calculatedCompanyCompatibility, hasInitializedWeights, similarCandidatesFromPipeline, props.github_vector_embeddings]);
     
     if (!props) return <Skeleton className="h-12 w-full" />; // or customize size;
+
+  // Handle edit form submission
+  const handleEditFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditFormError(null);
+    setEditFormLoading(true);
+
+    try {
+      // Validate required fields
+      if (!editForm.first_name) {
+        setEditFormError("First name is required.");
+        return;
+      }
+      if (!editForm.last_name) {
+        setEditFormError("Last name is required.");
+        return;
+      }
+      if (!editForm.phone_number) {
+        setEditFormError("Phone number is required.");
+        return;
+      }
+      if (!editForm.linkedin_url) {
+        setEditFormError("LinkedIn URL is required.");
+        return;
+      }
+      if (!editForm.bio) {
+        setEditFormError("Bio is required.");
+        return;
+      }
+      if (!editForm.school) {
+        setEditFormError("School is required.");
+        return;
+      }
+
+      // Build form data
+      const formData = new FormData();
+      formData.append('id', editForm.id.toString());
+      formData.append('first_name', editForm.first_name);
+      formData.append('last_name', editForm.last_name);
+      formData.append('linkedin_url', editForm.linkedin_url);
+      formData.append('personal_website', editForm.personal_website);
+      formData.append('phone_number', editForm.phone_number);
+      formData.append('email', editForm.email);
+      formData.append('bio', editForm.bio);
+      formData.append('is_public_profile', editForm.is_public_profile.toString());
+      formData.append('newsletter_opt_in', editForm.newsletter_opt_in.toString());
+      formData.append('needs_visa_sponsorship', editForm.needs_visa_sponsorship.toString());
+      formData.append('school', editForm.school);
+      
+      // Handle file uploads
+      if (editForm.resume_file) {
+        formData.append('resume_file', editForm.resume_file);
+      }
+      if (editForm.profile_image) {
+        formData.append('profile_image', editForm.profile_image);
+      }
+      if (editForm.transcript_file) {
+        formData.append('transcript_file', editForm.transcript_file);
+      }
+
+      // Make request
+      const response = await fetch('/api/post_profile', {
+        method: 'PATCH',
+        body: formData,
+      });
+
+      if (response.ok) {
+        setIsEditMode(false);
+        // Refresh the page to show updated data
+        window.location.reload();
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        setEditFormError(`Failed to update profile: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      setEditFormError('An unexpected error occurred.');
+    } finally {
+      setEditFormLoading(false);
+    }
+  };
+
+  // Show edit form if in edit mode
+  if (isEditMode) {
+    return (
+      <div className="max-w-6xl mx-auto px-8 py-16">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-neutral-900">Edit Profile</h1>
+        </div>
+        
+        <form onSubmit={handleEditFormSubmit}>
+          <ProfileInfo 
+            form={editForm} 
+            setForm={setEditForm}
+          />
+          
+          {editFormError && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 text-sm font-medium">{editFormError}</p>
+            </div>
+          )}
+          
+          <div className="flex justify-end gap-3 mt-8">
+            <Button
+              type="button"
+              onClick={() => setIsEditMode(false)}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={editFormLoading}
+              className="bg-neutral-900 hover:bg-neutral-800 text-white"
+            >
+              {editFormLoading ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-12">
-        <h1 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-2">
-          {props.first_name} {props.last_name}
-        </h1>
-        <div className="text-base text-neutral-600 space-y-1">
+        <div className="flex justify-between items-start">
           <div>
-            {props.status}
-            {props.is_public_profile && "Public Profile"}
-            {props.newsletter_opt_in && " · Newsletter Opt-in"}
-            {props.needs_visa_sponsorship !== undefined && (
-              <span>
-                {(props.is_public_profile || props.newsletter_opt_in) && " · "}
-                {props.needs_visa_sponsorship ? "Needs Visa Sponsorship" : "No Visa Sponsorship Needed"}
-              </span>
+            <h1 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-2">
+              {props.first_name} {props.last_name}
+            </h1>
+            <div className="text-base text-neutral-600 space-y-1">
+              <div>
+                {props.status}
+                {props.is_public_profile && "Public Profile"}
+                {props.newsletter_opt_in && " · Newsletter Opt-in"}
+                {props.needs_visa_sponsorship !== undefined && (
+                  <span>
+                    {(props.is_public_profile || props.newsletter_opt_in) && " · "}
+                    {props.needs_visa_sponsorship ? "Needs Visa Sponsorship" : "No Visa Sponsorship Needed"}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            {!props.isExternalView && (
+              <Button
+                onClick={() => setIsEditMode(true)}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                Edit Profile
+              </Button>
             )}
           </div>
         </div>
@@ -895,53 +1037,13 @@ export function ExternalProfile(props: ExternalProfileProps) {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium text-neutral-900">Bio</h3>
-                  {!props.isExternalView && !editingBio && (
-                    <Button
-                      onClick={() => setEditingBio(true)}
-                      variant="ghost"
-                      size="sm"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                  )}
                 </div>
                 
-                {!props.isExternalView && editingBio ? (
-                  <div className="space-y-3">
-                    <Textarea
-                      value={bioValue}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBioValue(e.target.value)}
-                      placeholder="Tell us about yourself..."
-                      className="min-h-[120px]"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => saveField('bio', bioValue)}
-                        disabled={saving === 'bio'}
-                        size="sm"
-                        className="bg-neutral-900 hover:bg-neutral-800 text-white"
-                      >
-                        {saving === 'bio' ? 'Saving...' : 'Save'}
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setEditingBio(false);
-                          setBioValue(props.bio || '');
-                        }}
-                        variant="outline"
-                        size="sm"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
+                <div className="bg-neutral-50 rounded-lg p-4">
+                  <div className="text-sm leading-relaxed text-neutral-700 whitespace-pre-line">
+                    {props.bio || 'No bio added yet.'}
                   </div>
-                ) : (
-                  <div className="bg-neutral-50 rounded-lg p-4">
-                    <div className="text-sm leading-relaxed text-neutral-700 whitespace-pre-line">
-                      {bioValue || 'No bio added yet.'}
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
 
               {/* Interests Section */}
@@ -949,57 +1051,17 @@ export function ExternalProfile(props: ExternalProfileProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-medium text-neutral-900">Interests</h3>
-                    {!props.isExternalView && (!interestsValue || interestsValue.trim() === '') && (
+                    {!props.isExternalView && (!props.interests || props.interests.trim() === '') && (
                       <AlertCircle className="w-4 h-4 text-amber-500" />
                     )}
                   </div>
-                  {!props.isExternalView && !editingInterests && (
-                    <Button
-                      onClick={() => setEditingInterests(true)}
-                      variant="ghost"
-                      size="sm"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                  )}
                 </div>
                 
-                {!props.isExternalView && editingInterests ? (
-                  <div className="space-y-3">
-                    <Textarea
-                      value={interestsValue}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInterestsValue(e.target.value)}
-                      placeholder="AI/ML, fintech, climate tech, product management, backend engineering..."
-                      className="min-h-[100px]"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => saveField('interests', interestsValue)}
-                        disabled={saving === 'interests'}
-                        size="sm"
-                        className="bg-neutral-900 hover:bg-neutral-800 text-white"
-                      >
-                        {saving === 'interests' ? 'Saving...' : 'Save'}
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setEditingInterests(false);
-                          setInterestsValue(props.interests || '');
-                        }}
-                        variant="outline"
-                        size="sm"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
+                <div className="bg-neutral-50 rounded-lg p-4">
+                  <div className="text-sm leading-relaxed text-neutral-700 whitespace-pre-line">
+                    {props.interests || 'No interests added yet.'}
                   </div>
-                ) : (
-                  <div className="bg-neutral-50 rounded-lg p-4">
-                    <div className="text-sm leading-relaxed text-neutral-700 whitespace-pre-line">
-                      {interestsValue || 'No interests added yet.'}
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
@@ -1301,6 +1363,16 @@ export function ExternalProfile(props: ExternalProfileProps) {
                     Profile Evaluation
                   </button>
                 )}
+                <button
+                  onClick={() => setActiveTab('timeline')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === 'timeline'
+                      ? 'border-neutral-900 text-neutral-900'
+                      : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+                  }`}
+                >
+                  Timeline
+                </button>
               </nav>
             </div>
 
@@ -1852,6 +1924,92 @@ export function ExternalProfile(props: ExternalProfileProps) {
                         </button>
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Timeline Tab - Always available */}
+              {activeTab === 'timeline' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium text-neutral-900">Status Timeline</h3>
+                    {!props.isExternalView && (
+                      <StatusCheckinTriggerButton />
+                    )}
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {/* Check-in Status */}
+                    {props.check_in_status && (
+                      <div className="bg-white rounded-lg p-4 border border-neutral-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-neutral-700">Current Status</span>
+                        </div>
+                        <div className="mt-2">
+                          <span className="text-base text-neutral-900">
+                            {(() => {
+                              switch (props.check_in_status) {
+                                case 'perusing': return 'Just Perusing';
+                                case 'open_to_outreach': return 'Open to Founder Outreaches';
+                                case 'request_intros': return 'Curious about Intros';
+                                case 'recommend_opportunities': return 'Will Request Intros';
+                                case 'actively_searching': return 'Actively Searching for New Opportunities';
+                                default: return props.check_in_status;
+                              }
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Timeline of Search */}
+                    {props.timeline_of_search && (
+                      <div className="bg-white rounded-lg p-4 border border-neutral-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-neutral-700">Interview Timeline</span>
+                        </div>
+                        <div className="mt-2">
+                          <span className="text-base text-neutral-900">
+                            {(() => {
+                              switch (props.timeline_of_search) {
+                                case 'immediate': return 'Immediate - Ready to hop on an intro call and interview now';
+                                case 'short_term': return 'Short term - Ready to hop on an intro call but interview in about a month';
+                                case 'medium_term': return 'Medium term - Ready to hop on an intro call but actually interview in about 3-6 months';
+                                case 'long_term': return 'Long term - Ready to hop on an intro call but maybe hold off on an actual interview';
+                                case 'flexible': return 'Flexible - No timeline';
+                                default: return props.timeline_of_search;
+                              }
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Outreach Frequency */}
+                    {props.outreach_frequency && (
+                      <div className="bg-white rounded-lg p-4 border border-neutral-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-neutral-700">Outreach Preference</span>
+                        </div>
+                        <div className="mt-2">
+                          <span className="text-base text-neutral-900">
+                            {props.outreach_frequency < 5 && 'Prefers fewer than 5 outreaches per month'}
+                            {props.outreach_frequency >= 5 && props.outreach_frequency <= 10 && 'Can handle 5-10 outreaches per month'}
+                            {props.outreach_frequency > 10 && props.outreach_frequency <= 20 && 'Comfortable with 10-20 outreaches per month'}
+                            {props.outreach_frequency > 20 && 'Can actively respond to 20+ outreaches per month'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Show message if no timeline data available */}
+                    {!props.check_in_status && !props.timeline_of_search && !props.outreach_frequency && (
+                      <div className="bg-neutral-50 rounded-lg p-6 text-center">
+                        <div className="text-sm text-neutral-500">
+                          No status information available yet.
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

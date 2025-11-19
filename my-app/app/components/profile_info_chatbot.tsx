@@ -961,15 +961,25 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                     <div></div> // Empty div to maintain layout
                   )}
 
-                  {/* Next button */}
-                  {currentQuestionIndex < questions.length - 1 && currentQuestion.type !== 'button' && (
+                  {/* Next/Complete button */}
+                  {currentQuestion.type !== 'button' && (
                     <Button
-                      onClick={nextQuestion}
+                      onClick={() => {
+                        if (currentQuestionIndex >= questions.length - 1) {
+                          // Last question - trigger completion
+                          if (onComplete) {
+                            onComplete(true)
+                          }
+                        } else {
+                          // Not last question - proceed to next
+                          nextQuestion()
+                        }
+                      }}
                       disabled={!canProceedToNext()}
                       variant="ghost"
                       className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Next
+                      {currentQuestionIndex >= questions.length - 1 ? 'Complete' : 'Next'}
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   )}
@@ -1396,20 +1406,6 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                           {userReferralsCount} recommendation(s) submitted
                         </div>
                       )}
-                      
-                      {/* Show Next button when 2+ referrals submitted */}
-                      {userReferralsCount >= 2 && currentQuestionIndex < questions.length - 1 && (
-                        <div className="flex justify-end">
-                          <Button
-                            onClick={nextQuestion}
-                            variant="ghost"
-                            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0"
-                          >
-                            Next
-                            <ArrowRight className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
                     </div>
                   )}
 
@@ -1428,34 +1424,6 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                       </div>
                     </div>
                   )}
-
-                {currentQuestion.type === 'outreach_frequency' && (
-                  <div className="flex gap-4">
-                    {Array.isArray(currentQuestion.options) && currentQuestion.options.every(opt => typeof opt === 'object' && 'display' in opt && 'value' in opt) && 
-                      (currentQuestion.options as { display: string; value: number }[]).map((option) => (
-                        <Button
-                          key={option.value}
-                          onClick={() => {
-                            setForm(prev => ({ ...prev, [currentQuestion.field]: option.value }))
-                            postFieldUpdate(currentQuestion.field, option.value).then(() => {
-                              setTimeout(() => {
-                                const newIndex = currentQuestionIndex + 1
-                                setCurrentQuestionIndex(newIndex)
-                                if (onComplete) {
-                                  onComplete(newIndex >= questions.length)
-                                }
-                              }, 200)
-                            })
-                          }}
-                          variant={form[currentQuestion.field] === option.value ? "default" : "outline"}
-                          className="flex-1 py-6 text-lg"
-                        >
-                          {option.display}
-                        </Button>
-                      ))
-                    }
-                  </div>
-                )}
 
                 {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && currentQuestion.type !== 'button' && currentQuestion.type !== 'outreach_frequency' && (
                   <form onSubmit={handleSubmit}>
@@ -1534,15 +1502,25 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                   <div></div> // Empty div to maintain layout
                 )}
 
-                {/* Next button */}
-                {currentQuestionIndex < questions.length - 1 && currentQuestion.type !== 'button' && (
+                {/* Next/Complete button */}
+                {currentQuestion.type !== 'button' && (
                   <Button
-                    onClick={nextQuestion}
+                    onClick={() => {
+                      if (currentQuestionIndex >= questions.length - 1) {
+                        // Last question - trigger completion
+                        if (onComplete) {
+                          onComplete(true)
+                        }
+                      } else {
+                        // Not last question - proceed to next
+                        nextQuestion()
+                      }
+                    }}
                     disabled={!canProceedToNext()}
                     variant="ghost"
                     className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    {currentQuestionIndex >= questions.length - 1 ? 'Complete' : 'Next'}
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 )}
@@ -1693,20 +1671,6 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                           <p className="text-green-800">
                             ✓ {userReferralsCount} recommendation(s) submitted
                           </p>
-                        </div>
-                      )}
-                      
-                      {/* Show Next button when 2+ referrals submitted */}
-                      {userReferralsCount >= 2 && currentQuestionIndex < questions.length - 1 && (
-                        <div className="flex justify-end">
-                          <Button
-                            onClick={nextQuestion}
-                            variant="ghost"
-                            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0"
-                          >
-                            Next
-                            <ArrowRight className="w-4 h-4" />
-                          </Button>
                         </div>
                       )}
                     </div>

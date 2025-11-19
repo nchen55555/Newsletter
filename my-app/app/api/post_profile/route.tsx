@@ -26,7 +26,6 @@ async function handleProfileUpdate(req: NextRequest) {
     // 3. Parse form data
     const formData = await req.formData();
 
-
     // Get optional files from form data
     const resume_file = formData.get('resume_file');
     const profile_image_file = formData.get('profile_image');
@@ -50,7 +49,30 @@ async function handleProfileUpdate(req: NextRequest) {
     let resume_url: string | null = null;
     let transcript_url: string | null = null;
     let profile_image_url: string | null = null;
-    const userFolder = `${formData.get("id")}/`;
+    
+    // Check which folder pattern existing files use
+    const profileIdFolder = `${formData.get("id")}/`;
+    const userIdFolder = `${user.id}/`;
+  
+    
+    // Test both patterns for resume files
+    const { data: resumesByProfileId } = await supabase.storage.from('resume_files').list(profileIdFolder);
+    const { data: resumesByUserId } = await supabase.storage.from('resume_files').list(userIdFolder);
+    // Test both patterns for transcript files
+    const { data: transcriptsByProfileId } = await supabase.storage.from('transcript_files').list(profileIdFolder);
+    const { data: transcriptsByUserId } = await supabase.storage.from('transcript_files').list(userIdFolder);
+    
+    // Test both patterns for profile image files
+    const { data: imagesByProfileId } = await supabase.storage.from('profile_image_files').list(profileIdFolder);
+    const { data: imagesByUserId } = await supabase.storage.from('profile_image_files').list(userIdFolder);
+    
+    // Determine which pattern to use based on what has existing files
+    let userFolder: string;
+    if ((resumesByUserId?.length || 0) > 0 || (transcriptsByUserId?.length || 0) > 0 || (imagesByUserId?.length || 0) > 0) {
+      userFolder = userIdFolder;
+    } else {
+      userFolder = profileIdFolder;
+    }
 
     // Handle resume file upload if provided
     if (resume_file instanceof File) {
@@ -68,7 +90,7 @@ async function handleProfileUpdate(req: NextRequest) {
 
       // Generate secure file name with original extension
       const resumeExtension = resume_file.name.split('.').pop() || 'pdf';
-      const fileName = `${userFolder}/resume.${resumeExtension}`;
+      const fileName = `${userFolder}resume.${resumeExtension}`;
 
       // Upload resume file
       const { error: uploadError } = await supabase.storage
@@ -99,12 +121,9 @@ async function handleProfileUpdate(req: NextRequest) {
 
     // Handle transcript file upload if provided
     if (transcript_file instanceof File) {
-      // Debug logging for transcript file
-
       // Validate file type explicitly
       const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
       if (!allowedTypes.includes(transcript_file.type)) {
-        console.error('Invalid transcript file type:', transcript_file.type);
         return NextResponse.json({ 
           error: 'Invalid file type. Please upload a PDF or Word document.',
           receivedType: transcript_file.type
@@ -112,20 +131,51 @@ async function handleProfileUpdate(req: NextRequest) {
       }
 
       // Delete existing transcript files
-      const { data: existingTranscriptFiles } = await supabase.storage
+      const { data: existingTranscriptFiles, error: listError } = await supabase.storage
         .from('transcript_files')
         .list(userFolder);
       
-      if (existingTranscriptFiles && existingTranscriptFiles.length > 0) {
-        const transcriptFilesToDelete = existingTranscriptFiles.map(file => `${userFolder}${file.name}`);
-        await supabase.storage
-          .from('transcript_files')
-          .remove(transcriptFilesToDelete);
+      if (listError) {
+        return NextResponse.json({ 
+          error: 'Failed to list existing transcript files', 
+          details: listError.message 
+        }, { status: 500 });
       }
+      
+      
+      // Also try to list the malformed double-slash path from old uploads
+      const malformedFolder = `${userFolder}/`;
+      const { data: malformedFiles } = await supabase.storage
+        .from('transcript_files')
+        .list(malformedFolder);
+      
+      // Combine both results
+      const allFilesToDelete = [];
+      
+      if (existingTranscriptFiles && existingTranscriptFiles.length > 0) {
+        allFilesToDelete.push(...existingTranscriptFiles.map(file => `${userFolder}${file.name}`));
+      }
+      
+      if (malformedFiles && malformedFiles.length > 0) {
+        allFilesToDelete.push(...malformedFiles.map(file => `${malformedFolder}${file.name}`));
+      }
+      
+      if (allFilesToDelete.length > 0) {
+        const { error: deleteError } = await supabase.storage
+          .from('transcript_files')
+          .remove(allFilesToDelete);
+          
+        if (deleteError) {
+          return NextResponse.json({ 
+            error: 'Failed to delete existing transcript files', 
+            details: deleteError.message 
+          }, { status: 500 });
+        }
+      } 
 
       // Upload transcript file with explicit content type mapping
       const transcriptExtension = transcript_file.name.split('.').pop()?.toLowerCase() || 'pdf';
-      const transcriptFileName = `${userFolder}/transcript.${transcriptExtension}`;
+      const transcriptFileName = `${userFolder}transcript.${transcriptExtension}`;
       
       // Map file extension to proper content type
       let contentType = transcript_file.type;
@@ -171,7 +221,6 @@ async function handleProfileUpdate(req: NextRequest) {
       // Validate file type explicitly
       const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!allowedImageTypes.includes(profile_image_file.type)) {
-        console.error('Invalid profile image file type:', profile_image_file.type);
         return NextResponse.json({ 
           error: 'Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.',
           receivedType: profile_image_file.type
@@ -192,7 +241,7 @@ async function handleProfileUpdate(req: NextRequest) {
 
       // Generate secure file name with original extension and explicit content type mapping
       const profileImageExtension = profile_image_file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const profile_image_file_name = `${userFolder}/profile_image.${profileImageExtension}`;
+      const profile_image_file_name = `${userFolder}profile_image.${profileImageExtension}`;
 
       // Map file extension to proper content type
       let contentType = profile_image_file.type;
@@ -215,10 +264,6 @@ async function handleProfileUpdate(req: NextRequest) {
         });
 
       if (profile_image_uploadError) {
-        console.error('Profile Image Upload Error:', {
-          message: profile_image_uploadError.message,
-          details: profile_image_uploadError
-        });
         return NextResponse.json({ 
           error: 'Failed to upload profile image', 
           details: profile_image_uploadError.message 
@@ -254,6 +299,10 @@ async function handleProfileUpdate(req: NextRequest) {
     if (formData.get('needs_visa_sponsorship') !== null) updateData.needs_visa_sponsorship = String(formData.get('needs_visa_sponsorship')) === 'true';
     if (formData.get('onboarding_step') != null) updateData.onboarding_step = String(formData.get('onboarding_step'));
     if (formData.get('github_url') != null) updateData.github_url = String(formData.get('github_url'));
+    if (formData.get('professional_agreement') !== null) {
+      updateData.professional_agreement = String(formData.get('professional_agreement'));
+      console.log("Professional agreement set to:", updateData.professional_agreement);
+    }
 
     
     // Handle new ProfileInfoChatbot fields
@@ -288,15 +337,30 @@ async function handleProfileUpdate(req: NextRequest) {
     if (Object.keys(updateData).length > 0) {
       (async () => {
         try {
+          const profileId = formData.get('id');
+          
+          // Verify the user has permission to update this profile
+          // Check if the profile belongs to the authenticated user
+          const { data: profileCheck, error: checkError } = await supabase
+            .from('subscribers')
+            .select('email')
+            .eq('id', profileId)
+            .single();
+            
+          if (checkError || !profileCheck || profileCheck.email !== user.email) {
+            console.error('Permission denied: User cannot update this profile');
+            return;
+          }
+          
           const { error: dbError } = await supabase
             .from('subscribers')
             .update(updateData)
-            .eq('email', user.email);
+            .eq('id', profileId);
           
           if (dbError) {
             console.error('Async profile update error:', dbError);
           } else {
-            console.log('Profile updated successfully for:', user.email);
+            console.log('Profile updated successfully for user ID:', profileId);
           }
         } catch (error) {
           console.error('Unexpected async update error:', error);
