@@ -56,14 +56,11 @@ async function handleProfileUpdate(req: NextRequest) {
   
     
     // Test both patterns for resume files
-    const { data: resumesByProfileId } = await supabase.storage.from('resume_files').list(profileIdFolder);
     const { data: resumesByUserId } = await supabase.storage.from('resume_files').list(userIdFolder);
     // Test both patterns for transcript files
-    const { data: transcriptsByProfileId } = await supabase.storage.from('transcript_files').list(profileIdFolder);
     const { data: transcriptsByUserId } = await supabase.storage.from('transcript_files').list(userIdFolder);
     
     // Test both patterns for profile image files
-    const { data: imagesByProfileId } = await supabase.storage.from('profile_image_files').list(profileIdFolder);
     const { data: imagesByUserId } = await supabase.storage.from('profile_image_files').list(userIdFolder);
     
     // Determine which pattern to use based on what has existing files

@@ -53,6 +53,25 @@ export class GitHubAPI {
     return this.octokit;
   }
 
+  /**
+   * Get repository information
+   */
+  async getRepository(owner: string, repo: string): Promise<GitHubRepo> {
+    try {
+      const octokit = await this.getOctokit();
+      const response = await octokit.request<GitHubRepo>('GET /repos/{owner}/{repo}', {
+        owner,
+        repo
+      });
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as { status?: number; message?: string };
+      if (err.status === 404) {
+        throw new Error(`Repository not found: ${owner}/${repo}`);
+      }
+      throw new Error(`Failed to fetch repository info: ${err.message || 'Unknown error'}`);
+    }
+  }
 
   /**
    * Get all public repositories for a user with pagination
@@ -175,6 +194,28 @@ export class GitHubAPI {
     } catch (error: unknown) {
       const err = error as { status?: number; message?: string };
       throw new Error(`GitHub API error: ${err.status} ${err.message}`);
+    }
+  }
+
+  /**
+   * Get file content at a specific commit SHA
+   */
+  async getFileContentAtCommit(owner: string, repo: string, path: string, sha: string): Promise<GitHubFileContent> {
+    try {
+      const octokit = await this.getOctokit();
+      const response = await octokit.request<GitHubFileContent>('GET /repos/{owner}/{repo}/contents/{path}', {
+        owner,
+        repo,
+        path,
+        ref: sha  // This gets the file at the specific commit
+      });
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as { status?: number };
+      if (err.status === 404) {
+        throw new Error(`File not found at commit ${sha}: ${path}`);
+      }
+      throw error;
     }
   }
 

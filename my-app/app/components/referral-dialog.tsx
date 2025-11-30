@@ -55,10 +55,8 @@ export function ReferralDialog({
         return res.json();
       })
       .then(data => {
-        console.log("Profile data received:", data);
         if (data.id) {
           setCurrentUserId(data.id);
-          console.log("Current user ID set to:", data.id);
         } else {
           console.error("No ID found in profile data:", data);
         }

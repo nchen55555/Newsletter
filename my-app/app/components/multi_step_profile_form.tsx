@@ -77,12 +77,8 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       });
 
       if (emailResponse.ok) {
-        console.log('Welcome email sent successfully');
         setEmailSent(true);
       } else {
-        console.error('Failed to send welcome email');
-        const emailError = await emailResponse.text();
-        console.error('Email error details:', emailError);
         setEmailSent(false);
       }
       
@@ -184,17 +180,15 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       });
 
       if (response.ok) {
-        const result = await response.json();
-        console.log('Profile update successful:', result);
+        // Update local state to reflect applied status
+        setForm(prev => ({ ...prev, applied: true }));
         handleFinishSetup();
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Profile update failed:', response.status, errorData);
         setFormError(`Failed to update profile: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Failed to update profile:', error);
-      setFormError('An unexpected error occurred.');
+      setFormError(`An unexpected error occurred. ${error}`);
     } 
   }
 
@@ -225,7 +219,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
   </div>
 
       {/* Application Confirmation Dialog */}
-      <Dialog open={profileFormComplete}>
+      <Dialog open={profileFormComplete && !form.applied} onOpenChange={setProfileFormComplete}>
         <DialogContent className="sm:max-w-5xl w-full p-8 max-h-[80vh] overflow-y-auto">
           <DialogHeader className="text-center">
             {/* <DialogTitle className="text-xl font-semibold">
@@ -244,7 +238,14 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                   <br></br>
                   <div className="flex flex-col gap-4 pt-4">
                     <Button 
-                      onClick={() => router.push('/profile')}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Your Profile button clicked');
+                        setProfileFormComplete(false);
+                        // Force a full page refresh to get updated data
+                        window.location.reload();
+                      }}
                       className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-2 text-sm w-fit"
                     >
                       Your Profile

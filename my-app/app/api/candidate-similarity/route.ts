@@ -6,7 +6,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Get request body and forward it to the Python similarity service
     const body = await request.json();
-    
+
+    console.log("BODY SENT ", body)
+
     const response = await fetch(`${SIMILARITY_SERVICE_URL}/api/similarity`, {
       method: 'POST',
       headers: {

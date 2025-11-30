@@ -134,6 +134,16 @@ export interface ContributionSummary {
   recentActivityPeriod: string; // e.g., "last 90 days"
 }
 
+export interface RepositoryGroup {
+  repositoryName: string;
+  fullName: string;
+  description?: string;
+  url: string;
+  language?: string;
+  files: CodeFile[];
+  contributionCount: number;
+}
+
 export interface GitHubProfileAnalysis {
   username: string;
   totalRepositories: number;
@@ -141,6 +151,7 @@ export interface GitHubProfileAnalysis {
   overallTechnologies: TechnologyProfile;
   contributionActivity?: ContributionActivity[];
   contributionSummary?: ContributionSummary;
+  repositoryGroups?: RepositoryGroup[];
   analysisDate: string;
 }
 

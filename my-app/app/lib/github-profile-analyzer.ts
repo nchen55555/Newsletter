@@ -1,15 +1,26 @@
 import GitHubAPI from './github-api';
 import GeminiCodeAnalyzer from './gemini-analyzer';
-import { 
-  TechnologyProfile, 
+import {
+  TechnologyProfile,
   TechnologyDetection,
-  AnalyzedRepository, 
-  GitHubProfileAnalysis, 
+  AnalyzedRepository,
+  GitHubProfileAnalysis,
   CodeFile,
   ContributionActivity,
   ContributionSummary,
-  GitHubRepo
+  GitHubRepo,
 } from '../types/github-analysis';
+
+type ContributedFile = {
+  filename: string;
+  content: string;
+  path: string;
+  size: number;
+  repositoryName: string;
+  repositoryFullName: string;
+  repositoryDescription?: string;
+  primaryLanguage?: string;
+};
 
 export class GitHubProfileAnalyzer {
   private githubAPI: GitHubAPI;
@@ -18,6 +29,84 @@ export class GitHubProfileAnalyzer {
   constructor(githubAppId?: string, githubPrivateKey?: string, geminiApiKey?: string) {
     this.githubAPI = new GitHubAPI(githubAppId, githubPrivateKey);
     this.geminiAnalyzer = new GeminiCodeAnalyzer(geminiApiKey);
+  }
+
+  /**
+   * Determine if a file should be analyzed based on path, extension, and content
+   */
+  private shouldAnalyzeFile(filename: string, content?: string, size?: number): boolean {
+    // Size check first (if provided)
+    if (size && size > 1024 * 1024) return false; // Skip files > 1MB
+    
+    // Known binary extensions to always skip
+    const binaryExtensions = [
+      '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico', '.svg',
+      '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+      '.zip', '.tar', '.gz', '.rar', '.7z',
+      '.exe', '.dll', '.so', '.dylib', '.bin',
+      '.mp3', '.mp4', '.avi', '.mov', '.wmv',
+      '.ttf', '.woff', '.woff2', '.eot',
+      '.lock' // package-lock.json, Cargo.lock, etc.
+    ];
+    
+    const lowerFilename = filename.toLowerCase();
+    if (binaryExtensions.some(ext => lowerFilename.endsWith(ext))) {
+      return false;
+    }
+    
+    // Whitelist known code/config file extensions
+    const textExtensions = [
+      '.py', '.js', '.ts', '.tsx', '.jsx', '.java', '.cpp', '.c', '.h', '.cs', '.php', '.rb', '.go', '.rs', '.swift', '.kt', '.scala', '.r', '.sql',
+      '.html', '.css', '.scss', '.sass', '.less', '.xml', '.json', '.yaml', '.yml', '.md', '.txt', '.sh', '.bat', '.ps1', '.dockerfile', '.tf', '.vue', '.svelte',
+      '.lua', '.vim', '.conf', '.config', '.cfg', '.ini', '.env', '.toml', '.snippets', '.gitignore', '.gitattributes'
+    ];
+    
+    if (textExtensions.some(ext => lowerFilename.endsWith(ext))) {
+      return true;
+    }
+    
+    // Whitelist important dotfile paths (extensionless config files)
+    const allowedPaths = [
+      /^\.config\//,
+      /^\.ssh\/config$/,
+      /^\.zshrc$/,
+      /^\.bashrc$/,
+      /^\.vimrc$/,
+      /^\.tmux\.conf$/,
+      /^\.gitconfig$/,
+      /^brewfile$/i,
+      /dockerfile$/i,
+      /makefile$/i,
+      /rakefile$/i,
+      /gemfile$/i,
+      /procfile$/i,
+      /^\.env/,
+      /^\.editorconfig$/
+    ];
+    
+    if (allowedPaths.some(pattern => pattern.test(filename))) {
+      return true;
+    }
+    
+    // For extensionless files, check content if available
+    if (!filename.includes('.') && content) {
+      return this.isTextContent(content);
+    }
+    
+    // Default: reject extensionless files without content check
+    return filename.includes('.');
+  }
+
+  /**
+   * Check if content appears to be text (not binary)
+   */
+  private isTextContent(content: string): boolean {
+    // Check first 8KB for null bytes (binary indicator)
+    const sample = content.slice(0, 8192);
+    const nullBytes = (sample.match(/\0/g) || []).length;
+    
+    // If >1% null bytes, likely binary
+    return nullBytes / sample.length < 0.01;
   }
 
   /**
@@ -52,83 +141,67 @@ export class GitHubProfileAnalyzer {
   }
 
   /**
-   * Analyze a GitHub user's complete profile
+   * Analyze a GitHub user's complete profile based on their actual contributions
    */
   async analyzeProfile(username: string, userRealName?: string): Promise<GitHubProfileAnalysis> {
 
-    // Step 1: Get all user repositories
+    // Step 1: Get all user repositories (owned)
     const repositories = await this.githubAPI.getUserRepositories(username);
 
-    // Step 2: Get recent commits across repositories (last year)
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    
-    const repoCommitActivity = await this.analyzeRecentCommitActivity(repositories, username, userRealName, oneYearAgo.toISOString());
+    // Step 2: Get ALL files the user has contributed to (owned + contributed repos)
+    const contributedFiles = await this.getAllUserContributions(
+      repositories,
+      username,
+      userRealName,
+      100,
+    );
 
-    // Step 3: Filter and prioritize repositories based on recent commit activity
-    const reposToAnalyze = this.prioritizeRepositoriesByCommitActivity(repoCommitActivity);
+    // Step 3: Group files by repository for embedding creation (skip technology analysis)
+    let repositoryGroups: Map<string, ContributedFile[]> = new Map();
 
-    // Step 4: Analyze each repository using commit-based file selection with retry logic
-    const analyzedRepos: AnalyzedRepository[] = [];
-    
-    for (const repoData of reposToAnalyze) {
-      const fullName = repoData.repo.full_name;
-      
-      let technologies: TechnologyProfile | null = null;
-      
-      // Retry logic with exponential backoff
-      for (let attempt = 1; attempt <= 5; attempt++) {
-        try {
-          technologies = await this.analyzeRepositoryByCommits(fullName, repoData);
-          break; // Success, exit retry loop
-          
-        } catch (error) {
-          const isRateLimit = error instanceof Error && (
-            error.message.includes('rate limit') ||
-            error.message.includes('403') ||
-            error.message.includes('exceeded')
-          );
-          
-          if (isRateLimit && attempt < 5) {
-            // Exponential backoff for rate limiting: 5s, 15s, 30s, 60s, 120s
-            const waitTime = Math.min(5000 * Math.pow(2, attempt - 1), 120000);
-            await this.sleep(waitTime);
-          } else if (attempt < 5) {
-            // For other errors, shorter wait
-            await this.sleep(2000);
-          }
-        }
-      }
-      
-      if (technologies) {
-        analyzedRepos.push({
-          name: repoData.repo.name,
-          description: repoData.repo.description || '',
-          url: repoData.repo.html_url,
-          technologies,
-          size: repoData.repo.size
-        });
-        
-        // Rate limiting - wait between analyses (reduced since we have retry logic)
-        await this.sleep(500);
-      } 
+    if (contributedFiles.length > 0) {
+      // Just group files by repository - embeddings will handle tech analysis
+      repositoryGroups = this.groupFilesByRepository(contributedFiles);
+      console.log(`[CONTRIB ANALYSIS] Grouped ${contributedFiles.length} files into ${repositoryGroups.size} repositories`);
+    } else {
+      console.log(`[CONTRIB ANALYSIS] No contributed files found for ${username}`);
     }
-
-    // Step 5: Aggregate technologies across all repositories
-    const overallTechnologies = this.aggregateTechnologies(analyzedRepos);
 
     // Step 6: Analyze contribution activity across GitHub
     const ownRepositoryNames = repositories.map(repo => repo.full_name);
-    const { contributionActivity, contributionSummary } = await this.analyzeContributionActivity(username, ownRepositoryNames);
+    const { contributionSummary } = await this.analyzeContributionActivity(username, ownRepositoryNames);
+
+    const repositoryGroupsArray = Array.from(repositoryGroups.entries()).map(
+      ([repoFullName, files]) => {
+        const first = files[0];
+        const repoName =
+          first?.repositoryName || repoFullName.split('/')[1] || repoFullName;
+
+        return {
+          repositoryName: repoName,
+          fullName: repoFullName,
+          description: first?.repositoryDescription,
+          url: `https://github.com/${repoFullName}`,
+          language: first?.primaryLanguage,
+          files: files.map((f: ContributedFile) => ({
+            name: f.filename,
+            content: f.content,
+            path: f.path,
+            size: f.size,
+          })),
+          contributionCount: files.length,
+        };
+      },
+    );
 
     return {
       username,
       totalRepositories: repositories.length,
-      analyzedRepositories: analyzedRepos,
-      overallTechnologies,
-      contributionActivity,
+      analyzedRepositories: [],
+      overallTechnologies: this.getEmptyProfile(),
       contributionSummary,
-      analysisDate: new Date().toISOString()
+      repositoryGroups: repositoryGroupsArray,
+      analysisDate: new Date().toISOString(),
     };
   }
 
@@ -350,105 +423,223 @@ export class GitHubProfileAnalyzer {
   }
 
   /**
-   * Analyze recent commit activity across repositories to identify active ones
+   * Get repositories the user has contributed to (not necessarily owned) via GitHub Events
    */
-  private async analyzeRecentCommitActivity(repositories: GitHubRepo[], username: string, userRealName: string | undefined, since: string): Promise<Array<{
-    repo: GitHubRepo;
-    commitCount: number;
-    recentFiles: string[];
-  }>> {
-    const repoActivity = [];
-
-    for (const repo of repositories.slice(0, 20)) { // Limit initial scan
-      if (repo.size < 50) {
-        continue;
-      }
-      // Note: Now including forks in analysis!
-
-      try {
-        const commits = await this.githubAPI.getRepositoryCommits(
-          repo.full_name.split('/')[0],
-          repo.full_name.split('/')[1],
-          since
-        );
-        // Filter commits by the target username and real name (more flexible matching)
-        const strictUserCommits = commits.filter(commit => {
-          const authorName = commit.commit.author.name;
-          const authorEmail = commit.commit.author.email;
-          
-          // Check email contains username
-          if (authorEmail.includes(username)) return true;
-          
-          // Check if author name is similar to username
-          if (this.isNameSimilar(authorName, username)) return true;
-          
-          // Check if author name is similar to user's real name from Supabase
-          if (userRealName && this.isNameSimilar(authorName, userRealName)) return true;
-          
-          return false;
-        });
+  private async getContributedRepositories(username: string, _userRealName?: string): Promise<Set<string>> {
+    const contributedRepos = new Set<string>();
+    
+    try {
+      // Get user events (last 300 events should cover decent time range)
+      const events = await this.githubAPI.getUserEvents(username, 300);
+      
+      for (const event of events as Array<{
+        repo?: { name?: string };
+        type: string;
+        actor?: { login?: string; display_login?: string };
+      }>) {
+        const repoName = event.repo?.name;
+        if (!repoName) continue;
         
-        // For forks, also try a more permissive filter if strict filtering finds nothing
-        let userCommits = strictUserCommits;
-        if (repo.fork && strictUserCommits.length === 0 && commits.length > 0) {
-          // For forks, if we find no user commits, take the most recent commits regardless of author
-          // This helps us analyze what technologies they're interested in (even if they haven't contributed)
-          userCommits = commits.slice(0, 5); // Just take recent commits to see technologies
-        } 
-
-        if (userCommits.length > 0) {
-          // Collect files changed in recent commits by fetching individual commit details
-          const recentFiles: string[] = [];
-          for (const commit of userCommits.slice(0, 5)) { // Limit to prevent too many API calls
-            try {
-              const commitDetails = await this.githubAPI.getCommitDetails(
-                repo.full_name.split('/')[0],
-                repo.full_name.split('/')[1],
-                commit.sha
-              );
-              
-              if (commitDetails?.files) {
-                recentFiles.push(...commitDetails.files.map(f => f.filename));
-              }
-            } catch (error) {
-              console.log(`[COMMIT ANALYSIS] Failed to get details for commit ${commit.sha.substring(0, 7)}:`, error);
-            }
-          }
-
-          const uniqueFiles = [...new Set(recentFiles)];
-
-          repoActivity.push({
-            repo,
-            commitCount: userCommits.length,
-            recentFiles: uniqueFiles
-          });
+        // Verify this is actually their activity (sometimes events can be mixed)
+        const actorLogin = event.actor?.login || event.actor?.display_login;
+        if (actorLogin && !this.isNameSimilar(actorLogin, username)) {
+          continue;
         }
-
-        await this.sleep(500); // Rate limiting
-      } catch (error) {
-        console.error(`[COMMIT ANALYSIS] Error analyzing commits for ${repo.name}:`, error);
-        continue;
+        
+        // Include repositories from contribution events
+        if (['PushEvent', 'PullRequestEvent', 'IssuesEvent', 'PullRequestReviewEvent'].includes(event.type)) {
+          contributedRepos.add(repoName);
+        }
       }
+      
+      console.log(`[CONTRIB ANALYSIS] Found ${contributedRepos.size} contributed repositories for ${username}`);
+      
+    } catch (error) {
+      console.error(`[CONTRIB ANALYSIS] Error getting contributed repositories for ${username}:`, error);
     }
-
-    return repoActivity;
+    
+    return contributedRepos;
   }
 
   /**
-   * Prioritize repositories based on recent commit activity
+   * Get up to maxFiles files that the user has actually contributed to across all repositories
    */
-  private prioritizeRepositoriesByCommitActivity(repoActivity: Array<{
-    repo: GitHubRepo;
-    commitCount: number;
-    recentFiles: string[];
-  }>): Array<{
-    repo: GitHubRepo;
-    commitCount: number;
-    recentFiles: string[];
-  }> {
-    return repoActivity
-      .sort((a, b) => b.commitCount - a.commitCount)
-      .slice(0, 10); // Analyze top 10 most active repos
+  private async getAllUserContributions(
+    ownedRepositories: GitHubRepo[],
+    username: string,
+    userRealName?: string,
+    maxFiles: number = 100,
+  ): Promise<
+    Array<{
+      filename: string;
+      content: string;
+      path: string;
+      size: number;
+      repositoryName: string;
+      repositoryFullName: string;
+      repositoryDescription?: string;
+      primaryLanguage?: string;
+    }>
+  > {
+    const contributedFiles: ContributedFile[] = [];
+    const processedRepos = new Set<string>();
+    
+    try {
+      // Step 1: Get repositories they contributed to (not owned)
+      const contributedRepoNames = await this.getContributedRepositories(username, userRealName);
+      
+      // Step 2: Combine owned + contributed repositories
+      const allRepoNames = new Set<string>();
+      
+      // Add owned repositories
+      ownedRepositories.forEach(repo => allRepoNames.add(repo.full_name));
+      
+      // Add contributed repositories
+      contributedRepoNames.forEach(repoName => allRepoNames.add(repoName));
+      
+      console.log(`[CONTRIB ANALYSIS] Analyzing ${allRepoNames.size} total repositories (${ownedRepositories.length} owned + ${contributedRepoNames.size} contributed)`);
+      console.log(`[CONTRIB ANALYSIS] Repositories to analyze:`, Array.from(allRepoNames).slice(0, 10)); // Show first 10
+      
+      // Step 3: For each repository, get files they actually modified
+      for (const repoFullName of allRepoNames) {
+        if (contributedFiles.length >= maxFiles) {
+          console.log(`[CONTRIB ANALYSIS] Reached maxFiles limit (${maxFiles}), stopping analysis`);
+          break;
+        }
+        if (processedRepos.has(repoFullName)) continue;
+        
+        processedRepos.add(repoFullName);
+        
+        try {
+          const [owner, repo] = repoFullName.split('/');
+          if (!owner || !repo) continue;
+          
+          console.log(`[CONTRIB ANALYSIS] Processing repository: ${repoFullName}`);
+          
+          // Get their commits in this repository (no time limit, just count limit)
+          const commits = await this.githubAPI.getRepositoryCommits(owner, repo);
+          
+          // Filter for their commits using flexible name matching
+          const userCommits = commits.filter(commit => {
+            const authorName = commit.commit.author.name;
+            const authorEmail = commit.commit.author.email;
+            
+            if (authorEmail.includes(username)) return true;
+            if (this.isNameSimilar(authorName, username)) return true;
+            if (userRealName && this.isNameSimilar(authorName, userRealName)) return true;
+            
+            return false;
+          });
+          
+          if (userCommits.length === 0) {
+            console.log(`[CONTRIB ANALYSIS] No user commits found in ${repoFullName}`);
+            continue;
+          }
+          
+          console.log(`[CONTRIB ANALYSIS] Found ${userCommits.length} user commits in ${repoFullName}`);
+          
+          // Get repository info for context
+          let repoInfo;
+          try {
+            repoInfo = await this.githubAPI.getRepository(owner, repo);
+          } catch (error) {
+            console.log(`[CONTRIB ANALYSIS] Could not get repo info for ${repoFullName}:`, error);
+            continue;
+          }
+          
+          // Get files they actually modified from their commits
+          const fileCommitMap = new Map<string, string>(); // Map file path to commit SHA
+          for (const commit of userCommits.slice(0, 10)) { // Limit to prevent too many API calls
+            try {
+              const commitDetails = await this.githubAPI.getCommitDetails(owner, repo, commit.sha);
+              if (commitDetails?.files) {
+                commitDetails.files.forEach(file => {
+                  // Only include added/modified files (not deleted)
+                  if (['added', 'modified'].includes(file.status)) {
+                    // Store the most recent commit SHA for each file
+                    if (!fileCommitMap.has(file.filename)) {
+                      fileCommitMap.set(file.filename, commit.sha);
+                    }
+                  }
+                });
+              }
+            } catch (error) {
+              console.log(`[CONTRIB ANALYSIS] Failed to get commit details for ${commit.sha.substring(0, 7)}:`, error);
+            }
+          }
+          
+          // Get content of files they actually modified using commit-specific content
+          for (const [filename, commitSha] of fileCommitMap.entries()) {
+            if (contributedFiles.length >= maxFiles) break;
+            
+            try {
+              // Enhanced file filtering logic
+              if (!this.shouldAnalyzeFile(filename)) {
+                console.log(`[CONTRIB ANALYSIS] Skipping binary file: ${filename}`);
+                continue;
+              }
+              
+              const content = await this.githubAPI.getFileContentAtCommit(owner, repo, filename, commitSha);
+              const decodedContent = this.githubAPI.decodeFileContent(content.content, content.encoding);
+              
+              // Skip very large files
+              if (content.size > 50000) continue;
+              
+              // Final check with content and size
+              if (!this.shouldAnalyzeFile(filename, decodedContent, content.size)) {
+                console.log(`[CONTRIB ANALYSIS] Skipping after content check: ${filename}`);
+                continue;
+              }
+              
+              contributedFiles.push({
+                filename: filename.split('/').pop() || filename,
+                content: decodedContent,
+                path: filename,
+                size: content.size,
+                repositoryName: repoInfo.name,
+                repositoryFullName: repoFullName,
+                repositoryDescription: repoInfo.description ?? undefined,
+                primaryLanguage: repoInfo.language ?? undefined,
+              });
+              
+            } catch (error) {
+              console.log(`[CONTRIB ANALYSIS] Failed to load file ${filename} at commit ${commitSha.substring(0, 7)} from ${repoFullName}:`, error);
+            }
+          }
+          
+          await this.sleep(500); // Rate limiting between repos
+          
+        } catch (error) {
+          console.error(`[CONTRIB ANALYSIS] Error analyzing repository ${repoFullName}:`, error);
+        }
+      }
+      
+      console.log(`[CONTRIB ANALYSIS] Collected ${contributedFiles.length} files from ${processedRepos.size} repositories`);
+      
+    } catch (error) {
+      console.error(`[CONTRIB ANALYSIS] Error in getAllUserContributions:`, error);
+    }
+    
+    return contributedFiles;
+  }
+
+  /**
+   * Group contributed files by repository for embedding creation
+   */
+  private groupFilesByRepository(
+    contributedFiles: ContributedFile[],
+  ): Map<string, ContributedFile[]> {
+    const filesByRepo = new Map<string, ContributedFile[]>();
+    
+    contributedFiles.forEach(file => {
+      const repoKey = file.repositoryFullName;
+      if (!filesByRepo.has(repoKey)) {
+        filesByRepo.set(repoKey, []);
+      }
+      filesByRepo.get(repoKey)!.push(file);
+    });
+    
+    return filesByRepo;
   }
 
   /**

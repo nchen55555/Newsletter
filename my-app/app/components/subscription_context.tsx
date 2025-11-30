@@ -28,7 +28,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     try {
       const res = await fetch("/api/check-subscription");
       const data = await res.json();
-      console.log("Subscription API response:", data);
       setIsSubscribed(data.isSubscribed);
       return data.isSubscribed;
     } catch (error) {
@@ -106,14 +105,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             console.error('Failed to store Google refresh token:', error);
             // Don't block the rest of the flow if token storage fails
           })
-        } else {
-          console.log('No Google refresh token found in session - checking if user needs to re-authenticate');
-          console.log('Available session keys:', Object.keys(session || {}));
-          console.log('Provider token available:', !!(session as ExtendedSession)?.provider_token);
-          
-          // If no Google refresh token, the user may need to re-authenticate with proper scopes
-          console.warn('Google refresh token not available. User may need to re-authenticate with offline access.');
-        }
+        } 
         setUserEmail(session.user.email); // replaces onEmailChange
         refreshSubscription().then((isSubscribedNow) => {
           setIsSubscribed(isSubscribedNow);

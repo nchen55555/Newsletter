@@ -1,151 +1,162 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { GitHubProfileAnalysis, TechnologyDetection } from '../../types/github-analysis';
 
-const extractTechNames = (techs: (string | TechnologyDetection)[]) => 
-    techs.map(tech => typeof tech === 'string' ? tech : tech.name).filter(Boolean);
-
-// Enhanced function to group technologies by confidence and source for concise embedding
-const createGroupedTechStrings = (techs: (string | TechnologyDetection)[]) => {
-  const groups: Record<string, string[]> = {
-    'high confidence usage, from active development': [],
-    'high confidence usage, from codebase analysis': [],
-    'high confidence usage, from project metadata': [],
-    'strong evidence of usage, from active development': [],
-    'strong evidence of usage, from codebase analysis': [],
-    'strong evidence of usage, from project metadata': [],
-    'evidence of usage, from active development': [],
-    'evidence of usage, from codebase analysis': [],
-    'evidence of usage, from project metadata': [],
-    'potential usage, from project metadata': []
-  };
-
-  techs.forEach(tech => {
-    if (typeof tech === 'string') {
-      groups['evidence of usage, from project metadata'].push(tech);
-      return;
-    }
-    
-    if (tech && tech.name && tech.confidence) {
-      const confidenceLevel = tech.confidence >= 0.8 ? 'high confidence usage' : 
-                              tech.confidence >= 0.6 ? 'strong evidence of usage' : 
-                              tech.confidence >= 0.4 ? 'evidence of usage' : 'potential usage';
-      const source = tech.source === 'commit' ? 'active development' :
-                    tech.source === 'file' ? 'codebase analysis' : 'project metadata';
-      
-      const key = `${confidenceLevel}, from ${source}`;
-      if (groups[key]) {
-        groups[key].push(tech.name);
-      }
-    }
-  });
-
-  // Return formatted groups, filtering out empty ones
-  return Object.entries(groups)
-    .filter(([, techs]) => techs.length > 0)
-    .map(([groupKey, techs]) => `${groupKey}: ${techs.join(', ')}`);
-};
-
-function createEmbeddingText(data: GitHubProfileAnalysis): string {
-  const { username, totalRepositories, overallTechnologies, analyzedRepositories, contributionSummary } = data;
+// Create embedding text from repository files with adaptive budgeting
+function createRepositoryEmbeddingText(repoGroup: {
+  repositoryName: string;
+  repositoryFullName: string;
+  fileCount: number;
+  contributionType: string;
+  primaryLanguage?: string;
+  files: Array<{
+    filename: string;
+    content: string;
+    path: string;
+    size: number;
+  }>;
+}): string {
+  // Adaptive budget based on repository size
+  let repoBaseBudget;
+  if (repoGroup.fileCount <= 3) {
+    repoBaseBudget = Math.min(20000, repoGroup.fileCount * 8000); // Small repos: proportional, max 20KB
+  } else if (repoGroup.fileCount <= 10) {
+    repoBaseBudget = 50000; // Medium repos: 50KB
+  } else {
+    repoBaseBudget = 75000; // Large repos: 75KB
+  }
   
-  // Helper function to add tech category only if it has content
-  const addTechCategory = (label: string, techArray: (string | TechnologyDetection)[]) => {
-    const techGroups = createGroupedTechStrings(techArray);
-    if (techGroups.length > 0) {
-      return `${label}: ${techGroups.join('; ')}`;
-    }
-    return null;
-  };
+  // Distribute budget per file, but cap individual files
+  const budgetPerFile = Math.min(
+    Math.floor(repoBaseBudget / repoGroup.fileCount),
+    25000 // Max 25KB per individual file
+  );
   
+  console.log(`[EMBEDDING] Repo ${repoGroup.repositoryName}: ${repoGroup.fileCount} files, ${budgetPerFile} chars/file`);
+
   const embeddingParts = [
-    `GitHub Profile: ${username}`,
-    `Total Repositories: ${totalRepositories}`,
-    addTechCategory('Programming Languages', overallTechnologies.languages || []),
-    addTechCategory('Web Frameworks', overallTechnologies.webFrameworks || []),
-    addTechCategory('Libraries', overallTechnologies.libraries || []),
-    addTechCategory('Databases', overallTechnologies.databases || []),
-    addTechCategory('Data Processing', overallTechnologies.dataProcessing || []),
-    addTechCategory('ORM', overallTechnologies.orm || []),
-    addTechCategory('Containerization', overallTechnologies.containerization || []),
-    addTechCategory('Orchestration', overallTechnologies.orchestration || []),
-    addTechCategory('Cloud Platforms', overallTechnologies.cloudPlatforms || []),
-    addTechCategory('Infrastructure', overallTechnologies.infrastructure || []),
-    addTechCategory('Distributed Systems', overallTechnologies.distributedSystems || []),
-    addTechCategory('Messaging Queues', overallTechnologies.messagingQueues || []),
-    addTechCategory('Consensus', overallTechnologies.consensus || []),
-    addTechCategory('CI/CD', overallTechnologies.cicd || []),
-    addTechCategory('Monitoring', overallTechnologies.monitoring || []),
-    addTechCategory('Deployment', overallTechnologies.deployment || []),
-    addTechCategory('Architectural Patterns', overallTechnologies.architecturalPatterns || []),
-    addTechCategory('Design Patterns', overallTechnologies.designPatterns || []),
-    addTechCategory('Security', overallTechnologies.security || []),
+    `Repository: ${repoGroup.repositoryFullName}`,
+    `Contribution Type: ${repoGroup.contributionType}`,
+    `Files Contributed: ${repoGroup.fileCount}`,
+    ''
   ];
 
-  if (analyzedRepositories && analyzedRepositories.length > 0) {
-    embeddingParts.push('Recent Projects:');
-    analyzedRepositories.slice(0, 5).forEach(repo => {
-      // Combine all technologies from the repository
-      const allRepoTechs = [
-        ...(repo.technologies.languages || []),
-        ...(repo.technologies.webFrameworks || []),
-        ...(repo.technologies.libraries || []),
-        ...(repo.technologies.databases || []),
-        ...(repo.technologies.cloudPlatforms || []),
-        ...(repo.technologies.architecturalPatterns || [])
-      ];
-      
-      const repoTechGroups = createGroupedTechStrings(allRepoTechs);
-      
-      const repoInfo = [
-        `${repo.name}${repo.description ? `: ${repo.description}` : ''}`,
-        repoTechGroups.length > 0 ? `Technologies: ${repoTechGroups.join('; ')}` : null
-      ].filter(Boolean).join(' | ');
-      
-      if (repoInfo.trim()) {
-        embeddingParts.push(repoInfo);
-      }
-    });
-  }
-
-  // Skip recent activity since we removed lastUpdated field
-  // Focus on technology expertise instead
-
-  // Skip star count since we removed stars field
-  if (analyzedRepositories.length > 0) {
-    embeddingParts.push(`Total Active Projects: ${analyzedRepositories.length}`);
-  }
-
-  // Add contribution activity information
-  if (contributionSummary && (contributionSummary.totalActivities > 0 || contributionSummary.openSourceContributions > 0)) {
-    embeddingParts.push(`Open Source Activity:`);
-    embeddingParts.push(`Total Recent Activities: ${contributionSummary.totalActivities}`);
-    embeddingParts.push(`Open Source Contributions: ${contributionSummary.openSourceContributions}`);
+  // Include actual code content from files they contributed to
+  repoGroup.files.forEach(file => {
+    embeddingParts.push(`--- File: ${file.path} ---`);
     
-    if (contributionSummary.openSourceContributions > 0) {
-      const activityTypes = Object.entries(contributionSummary.contributionsByType || {})
-        .filter(([, count]) => count > 0)
-        .map(([type, count]) => `${count} ${type.replace('_', ' ')}${count > 1 ? 's' : ''}`)
-        .join(', ');
+    // Apply per-file budget with smart truncation
+    let fileContent = file.content;
+    if (fileContent.length > budgetPerFile) {
+      const beginningChars = Math.floor(budgetPerFile * 0.7);
+      const endingChars = budgetPerFile - beginningChars - 50;
       
-      if (activityTypes) {
-        embeddingParts.push(`Activity Types: ${activityTypes}`);
-      }
+      fileContent = fileContent.substring(0, beginningChars) + 
+                   '\n\n... [content truncated] ...\n\n' + 
+                   fileContent.substring(fileContent.length - endingChars);
+    }
+    
+    embeddingParts.push(fileContent);
+    embeddingParts.push(''); // Separator between files
+  });
 
-      // Include notable open source repositories they've contributed to
-      const openSourceRepos = (contributionSummary.activeRepositories || [])
-        .filter(repo => !data.analyzedRepositories.some(own => own.name === repo.split('/')[1]))
-        .slice(0, 5); // Limit to top 5 external repos
-        
-      if (openSourceRepos.length > 0) {
-        embeddingParts.push(`Contributes to: ${openSourceRepos.join(', ')}`);
+  return embeddingParts.join('\n');
+}
+
+// Analyze technologies using Gemini with model cycling and rate limit handling
+async function analyzeTechnologies(embeddingText: string, geminiApiKey: string) {
+  const modelNames = [
+    'gemini-2.5-pro',
+    'gemini-2.5-flash', 
+    'gemini-2.0-flash-001',
+    'gemini-2.5-flash-lite'
+  ];
+
+  const prompt = `Analyze this code repository content and identify:
+- Programming languages used
+- Frameworks/libraries imported 
+- Database technologies
+- Architectural patterns
+- Key packages/dependencies
+- Programming interests (what domains/problems they're solving)
+- Skill level assessment (beginner/intermediate/advanced based on code complexity, patterns used)
+- Background indicators (academic projects, professional work, personal experiments, open source contributions)
+
+Return ONLY valid JSON:
+{
+  "technologies": {
+    "languages": [],
+    "frameworks": [], 
+    "databases": [],
+    "packages": [],
+    "patterns": []
+  },
+  "assessment": {
+    "interests": [],
+    "skill_level": "",
+    "background": ""
+  },
+  "summary": ""
+}
+
+Repository content:
+${embeddingText}`;
+
+  // Try each model in sequence
+  for (const modelName of modelNames) {
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+        })
+      });
+
+      if (response.status === 429) continue; // Try next model
+      if (!response.ok) continue;
+
+      const result = await response.json();
+      const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+      const jsonMatch = text?.match(/\{[\s\S]*\}/);
+      
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
       }
+    } catch {
+      continue; // Try next model
     }
   }
 
-  return embeddingParts.filter(Boolean).join('\n');
+  // All models failed - wait and retry once
+  console.log('[TECH ANALYSIS] All models failed, waiting 60s...');
+  await new Promise(resolve => setTimeout(resolve, 60000));
+  
+  // One final attempt
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+      })
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+      const jsonMatch = text?.match(/\{[\s\S]*\}/);
+      if (jsonMatch) return JSON.parse(jsonMatch[0]);
+    }
+  } catch {}
+
+  return {
+    technologies: { languages: [], frameworks: [], databases: [], packages: [], patterns: [] },
+    assessment: { interests: [], skill_level: "unknown", background: "unknown" },
+    summary: "Unable to analyze technologies"
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -160,8 +171,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Subscriber ID is required' }, { status: 400 });
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_GEMENI_API_KEY;
-    if (!apiKey) {
+    const voyageApiKey = process.env.VOYAGE_API_KEY;
+    const geminiApiKey = process.env.NEXT_PUBLIC_GEMENI_API_KEY;
+    
+    if (!voyageApiKey) {
+      return NextResponse.json({ error: 'Voyage API key not configured' }, { status: 500 });
+    }
+    
+    if (!geminiApiKey) {
       return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
     }
 
@@ -183,75 +200,129 @@ export async function POST(request: NextRequest) {
       supabase = createRouteHandlerClient({ cookies });
     }
 
-    const embeddingText = createEmbeddingText(data);
-    
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-embedding-001' });
-
-    const result = await model.embedContent(embeddingText);
-    const embedding = result.embedding.values.slice(0, 1536);
-
-    const metadata = {
-      username: data.username,
-      totalRepositories: data.totalRepositories,
-      languages: extractTechNames(data.overallTechnologies?.languages || []),
-      webFrameworks: extractTechNames(data.overallTechnologies?.webFrameworks || []),
-      libraries: extractTechNames(data.overallTechnologies?.libraries || []),
-      databases: extractTechNames(data.overallTechnologies?.databases || []),
-      cloudPlatforms: extractTechNames(data.overallTechnologies?.cloudPlatforms || []),
-      containerization: extractTechNames(data.overallTechnologies?.containerization || []),
-      distributedSystems: extractTechNames(data.overallTechnologies?.distributedSystems || []),
-      architecturalPatterns: extractTechNames(data.overallTechnologies?.architecturalPatterns || []),
-      totalActiveProjects: data.analyzedRepositories?.length || 0,
-      analysisDate: data.analysisDate,
-      openSourceContributions: data.contributionSummary?.openSourceContributions || 0,
-      totalActivities: data.contributionSummary?.totalActivities || 0,
-      contributionTypes: data.contributionSummary?.contributionsByType || {},
-      activeRepositories: data.contributionSummary?.activeRepositories || []
-    };
-
-    // Save to Supabase
-    const { error: updateError } = await supabase
-      .from('subscribers')
-      .update({
-        github_vector_embeddings: embedding,
-        embedding_text: embeddingText,
-        embedding_metadata: metadata
+    // Process repository groups - this is our new primary approach
+    if (data.repositoryGroups && data.repositoryGroups.length > 0) {
+      console.log(`[EMBEDDING] Processing ${data.repositoryGroups.length} repository groups for user ${data.username}`);
+      
+      const repositoryEmbeddings = [];
+      
+      for (const repoGroup of data.repositoryGroups) {
+        const embeddingText = createRepositoryEmbeddingText(repoGroup);
         
-      })
-      .eq('id', subscriberId);
+        try {
+          // Generate embedding
+          const voyageResponse = await fetch('https://api.voyageai.com/v1/embeddings', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${voyageApiKey}`
+            },
+            body: JSON.stringify({
+              input: [embeddingText],
+              model: 'voyage-code-3'
+            })
+          });
 
-    if (updateError) {
-      return NextResponse.json({ 
-        error: 'Failed to save embedding data',
-        details: updateError.message
-      }, { status: 500 });
+          if (!voyageResponse.ok) {
+            console.error(`Failed to generate embedding for ${repoGroup.repositoryName}:`, await voyageResponse.text());
+            continue;
+          }
+
+          const voyageResult = await voyageResponse.json();
+          const embedding = voyageResult.data[0].embedding;
+          
+          // Analyze technologies using the same content
+          const techAnalysis = await analyzeTechnologies(embeddingText, geminiApiKey);
+          
+          repositoryEmbeddings.push({
+            repositoryName: repoGroup.repositoryName,
+            repositoryFullName: repoGroup.repositoryFullName,
+            contributionType: repoGroup.contributionType,
+            fileCount: repoGroup.fileCount,
+            embedding: embedding,
+            embeddingText: embeddingText,
+            technologies: techAnalysis.technologies,
+            assessment: techAnalysis.assessment,
+            summary: techAnalysis.summary
+          });
+          
+          console.log(`[EMBEDDING] Generated embedding and tech analysis for ${repoGroup.repositoryName} (${repoGroup.fileCount} files)`);
+        } catch (embeddingError) {
+          console.error(`Error generating embedding for ${repoGroup.repositoryName}:`, embeddingError);
+          continue;
+        }
+      }
+
+      if (repositoryEmbeddings.length === 0) {
+        return NextResponse.json({ 
+          error: 'Failed to generate any repository embeddings' 
+        }, { status: 500 });
+      }
+
+      // Upsert repository embeddings - update existing or insert new
+      for (const repoEmbedding of repositoryEmbeddings) {
+        const { error: upsertError } = await supabase
+          .from('github_repository_embeddings')
+          .upsert({
+            subscriber_id: subscriberId,
+            repository_name: repoEmbedding.repositoryFullName, // Use full path
+            contribution_type: repoEmbedding.contributionType,
+            file_count: repoEmbedding.fileCount,
+            embedding: repoEmbedding.embedding,
+            embedding_text: repoEmbedding.embeddingText,
+            technologies: repoEmbedding.technologies,
+            assessment: repoEmbedding.assessment,
+            summary: repoEmbedding.summary,
+            last_analyzed_commit: data.lastAnalyzedCommit, // From analyzer
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'subscriber_id,repository_name'
+          });
+
+        if (upsertError) {
+          console.error(`Failed to upsert embedding for ${repoEmbedding.repositoryName}:`, upsertError);
+        }
+      }
+
+      // Update subscribers metadata
+      const { error: metadataError } = await supabase
+        .from('subscribers')
+        .update({
+          embedding_metadata: {
+            username: data.username,
+            totalRepositories: data.totalRepositories,
+            totalRepositoryGroups: repositoryEmbeddings.length,
+            analysisDate: data.analysisDate,
+            contributionSummary: data.contributionSummary
+          }
+        })
+        .eq('id', subscriberId);
+
+      if (metadataError) {
+        console.error('Failed to update metadata:', metadataError);
+        // Don't fail the request for metadata errors
+      }
+
+      // Return success with repository embeddings info
+      return NextResponse.json({
+        success: true,
+        repositoryEmbeddingsGenerated: repositoryEmbeddings.length,
+        repositoryNames: repositoryEmbeddings.map(re => re.repositoryName),
+        embeddingGenerated: true,
+        subscriberId
+      });
+
+    } else {
+      // No repository groups found - this means no files were successfully processed
+      console.log(`[EMBEDDING] No repository groups found for user ${data.username}`);
+      
+      return NextResponse.json({
+        success: false,
+        error: 'No repository data available for embedding generation',
+        embeddingGenerated: false,
+        subscriberId
+      });
     }
-
-    const queryVector = embedding; 
-
-    const { data: matches, error: rpcError } = await supabase.rpc('github_match_subscribers', {
-      q: queryVector,
-      k: 5,
-      exclude_id: subscriberId, // optional
-    });
-
-    if (rpcError) {
-      console.error('RPC error:', rpcError);
-      return NextResponse.json({ error: 'Similarity search failed', details: rpcError.message }, { status: 500 });
-    }
-
-
-    // 3) Return the ranked results
-    return NextResponse.json({
-      success: true,
-      queryVectorLength: queryVector.length,
-      topk: 5,
-      matches, // [{ id, similarity, username, metadata }, ...]
-      embeddingGenerated: true, // Signal that embeddings were successfully created
-      subscriberId // Include subscriber ID for frontend tracking
-    });
-    
 
   } catch (error: unknown) {
     const err = error as { message?: string };

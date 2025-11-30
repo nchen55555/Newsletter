@@ -1,21 +1,26 @@
 import { Slider } from "@/components/ui/slider";
-import { SimilarityWeights } from "../types/match-types";
+import { SimilarityWeights } from "@/app/types/match-types";
+
+export type WeightDimension = keyof SimilarityWeights & string;
 
 interface WeightSlidersProps {
   title: string;
   weights: SimilarityWeights;
   onWeightChange: (weights: Partial<SimilarityWeights>) => void;
-  availableDimensions: string[];
+  availableDimensions: WeightDimension[];
   showCurrentValues?: boolean;
   resetButtonText?: string;
   onReset?: () => void;
+  onApply?: () => void;
+  applyButtonText?: string;
+  isApplying?: boolean;
 }
 
 const DIMENSION_LABELS: Record<string, string> = {
   systems_infrastructure: 'Systems & Infrastructure',
   theory_statistics_ml: 'Theory, Statistics & ML',
   product: 'Product Development',
-  github_similarity: 'GitHub Technical Similarity'
+  repository_similarity: 'Repository / Portfolio Similarity',
 };
 
 export function WeightSliders({
@@ -25,9 +30,12 @@ export function WeightSliders({
   availableDimensions,
   showCurrentValues = true,
   resetButtonText = 'Reset Weights',
-  onReset
+  onReset,
+  onApply,
+  applyButtonText = 'Apply Weights',
+  isApplying = false,
 }: WeightSlidersProps) {
-  const handleWeightChange = (dimension: string, value: number) => {
+  const handleWeightChange = (dimension: WeightDimension, value: number) => {
     onWeightChange({
       [dimension]: value
     } as Partial<SimilarityWeights>);
@@ -77,14 +85,27 @@ export function WeightSliders({
         ))}
       </div>
       
-      {onReset && (
-        <div className="flex justify-center">
-          <button
-            onClick={onReset}
-            className="px-4 py-2 text-xs bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg transition-colors font-medium"
-          >
-            {resetButtonText}
-          </button>
+      {(onReset || onApply) && (
+        <div className="flex flex-wrap gap-2 justify-center">
+          {onReset && (
+            <button
+              onClick={onReset}
+              className="px-4 py-2 text-xs bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg transition-colors font-medium"
+            >
+              {resetButtonText}
+            </button>
+          )}
+          {onApply && (
+            <button
+              onClick={() => {
+                void onApply();
+              }}
+              disabled={isApplying}
+              className="px-4 py-2 text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg transition-colors font-medium"
+            >
+              {isApplying ? 'Recalculating…' : applyButtonText ?? 'Apply Weights'}
+            </button>
+          )}
         </div>
       )}
     </div>

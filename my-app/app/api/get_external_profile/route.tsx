@@ -85,6 +85,9 @@ export async function GET(request: Request){
             company_recommendations: subscriber?.company_recommendations,
             github_url_data: subscriber?.github_url_data, 
             github_vector_embeddings: subscriber?.github_vector_embeddings,
+            check_in_status: subscriber?.check_in_status,
+            timeline_of_search: subscriber?.timeline_of_search,
+            interview_status_updated_at: subscriber?.interview_status_updated_at,
             // Client information from URL - not from database
             client_id: clientId,
             is_client_specific: clientId !== null

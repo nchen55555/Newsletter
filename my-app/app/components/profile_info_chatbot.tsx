@@ -341,7 +341,6 @@ export default function ProfileInfoChatbot({
       
       if (response.ok) {
         const result = await response.json()
-        console.log(`Successfully updated ${field}:`, result)
         
         // Update form with any returned URLs (for file uploads)
         if (result.profileImageUrl && field === 'profile_image') {
@@ -388,49 +387,65 @@ export default function ProfileInfoChatbot({
 
   const loadAllProfiles = async () => {
     setLoadingProfiles(true)
-    try {
-      const [profilesResponse, userResponse] = await Promise.all([
-        fetch('/api/get_cohort', { credentials: 'include' }),
-        fetch('/api/get_profile', { credentials: 'include' })
-      ])
-      
-      if (profilesResponse.ok) {
-        const data = await profilesResponse.json()
-        setAllProfiles(data.profiles || [])
-      } else {
-        console.error('Failed to load profiles')
+    
+    // Load profiles and user data independently and asynchronously
+    const loadProfiles = async () => {
+      try {
+        const response = await fetch('/api/get_cohort', { credentials: 'include' })
+        if (response.ok) {
+          const data = await response.json()
+          setAllProfiles(data.profiles || [])
+        } else {
+          console.error('Failed to load profiles')
+          setAllProfiles([])
+        }
+      } catch (error) {
+        console.error('Error loading profiles:', error)
         setAllProfiles([])
       }
-
-      if (userResponse.ok) {
-        const userData = await userResponse.json()
-        setCurrentUserData(userData)
-      } else {
-        console.error('Failed to load user data')
+    }
+    
+    const loadUserData = async () => {
+      try {
+        const response = await fetch('/api/get_profile', { credentials: 'include' })
+        if (response.ok) {
+          const userData = await response.json()
+          setCurrentUserData(userData)
+        } else {
+          console.error('Failed to load user data')
+          setCurrentUserData(null)
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error)
         setCurrentUserData(null)
       }
-    } catch (error) {
-      console.error('Error loading data:', error)
-      setAllProfiles([])
-      setCurrentUserData(null)
-    } finally {
-      setLoadingProfiles(false)
     }
+    
+    // Start both requests simultaneously but don't wait for both to complete
+    // This allows the UI to update as soon as either request finishes
+    Promise.all([loadProfiles(), loadUserData()]).finally(() => {
+      setLoadingProfiles(false)
+    })
   }
 
   const loadUserReferrals = async () => {
-    try {
-      const response = await fetch(`/api/get_user_referrals?user_id=${form.id}`, {
-        credentials: 'include'
-      })
+    // Make this truly async and non-blocking
+    fetch(`/api/get_user_referrals?user_id=${form.id}`, {
+      credentials: 'include'
+    })
+    .then(response => {
       if (response.ok) {
-        const data = await response.json()
-        setUserReferralsCount(data.length || 0)
+        return response.json()
       }
-    } catch (error) {
+      throw new Error('Failed to load referrals')
+    })
+    .then(data => {
+      setUserReferralsCount(data.length || 0)
+    })
+    .catch(error => {
       console.error('Error loading user referrals:', error)
       setUserReferralsCount(0)
-    }
+    })
   }
 
   // Load data when reaching companies, networking, or network_recommendations questions
@@ -438,9 +453,11 @@ export default function ProfileInfoChatbot({
     if (currentQuestion?.type === 'companies' && companies.length === 0) {
       loadCompanies()
     }
+    // Only load profiles when user actually reaches networking question
     if (currentQuestion?.type === 'networking' && allProfiles.length === 0) {
       loadAllProfiles()
     }
+    // Only load user referrals when user actually reaches network recommendations question  
     if (currentQuestion?.type === 'network_recommendations') {
       loadUserReferrals()
     }

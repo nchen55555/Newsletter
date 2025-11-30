@@ -11,7 +11,7 @@ export interface SkillScores {
   systems_infrastructure: number;
   theory_statistics_ml: number;
   product: number;
-  github_similarity?: number; // 0-1 similarity score from GitHub embedding
+  repository_similarity?: number; // 0-1 similarity score from GitHub embedding
 }
 
 // Company compatibility response from the similarity API
@@ -42,7 +42,6 @@ export interface CompanyData {
 export interface MatchingCandidate {
   candidate_id: string;
   skills: SkillScores;
-  github_vector_embeddings?: number[];
   [key: string]: unknown;
 }
 
@@ -51,8 +50,7 @@ export interface ReferenceProfile {
   systems_infrastructure: number;
   theory_statistics_ml: number;
   product: number;
-  github_similarity?: number;
-  github_vector_embeddings?: number[];
+  repository_similarity?: number;
 }
 
 // Props for external profile component  
@@ -68,7 +66,7 @@ export interface SimilarityWeights {
   systems_infrastructure: number;
   theory_statistics_ml: number;
   product: number;
-  github_similarity?: number;
+  repository_similarity?: number;
   [key: string]: number | undefined; // Index signature to allow dynamic property access
 }
 
@@ -79,7 +77,6 @@ export interface CandidateMatch {
   similarity: number;
   similarity_percentage: number;
   skills: SkillScores;
-  github_vector_embeddings?: number[];
   profile?: {
     id: number;
     first_name: string;

@@ -2,7 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import GitHubProfileAnalyzer from '../../lib/github-profile-analyzer';
-import { AnalyzedRepository } from '../../types/github-analysis';
+import type { GitHubProfileAnalysis } from '../../types/github-analysis';
+
+// JSON-like type used for sanitized analysis payloads
+type JSONPrimitive = string | number | boolean | null;
+type JSONArray = JSONValue[];
+type JSONObject = { [key: string]: JSONValue };
+type JSONValue = JSONPrimitive | JSONArray | JSONObject | GitHubProfileAnalysis;
+
+// Helper function to sanitize data by removing null bytes and problematic characters
+function sanitizeAnalysisData(obj: JSONValue): JSONValue {
+  if (typeof obj === 'string') {
+    // Remove null bytes and other problematic Unicode characters
+    return obj
+      .replace(/\u0000/g, '')
+      .replace(/[\u0001-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
+  }
+
+  if (Array.isArray(obj)) {
+    return (obj as JSONArray).map(sanitizeAnalysisData);
+  }
+
+  if (obj !== null && typeof obj === 'object') {
+    const cleaned: JSONObject = {};
+    for (const [key, value] of Object.entries(obj as JSONObject)) {
+      cleaned[key] = sanitizeAnalysisData(value);
+    }
+    return cleaned;
+  }
+
+  return obj;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,6 +107,9 @@ export async function POST(request: NextRequest) {
     // Perform the analysis with user's real name for better commit verification
     const analysis = await analyzer.analyzeProfile(username, userRealName);
 
+    // Clean the analysis data to remove null bytes and other problematic characters
+    const cleanedAnalysis = sanitizeAnalysisData(analysis);
+
     // Track if embeddings were generated during this analysis
     let embeddingGenerated = false;
 
@@ -88,7 +121,7 @@ export async function POST(request: NextRequest) {
         const { error: updateError } = await supabase
           .from('subscribers')
           .update({ 
-            github_url_data: analysis 
+            github_url_data: cleanedAnalysis 
           })
           .eq('id', id);
 
@@ -112,7 +145,7 @@ export async function POST(request: NextRequest) {
               method: 'POST',
               headers: embeddingHeaders,
               body: JSON.stringify({
-                data: analysis,
+                data: cleanedAnalysis,
                 subscriberId: id
               })
             });
@@ -145,41 +178,6 @@ export async function POST(request: NextRequest) {
     const cleanAnalysis = {
       username: analysis.username,
       totalRepositories: analysis.totalRepositories,
-      overallTechnologies: analysis.overallTechnologies ? {
-        languages: analysis.overallTechnologies.languages || [],
-        webFrameworks: analysis.overallTechnologies.webFrameworks || [],
-        libraries: analysis.overallTechnologies.libraries || [],
-        databases: analysis.overallTechnologies.databases || [],
-        dataProcessing: analysis.overallTechnologies.dataProcessing || [],
-        orm: analysis.overallTechnologies.orm || [],
-        containerization: analysis.overallTechnologies.containerization || [],
-        orchestration: analysis.overallTechnologies.orchestration || [],
-        cloudPlatforms: analysis.overallTechnologies.cloudPlatforms || [],
-        infrastructure: analysis.overallTechnologies.infrastructure || [],
-        distributedSystems: analysis.overallTechnologies.distributedSystems || [],
-        messagingQueues: analysis.overallTechnologies.messagingQueues || [],
-        consensus: analysis.overallTechnologies.consensus || [],
-        cicd: analysis.overallTechnologies.cicd || [],
-        monitoring: analysis.overallTechnologies.monitoring || [],
-        deployment: analysis.overallTechnologies.deployment || [],
-        architecturalPatterns: analysis.overallTechnologies.architecturalPatterns || [],
-        designPatterns: analysis.overallTechnologies.designPatterns || [],
-        security: analysis.overallTechnologies.security || []
-      } : {
-        languages: [], webFrameworks: [], libraries: [], databases: [], 
-        dataProcessing: [], orm: [], containerization: [], orchestration: [],
-        cloudPlatforms: [], infrastructure: [], distributedSystems: [], 
-        messagingQueues: [], consensus: [], cicd: [], monitoring: [], 
-        deployment: [], architecturalPatterns: [], designPatterns: [], security: []
-      },
-      analyzedRepositories: analysis.analyzedRepositories ? analysis.analyzedRepositories.map((repo: AnalyzedRepository) => ({
-        name: repo.name,
-        description: repo.description,
-        url: repo.url,
-        size: repo.size,
-        language: repo.language,
-        technologies: repo.technologies
-      })) : [],
       contributionSummary: analysis.contributionSummary ? {
         totalActivities: analysis.contributionSummary.totalActivities || 0,
         openSourceContributions: analysis.contributionSummary.openSourceContributions || 0,
@@ -191,6 +189,7 @@ export async function POST(request: NextRequest) {
         contributionsByType: {},
         activeRepositories: []
       },
+      repositoryGroups: analysis.repositoryGroups || [],
       analysisDate: analysis.analysisDate
     };
 
