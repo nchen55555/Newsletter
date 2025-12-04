@@ -11,6 +11,7 @@ import { ThreadsTab } from "./external_profile/threads_tab";
 import { ReferralsTab } from "./external_profile/referrals_tab";
 import { ProjectsTab } from "./external_profile/projects_tab";
 import { ConnectionsTab } from "./external_profile/connections_tab";
+import { NetworkSimilarityTab } from "./external_profile/network_similarity_tab";
 import { ScoresTab } from "./external_profile/github_tab";
 import { TimelineTab } from "./external_profile/timeline_tab";
 import { getClientConfig } from "@/app/components/client-config";
@@ -59,6 +60,11 @@ export interface SimilarDeveloper {
   };
 }
 
+type NetworkProfile = ProfileData & {
+  networkSimilarity: number;
+  networkSimilarityLevel: "very_high" | "high" | "medium" | "low";
+};
+
 
 export function ExternalProfile(props: ExternalProfileProps) {
   const router = useRouter();
@@ -92,6 +98,10 @@ export function ExternalProfile(props: ExternalProfileProps) {
 
   const [connectionProfiles, setConnectionProfiles] = useState<ProfileData[]>([]);
   const [loadingConnections, setLoadingConnections] = useState(false);
+
+  const [userNetwork, setUserNetwork] = useState<NetworkProfile[]>([]);
+  const [loadingNetwork, setLoadingNetwork] = useState(false);
+  const [networkError, setNetworkError] = useState<string>("");
 
   const [userProjects, setUserProjects] = useState<string[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
@@ -776,6 +786,86 @@ useEffect(() => {
     }
   }, [props.id, githubAnalysis, repositoryEmbeddings.length, similarDevelopers.length, companyData]);
 
+  // ---------- Network similarity pipeline ----------
+
+  const fetchNetworkSimilarity = useCallback(async () => {
+    if (!props.id) return;
+
+    // Simple cache: if we've already loaded the network for this profile, skip refetch
+    if (userNetwork.length > 0) {
+      return;
+    }
+
+    setLoadingNetwork(true);
+    setNetworkError("");
+
+    try {
+      const response = await fetch("/api/network-similarity", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          candidate_id: props.id,
+          min_similarity: 0.85,
+          top_k: 10,
+          exclude_existing: false,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        setNetworkError(data.error || "Failed to fetch network similarity");
+        setUserNetwork([]);
+        return;
+      }
+
+      const similarCandidates = (data.similar_candidates || []) as {
+        candidate_id: number;
+        similarity: number;
+      }[];
+
+      if (!Array.isArray(similarCandidates) || similarCandidates.length === 0) {
+        setUserNetwork([]);
+        return;
+      }
+
+      const profilePromises = similarCandidates.map(async (match) => {
+        try {
+          const encodedId = encodeSimple(match.candidate_id);
+          const res = await fetch(`/api/get_external_profile?id=${encodedId}`, {
+            credentials: "include",
+          });
+          if (!res.ok) return null;
+          const profile = await res.json();
+          return {
+            ...(profile as ProfileData),
+            networkSimilarity: match.similarity,
+          } as NetworkProfile;
+        } catch (error) {
+          console.log("Error fetching network profile", error);
+          return null;
+        }
+      });
+
+      const profiles = await Promise.all(profilePromises);
+      const validProfiles = profiles.filter((p): p is NetworkProfile => p !== null);
+
+      // Sort by similarity descending
+      validProfiles.sort((a, b) => b.networkSimilarity - a.networkSimilarity);
+
+      setUserNetwork(validProfiles);
+    } catch (error) {
+      console.log("Error fetching network similarity", error);
+      setNetworkError(`Network error occurred while fetching network similarity: ${String(error)}`);
+      setUserNetwork([]);
+    } finally {
+      setLoadingNetwork(false);
+    }
+  }, [props.id, userNetwork.length]);
+
 
   useEffect(() => {
     const availableTabs: AvailableTab[] = [];
@@ -786,6 +876,7 @@ useEffect(() => {
     if (clientConfig.showProjects) availableTabs.push('projects');
     if (clientConfig.showConnections) availableTabs.push('connections');
     if (clientConfig.showTimeline) availableTabs.push('timeline');
+    if (clientConfig.showNetworkSimilarity) availableTabs.push('network');
     // if (isCompanyView) availableTabs.push('similar');
 
     if (availableTabs.length > 0 && !availableTabs.includes(activeTab)) {
@@ -848,6 +939,13 @@ useEffect(() => {
     if (loadingConnections) return;
     fetchConnectionProfiles();
   }, [activeTab, loadingConnections, fetchConnectionProfiles]);
+
+  // Lazily load network similarity only when the "network" tab is active
+  useEffect(() => {
+    if (activeTab !== 'network') return;
+    if (loadingNetwork) return;
+    fetchNetworkSimilarity();
+  }, [activeTab, loadingNetwork, fetchNetworkSimilarity]);
 
   // ---------- Edit form submit ----------
 
@@ -1106,6 +1204,7 @@ useEffect(() => {
             referrals: userReferrals.length,
             projects: userProjects.length,
             connections: connectionProfiles.length,
+            network: userNetwork.length,
           }}
           isExternalView={props.isExternalView}
           firstName={props.first_name}
@@ -1189,6 +1288,15 @@ useEffect(() => {
               loadingSimilarDevelopers={loadingSimilarDevelopers}
               similarDevelopersError={similarDevelopersError}
               fetchSimilarDevelopers={fetchGithub}
+            />
+          )}
+
+        {activeTab === 'network' && clientConfig.showNetworkSimilarity && (
+            <NetworkSimilarityTab
+              isExternalView={props.isExternalView}
+              firstName={props.first_name}
+              userNetwork={userNetwork}
+              loadingNetwork={loadingNetwork}
             />
           )}
 

@@ -5,7 +5,7 @@
 import { ProfileData } from "../types";
 
 // Tab types for profile navigation
-export type AvailableTab = "scores" | "bookmarks" | "threads" | "referrals" | "projects" | "connections" | "similar" | "timeline";
+export type AvailableTab = "scores" | "bookmarks" | "threads" | "referrals" | "projects" | "connections" | "similar" | "timeline" | "network";
 
 export interface SkillScores {
   systems_infrastructure: number;

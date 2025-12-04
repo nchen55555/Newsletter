@@ -18,6 +18,7 @@ export function ProfileTabsNav({
     referrals: number;
     projects: number;
     connections: number;
+    network: number;
   };
   isExternalView?: boolean;
   firstName?: string | null;
@@ -88,6 +89,18 @@ export function ProfileTabsNav({
             }`}
           >
             {isExternalView ? `${firstName}'s Network` : 'Your Network'} ({counts.connections})
+          </button>
+        )}
+        {clientConfig.showNetworkSimilarity && (
+          <button
+            onClick={() => setActiveTab('network')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === 'network'
+                ? 'border-neutral-900 text-neutral-900'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+            }`}
+          >
+            {isExternalView ? `${firstName}'s Network Similarity` : 'Network Similarity'} ({counts.network})
           </button>
         )}
         {clientConfig.showSkillScores && (

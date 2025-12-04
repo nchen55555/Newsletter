@@ -2,7 +2,19 @@ import { ProfileData } from "@/app/types";
 import ProfileAvatar from "@/app/components/profile_avatar";
 import { connectionLabels } from "./connection-scale";
 
-function ProfileCard({ profile, onClick, connectionStatus = 'none', connectionRating }: { profile: ProfileData; onClick: () => void; connectionStatus?: 'connected' | 'pending_sent' | 'requested' | 'none'; connectionRating?: number }) {
+function ProfileCard({
+  profile,
+  onClick,
+  connectionStatus = 'none',
+  connectionRating,
+  tags,
+}: {
+  profile: ProfileData;
+  onClick: () => void;
+  connectionStatus?: 'connected' | 'pending_sent' | 'requested' | 'none';
+  connectionRating?: number;
+  tags?: string[];
+}) {
 
   const getConnectionBadges = () => {
     const badges = [];
@@ -78,6 +90,20 @@ function ProfileCard({ profile, onClick, connectionStatus = 'none', connectionRa
             <p className="text-neutral-600 text-sm leading-relaxed line-clamp-3 text-left">
               {profile.bio}
             </p>
+          )}
+
+          {/* Optional tagged text */}
+          {tags && tags.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           )}
         </div>
       </div>

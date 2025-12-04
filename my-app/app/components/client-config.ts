@@ -11,6 +11,7 @@ export function getClientConfig(clientId?: number, isCompany?: boolean) {
       showThreads: false,
       showProjects: true,
       showTimeline: true,
+      showNetworkSimilarity: true,
       highlightSections: ["bio", "projects", "bookmarks"],
     };
   }
@@ -26,6 +27,7 @@ export function getClientConfig(clientId?: number, isCompany?: boolean) {
     showThreads: true,
     showProjects: true,
     showTimeline: true,
+    showNetworkSimilarity: true,
     highlightSections: [],
   };
 }
