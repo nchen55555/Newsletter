@@ -4,13 +4,12 @@ import { Button } from '@/components/ui/button'
 import { ProfileFormState, ProfileData, CompanyWithImageUrl, ConnectionData } from '@/app/types'
 import ProfileAvatar from './profile_avatar'
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { CheckCircle, Upload, Search, UserPlus, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Upload, Search, UserPlus, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { CompanyCard } from '@/app/companies/company-cards'
 import ProfileCard from './profile_card'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { ConnectionScale } from './connection-scale'
 import { ReferralDialog } from './referral-dialog'
+import { ConnectDialog } from './connect_dialog'
 
 interface Question {
   id: string
@@ -586,7 +585,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     setDialogOpen(true)
   }
 
-  const handleConnectionScale = async (scaleValue: number) => {
+  const handleConnectionScale = async (scaleValue: number, note?: string) => {
     if (!selectedProfile) return
 
     setIsSubmitting(true)
@@ -598,7 +597,8 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           connect_id: selectedProfile.id,
-          rating: scaleValue
+          rating: scaleValue,
+          note: note
         })
       })
       
@@ -906,13 +906,23 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     }
   }
 
+  useEffect(() => {
+    if (isComplete) {
+      const timer = setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete]);
+
   if (isComplete) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center max-w-md mx-auto">
-          <CheckCircle className="w-16 h-1 mx-auto mb-6" />
           <h2 className="text-3xl font-bold text-gray-900 mb-4">All done!</h2>
-          <p className="text-lg text-gray-600">Your profile information has been collected successfully.</p>
+          <p className="text-lg text-gray-600">
+            Your profile information has been collected successfully. We&apos;re refreshing your workspace to reflect your updates.
+          </p>
         </div>
       </div>
     )
@@ -981,17 +991,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                   {/* Next/Complete button */}
                   {currentQuestion.type !== 'button' && (
                     <Button
-                      onClick={() => {
-                        if (currentQuestionIndex >= questions.length - 1) {
-                          // Last question - trigger completion
-                          if (onComplete) {
-                            onComplete(true)
-                          }
-                        } else {
-                          // Not last question - proceed to next
-                          nextQuestion()
-                        }
-                      }}
+                      onClick={nextQuestion}
                       disabled={!canProceedToNext()}
                       variant="ghost"
                       className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1043,14 +1043,21 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                   >
                     <Button
                       onClick={() => handleToggleResponse(true)}
-                      className="flex-1 py-6 text-lg bg-neutral-900 hover:bg-neutral-800 text-white"
+                      className={`flex-1 py-6 text-lg ${
+                        form[currentQuestion.field] === true
+                          ? 'bg-neutral-900 text-white hover:bg-neutral-800'
+                          : 'bg-neutral-100 text-neutral-800 hover:bg-neutral-200'
+                      }`}
                     >
                       Yes
                     </Button>
                     <Button
                       onClick={() => handleToggleResponse(false)}
-                      variant="outline"
-                      className="flex-1 py-6 text-lg hover:bg-gray-50"
+                      className={`flex-1 py-6 text-lg ${
+                        form[currentQuestion.field] === false
+                          ? 'bg-neutral-900 text-white hover:bg-neutral-800'
+                          : 'bg-neutral-100 text-neutral-800 hover:bg-neutral-200'
+                      }`}
                     >
                       No
                     </Button>
@@ -1191,49 +1198,16 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                                   .filter(profile => profile.school === form.school && profile.id !== form.id)
                                   .slice(0, 4)
                                   .map((profile) => (
-                                    <Dialog key={profile.id} open={selectedProfile?.id === profile.id} onOpenChange={(open) => {
-                                      if (!open) {
-                                        handleDialogChange(false)
-                                      } else {
-                                        handleDialogChange(true)
-                                        handleConnectClick(profile)
-                                      }
-                                    }}>
-                                      <DialogTrigger asChild>
-                                        <div>
-                                          <ProfileCard
-                                            profile={profile}
-                                            onClick={() => {handleConnectClick(profile)}}
-                                            connectionStatus={getConnectionStatus(profile)}
-                                          />
-                                        </div>
-                                      </DialogTrigger>
-                                      <DialogContent className="sm:max-w-xl w-full px-12 py-8">
-                                        <DialogHeader>
-                                          <DialogTitle>
-                                            {getConnectionStatus(profile) === 'requested' 
-                                              ? `Accept Connection Request from ${profile.first_name}`
-                                              : `Connect with ${profile.first_name}`
-                                            }
-                                          </DialogTitle>
-                                          <DialogDescription>
-                                            {getConnectionStatus(profile) === 'requested'
-                                              ? `${profile.first_name} has sent you a connection request. Rate your connection strength to accept and add them to your network.`
-                                              : `To add ${profile.first_name} to your verified network, please rate your connection strength. This helps us maintain network quality and provide better recommendations.`
-                                            }
-                                          </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="space-y-6 mt-6">
-                                          <ConnectionScale
-                                            onSubmit={handleConnectionScale}
-                                            isSubmitting={isSubmitting}
-                                            personName={profile.first_name}
-                                          
-                                          />
-                                          
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
+                                    <div key={profile.id}>
+                                      <ProfileCard
+                                        profile={profile}
+                                        onClick={() => {
+                                          handleConnectClick(profile);
+                                          handleDialogChange(true);
+                                        }}
+                                        connectionStatus={getConnectionStatus(profile)}
+                                      />
+                                    </div>
                                   ))}
                               </div>
                               {allProfiles.filter(profile => profile.school === form.school && profile.id !== form.id).length === 0 && (
@@ -1289,64 +1263,29 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                                           );
                                         } else {
                                           return (
-                                            <Dialog open={selectedProfile?.id === profile.id} onOpenChange={(open) => {
-                                              if (!open) {
-                                                handleDialogChange(false)
-                                              } else {
-                                                handleDialogChange(true)
-                                                handleConnectClick(profile)
-                                              }
-                                            }}>
-                                              <DialogTrigger asChild>
-                                                {status === 'requested' ? (
-                                                  <Button className="inline-flex items-center gap-2 whitespace-nowrap" onClick={() => handleConnectClick(profile)}>
-                                                    <UserPlus className="w-4 h-4" />
-                                                    Accept Request
-                                                  </Button>
-                                                ) : (
-                                                  <Button className="inline-flex items-center gap-2 whitespace-nowrap" onClick={() => handleConnectClick(profile)}>
-                                                    <UserPlus className="w-4 h-4" />
-                                                    Add to Network
-                                                  </Button>
-                                                )}
-                                              </DialogTrigger>
-                                              <DialogContent className="sm:max-w-xl w-full px-12 py-8">
-                                                <DialogHeader>
-                                                  <DialogTitle>
-                                                    {getConnectionStatus(profile) === 'requested' 
-                                                      ? `Accept Connection Request from ${profile.first_name}`
-                                                      : `Connect with ${profile.first_name}`
-                                                    }
-                                                  </DialogTitle>
-                                                  <DialogDescription>
-                                                    {getConnectionStatus(profile) === 'requested'
-                                                      ? `${profile.first_name} has sent you a connection request. Rate your connection strength to accept and add them to your network.`
-                                                      : `To add ${profile.first_name} to your verified network, please rate your connection strength. This helps us maintain network quality and provide better recommendations.`
-                                                    }
-                                                  </DialogDescription>
-                                                </DialogHeader>
-                                                <div className="space-y-6 mt-6">
-                                                  <ConnectionScale
-                                                    onSubmit={handleConnectionScale}
-                                                    isSubmitting={isSubmitting}
-                                                    personName={profile.first_name}
-                                                  />
-                                                  
-                                                  {/* Status Message Display */}
-                                                  {verificationStatus !== 'idle' && (
-                                                    <div className={`mt-6 p-4 rounded-lg text-sm ${
-                                                      verificationStatus === 'success' 
-                                                        ? 'bg-green-50 text-green-700 border border-green-200' 
-                                                        : verificationStatus === 'error'
-                                                        ? 'bg-red-50 text-red-700 border border-red-200'
-                                                        : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                                                    }`}>
-                                                      {statusMessage}
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              </DialogContent>
-                                            </Dialog>
+                                            status === 'requested' ? (
+                                              <Button
+                                                className="inline-flex items-center gap-2 whitespace-nowrap"
+                                                onClick={() => {
+                                                  handleConnectClick(profile);
+                                                  handleDialogChange(true);
+                                                }}
+                                              >
+                                                <UserPlus className="w-4 h-4" />
+                                                Accept Request
+                                              </Button>
+                                            ) : (
+                                              <Button
+                                                className="inline-flex items-center gap-2 whitespace-nowrap"
+                                                onClick={() => {
+                                                  handleConnectClick(profile);
+                                                  handleDialogChange(true);
+                                                }}
+                                              >
+                                                <UserPlus className="w-4 h-4" />
+                                                Add to Network
+                                              </Button>
+                                            )
                                           );
                                         }
                                       })()}
@@ -1362,45 +1301,17 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                           )}
 
 
-                          {/* Connection Dialog */}
-                          <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-                            <DialogContent className="sm:max-w-xl w-full px-12 py-8">
-                              <DialogHeader>
-                                <DialogTitle>
-                                  {getConnectionStatus(selectedProfile!) === 'requested' 
-                                    ? `Accept Connection Request from ${selectedProfile?.first_name}`
-                                    : `Connect with ${selectedProfile?.first_name}`
-                                  }
-                                </DialogTitle>
-                                <DialogDescription>
-                                  {getConnectionStatus(selectedProfile!) === 'requested'
-                                    ? `${selectedProfile?.first_name} has sent you a connection request. Rate your connection strength to accept and add them to your network.`
-                                    : `To add ${selectedProfile?.first_name} to your verified network, please rate your connection strength. This helps us maintain network quality and provide better recommendations.`
-                                  }
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-6 mt-6">
-                                <ConnectionScale
-                                  onSubmit={handleConnectionScale}
-                                  isSubmitting={isSubmitting}
-                                  personName={selectedProfile?.first_name}
-                                />
-                                
-                                {/* Status Message Display */}
-                                {verificationStatus !== 'idle' && (
-                                  <div className={`mt-6 p-4 rounded-lg text-sm ${
-                                    verificationStatus === 'success' 
-                                      ? 'bg-green-50 text-green-700 border border-green-200' 
-                                      : verificationStatus === 'error'
-                                      ? 'bg-red-50 text-red-700 border border-red-200'
-                                      : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                                  }`}>
-                                    {statusMessage}
-                                  </div>
-                                )}
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+                          {/* Global Connection Dialog */}
+                          <ConnectDialog
+                            open={dialogOpen}
+                            onOpenChange={handleDialogChange}
+                            trigger={null}
+                            firstName={selectedProfile?.first_name || ""}
+                            isSubmitting={isSubmitting}
+                            verificationStatus={verificationStatus}
+                            statusMessage={statusMessage}
+                            onSubmit={handleConnectionScale}
+                          />
                         </>
                       )}
                     </div>
@@ -1522,17 +1433,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                 {/* Next/Complete button */}
                 {currentQuestion.type !== 'button' && (
                   <Button
-                    onClick={() => {
-                      if (currentQuestionIndex >= questions.length - 1) {
-                        // Last question - trigger completion
-                        if (onComplete) {
-                          onComplete(true)
-                        }
-                      } else {
-                        // Not last question - proceed to next
-                        nextQuestion()
-                      }
-                    }}
+                    onClick={nextQuestion}
                     disabled={!canProceedToNext()}
                     variant="ghost"
                     className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0 disabled:opacity-50 disabled:cursor-not-allowed"

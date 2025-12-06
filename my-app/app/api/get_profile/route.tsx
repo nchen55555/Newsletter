@@ -75,7 +75,8 @@ export async function GET(){
             interview_status_updated_at: subscriber?.interview_status_updated_at,
             check_in_status: subscriber?.check_in_status,
             timeline_of_search: subscriber?.timeline_of_search,
-            outreach_frequency: subscriber?.outreach_frequency
+            outreach_frequency: subscriber?.outreach_frequency, 
+            github_url: subscriber?.github_url,
         })
 
     } catch (error) {

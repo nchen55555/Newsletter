@@ -3,6 +3,7 @@ export type ConnectionData = {
   rating: number;
 };
 
+// Backend Profile Data
 export type ProfileData = {
     id: number,
     email: string;
@@ -46,8 +47,10 @@ export type ProfileData = {
     check_in_status?: string;
     interview_status_updated_at?: string;
     timeline_of_search?: string;  
+    github_url?: string;
   };
 
+// UI Form State for Profile
 export type ProfileFormState = {
   id: number;
   email: string;

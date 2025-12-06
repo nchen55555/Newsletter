@@ -20,7 +20,11 @@ export async function POST(req: NextRequest) {
 
     // 3. Parse JSON body
     const body = await req.json();
-    const { connect_id, rating } = body;
+    const { connect_id, rating, note } = body;
+
+    console.log('connect_id', connect_id);
+    console.log('rating', rating);
+    console.log('note', note);
     
     if (!connect_id) {
       return NextResponse.json({ error: 'connect_id is required' }, { status: 400 });
@@ -28,6 +32,10 @@ export async function POST(req: NextRequest) {
     
     if (!rating || rating < 1 || rating > 5) {
       return NextResponse.json({ error: 'rating must be between 1 and 5' }, { status: 400 });
+    }
+
+    if (!note || note.trim().length < 20) {
+      return NextResponse.json({ error: 'note must be at least 20 characters' }, { status: 400 });
     }
 
     // 4. Get the current user's profile to retrieve existing connections and pending connections
@@ -59,9 +67,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 5. Get existing connections array or initialize empty array
-    let connections: {connect_id: number, rating: number}[] = [];
-    let pendingConnections: {connect_id: number, rating: number}[] = [];
-    let requestedConnections: {connect_id: number, rating: number}[] = [];
+    let connections: {connect_id: number, rating: number, note: string}[] = [];
+    let pendingConnections: {connect_id: number, rating: number, note: string}[] = [];
+    let requestedConnections: {connect_id: number, rating: number, note: string}[] = [];
     
     if (currentProfile?.connections_new && Array.isArray(currentProfile.connections_new)) {
       connections = currentProfile.connections_new;
@@ -124,9 +132,9 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    let targetPendingConnections: {connect_id: number, rating: number}[] = [];
-    let targetConnections: {connect_id: number, rating: number}[] = [];
-    let targetRequestedConnections: {connect_id: number, rating: number}[] = [];
+    let targetPendingConnections: {connect_id: number, rating: number, note: string}[] = [];
+    let targetConnections: {connect_id: number, rating: number, note: string}[] = [];
+    let targetRequestedConnections: {connect_id: number, rating: number, note: string}[] = [];
     
     if (targetProfile?.requested_connections_new && Array.isArray(targetProfile.requested_connections_new)) {
       targetRequestedConnections = targetProfile.requested_connections_new;
@@ -160,8 +168,8 @@ export async function POST(req: NextRequest) {
       const otherUserRating = existingRequest ? existingRequest.rating : 3; // Default rating if not found
       
       // Add each other to connections and remove from pending_connections
-      connections.push({connect_id: connectIdNum, rating: rating});
-      targetConnections.push({connect_id: currentUserId, rating: otherUserRating});
+      connections.push({connect_id: connectIdNum, rating: rating, note: note});
+      targetConnections.push({connect_id: currentUserId, rating: otherUserRating, note: note});
       
       console.log('After push - Current user connections:', connections);
       console.log('After push - Target user connections:', targetConnections);
@@ -267,8 +275,8 @@ export async function POST(req: NextRequest) {
       });
     } else {
       // This is a new request - add current user's ID to target's pending connections
-        pendingConnections.push({connect_id: parseInt(connect_id), rating: rating});
-        targetRequestedConnections.push({connect_id: currentUserId, rating: rating});
+        pendingConnections.push({connect_id: parseInt(connect_id), rating: rating, note: note});
+        targetRequestedConnections.push({connect_id: currentUserId, rating: rating, note: note});
         console.log("pending connections for user now ", targetPendingConnections, "and connections ", targetConnections)
 
         // 9. Update the target's profile with the new pending connections array

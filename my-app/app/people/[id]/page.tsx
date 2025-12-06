@@ -21,6 +21,7 @@ import ProfileAvatar from "../../components/profile_avatar";
 import { CompanyRow } from "../../companies/company-row";
 import { decodeSimple } from "../../utils/simple-hash";
 import { ConnectionScale } from "../../components/connection-scale";
+import { ConnectDialog } from "../../components/connect_dialog";
 
 export default function PeopleProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const [data, setData] = useState<ProfileData | null>(null); 
@@ -183,7 +184,7 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
     }
   };
 
-  const handleConnectionScale = async (scaleValue: number) => {
+  const handleConnectionScale = async (scaleValue: number, note?: string) => {
     setIsSubmitting(true);
     setVerificationStatus('idle');
     
@@ -193,7 +194,8 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           connect_id: data?.id,
-          rating: scaleValue
+          rating: scaleValue, 
+          note: note
         })
       });
       
@@ -301,7 +303,7 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                             Accept Request
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-xl w-full px-12 py-8">
+                        <DialogContent className="sm:max-w-2xl w-full px-12 py-8">
                         <DialogHeader>
                           <DialogTitle>Accept Connection Request from {data.first_name}</DialogTitle>
                           <DialogDescription>
@@ -332,45 +334,16 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                         </DialogContent>
                       </Dialog>
                     ) : (
-                      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-                        <DialogTrigger asChild>
-                          <Button className="inline-flex items-center gap-2">
-                            <UserPlus className="w-4 h-4" />
-                            Add to Verified Network
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-xl w-full px-12 py-8">
-                        <DialogHeader>
-                          <DialogTitle>
-                            Connect with {data.first_name}
-                          </DialogTitle>
-                          <DialogDescription>
-                            To add {data.first_name} to your verified network, please rate your connection strength. This helps us maintain network quality and provide better recommendations.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-6 mt-6">
-                          <ConnectionScale
-                            onSubmit={handleConnectionScale}
-                            isSubmitting={isSubmitting}
-                            personName={data.first_name}
-                            initialRating={existingRating}
-                          />
-                          
-                          {/* Status Message Display */}
-                          {verificationStatus !== 'idle' && (
-                            <div className={`mt-6 p-4 rounded-lg text-sm ${
-                              verificationStatus === 'success' 
-                                ? 'bg-green-50 text-green-700 border border-green-200' 
-                                : verificationStatus === 'error'
-                                ? 'bg-red-50 text-red-700 border border-red-200'
-                                : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                            }`}>
-                              {statusMessage}
-                            </div>
-                          )}
-                        </div>
-                        </DialogContent>
-                      </Dialog>
+                      <ConnectDialog
+                        open={dialogOpen}
+                        onOpenChange={handleDialogChange}
+                        firstName={data.first_name}
+                        isSubmitting={isSubmitting}
+                        verificationStatus={verificationStatus}
+                        statusMessage={statusMessage}
+                        existingRating={existingRating}
+                        onSubmit={handleConnectionScale}
+                      />
                     )}
                   </div>
                   

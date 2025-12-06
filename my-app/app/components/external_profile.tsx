@@ -101,7 +101,6 @@ export function ExternalProfile(props: ExternalProfileProps) {
 
   const [userNetwork, setUserNetwork] = useState<NetworkProfile[]>([]);
   const [loadingNetwork, setLoadingNetwork] = useState(false);
-  const [networkError, setNetworkError] = useState<string>("");
 
   const [userProjects, setUserProjects] = useState<string[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
@@ -197,11 +196,9 @@ const [companyData, setCompanyData] = useState<CompanyData | null>(null);
     status: props.status || "",
     transcript_file: null,
     transcript_url: props.transcript_url || "",
-    parsed_resume_json: "",
     needs_visa_sponsorship: props.needs_visa_sponsorship || false,
     interests: props.interests || "",
-    network_recommendations: props.network_recommendations || [],
-    verified: props.verified || false,
+    github_url: props.github_url || "",
   });
   const [editFormError, setEditFormError] = useState<string | null>(null);
   const [editFormLoading, setEditFormLoading] = useState(false);
@@ -797,7 +794,6 @@ useEffect(() => {
     }
 
     setLoadingNetwork(true);
-    setNetworkError("");
 
     try {
       const response = await fetch("/api/network-similarity", {
@@ -817,7 +813,6 @@ useEffect(() => {
       const data = await response.json();
 
       if (!response.ok || data.success === false) {
-        setNetworkError(data.error || "Failed to fetch network similarity");
         setUserNetwork([]);
         return;
       }
@@ -859,7 +854,6 @@ useEffect(() => {
       setUserNetwork(validProfiles);
     } catch (error) {
       console.log("Error fetching network similarity", error);
-      setNetworkError(`Network error occurred while fetching network similarity: ${String(error)}`);
       setUserNetwork([]);
     } finally {
       setLoadingNetwork(false);
@@ -993,6 +987,13 @@ useEffect(() => {
       formData.append('newsletter_opt_in', editForm.newsletter_opt_in.toString());
       formData.append('needs_visa_sponsorship', editForm.needs_visa_sponsorship.toString());
       formData.append('school', editForm.school);
+
+      if (editForm.interests) {
+        formData.append('interests', editForm.interests);
+      }
+      if (editForm.github_url) {
+        formData.append('github_url', editForm.github_url);
+      }
       
       if (editForm.resume_file) {
         formData.append('resume_file', editForm.resume_file);
@@ -1162,9 +1163,9 @@ useEffect(() => {
                   </a>
                 </Button>
               )}
-              {githubAnalysis?.username && (
+              {props.github_url && (
                 <Button asChild variant="outline" size="sm">
-                  <a href={`https://github.com/${githubAnalysis.username}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
+                  <a href={props.github_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
                     <Github className="w-4 h-4 mr-2" />
                     GitHub
                   </a>

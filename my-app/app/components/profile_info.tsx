@@ -145,6 +145,22 @@ export default function ProfileInfo({
         />
       </div>
       <hr />
+       {/* Interests */}
+       <div className="py-6">
+          <Label htmlFor="interests" className="text-base font-medium">Interests</Label>
+          <textarea
+            id="interests"
+            name="interests"
+            value={form.interests || ""}
+            onChange={(e) => setForm({ ...form, interests: e.target.value })}
+            placeholder="Tell us what types of roles, technologies, or problems you’re most excited about."
+            className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-lg 
+                      mt-2 min-h-[100px] max-h-[40vh] resize-y 
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring 
+                      focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
+        <hr />
       <div className="py-6">
         <Label htmlFor="phone_number" className="text-base font-medium">Phone Number *</Label>
         <Input
@@ -242,6 +258,21 @@ export default function ProfileInfo({
             value={form.personal_website}
             onChange={handleChange}
             placeholder="https://yourwebsite.com"
+            className="h-12 text-lg px-4 mt-2"
+          />
+        </div>
+        <hr />
+
+        {/* GitHub URL */}
+        <div className="py-6">
+          <Label htmlFor="github_url" className="text-base font-medium">GitHub URL</Label>
+          <Input
+            id="github_url"
+            name="github_url"
+            type="url"
+            value={form.github_url || ""}
+            onChange={handleChange}
+            placeholder="https://github.com/username"
             className="h-12 text-lg px-4 mt-2"
           />
         </div>
