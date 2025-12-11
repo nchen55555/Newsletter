@@ -3,7 +3,7 @@
 import { useId, useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Info} from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
 import { CompanyData } from "@/app/types";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -27,6 +27,7 @@ export function CompanyCard({ company, showHighMutualInterest = false, potential
   const aboutId = useId();
   const router = useRouter();
   const [appliedToNiche, setAppliedToNiche] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Check if user has applied to The Niche
   useEffect(() => {
@@ -47,10 +48,18 @@ export function CompanyCard({ company, showHighMutualInterest = false, potential
 
   const title = company.alt || `Company ${company.company?.toString?.() ?? ""}`;
 
+  const handleCardClick = () => {
+    if (disableNavigation || !appliedToNiche || isNavigating) return;
+    setIsNavigating(true);
+    router.push(`/companies/${company.company}`);
+  };
+
   return (
     <article 
-      className={`group relative flex h-80 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition-all duration-200 ${!disableNavigation ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02]' : ''}`}
-      onClick={() => !disableNavigation && appliedToNiche ? router.push(`/companies/${company.company}`) : null}
+      className={`group relative flex h-80 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition-all duration-200 ${
+        !disableNavigation ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02]' : ''
+      } ${isNavigating ? 'pointer-events-none opacity-70' : ''}`}
+      onClick={handleCardClick}
     >
       {/* Badge */}
       {showHighMutualInterest && company.partner && (
@@ -178,6 +187,12 @@ export function CompanyCard({ company, showHighMutualInterest = false, potential
           </div>
         )}
       </div>
+
+      {isNavigating && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white/60">
+          <Loader2 className="h-6 w-6 animate-spin text-neutral-700" />
+        </div>
+      )}
 
       {/* Footer — All buttons on the left */}
      

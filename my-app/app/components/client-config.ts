@@ -27,7 +27,7 @@ export function getClientConfig(clientId?: number, isCompany?: boolean) {
     showThreads: true,
     showProjects: true,
     showTimeline: true,
-    showNetworkSimilarity: true,
+    showNetworkSimilarity: false,
     highlightSections: [],
   };
 }

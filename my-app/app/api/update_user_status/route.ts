@@ -39,21 +39,25 @@ export async function POST(request: NextRequest) {
     const updateData: {
       check_in_status: string
       interview_status_updated_at: string
-      timeline_of_search?: string
-      outreach_frequency?: number
+      timeline_of_search?: string | null
+      outreach_frequency?: number | null
     } = {
       check_in_status: status,
       interview_status_updated_at: new Date().toISOString()
     }
 
-    // Add timeline if provided
+    // Add or clear timeline
     if (timeline) {
       updateData.timeline_of_search = timeline
+    } else {
+      updateData.timeline_of_search = null
     }
 
-    // Add outreach frequency if provided
-    if (outreach_frequency !== undefined) {
+    // Add or clear outreach frequency
+    if (outreach_frequency !== undefined && outreach_frequency !== null) {
       updateData.outreach_frequency = outreach_frequency
+    } else {
+      updateData.outreach_frequency = null
     }
 
     // Update user status in the profiles table

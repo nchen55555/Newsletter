@@ -2,13 +2,14 @@
 import { Navigation } from "./components/header";
 import LandingClient from "./components/landing_client";
 import { client } from "@/lib/sanity/client";
+import { ArticleNewsfeed } from "@/app/components/article_mosaic";
 
 export default async function Home() {
   // Fetch posts from Sanity but use static mediaLibrary for companies 6 & 7
   const POSTS_QUERY = `*[_type == "post" 
   && defined(slug.current)
   && !(slug.current match "*-beta*")
-  ]|order(publishedAt desc)[0...6]{_id, title, slug, publishedAt, image}`;
+  ]|order(publishedAt desc){_id, title, slug, publishedAt, image}`;
   
   const options = { next: { revalidate: 300 } };
   
@@ -48,6 +49,10 @@ export default async function Home() {
     }}>
       <Navigation />
       <LandingClient posts={posts} mediaLibrary={mediaLibrary} />
+      <div className="bg-white">
+        {/* Shared article mosaic / combined feed */}
+        <ArticleNewsfeed limit={4} />
+      </div>
     </div>
   );
 }

@@ -34,9 +34,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'rating must be between 1 and 5' }, { status: 400 });
     }
 
-    if (!note || note.trim().length < 20) {
-      return NextResponse.json({ error: 'note must be at least 20 characters' }, { status: 400 });
-    }
+    // Require a note for new connection requests, but allow rating-only updates to omit it
 
     // 4. Get the current user's profile to retrieve existing connections and pending connections
     const { data: currentProfile, error: fetchError } = await supabase
@@ -89,11 +87,15 @@ export async function POST(req: NextRequest) {
     const connectIdNum = parseInt(connect_id);
     const currentUserId = currentProfile?.id;
 
-    // 6. Check if already connected and update rating if exists
+    // 6. Check if already connected and update rating/note if exists
     const existingConnectionIndex = connections.findIndex(conn => conn.connect_id === connectIdNum);
     if (existingConnectionIndex !== -1) {
       // Update the existing connection's rating
       connections[existingConnectionIndex].rating = rating;
+      // Optionally update note if provided and long enough
+      if (note && note.trim().length >= 20) {
+        connections[existingConnectionIndex].note = note.trim();
+      }
       
       // Update the database
       const { error: updateError } = await supabase

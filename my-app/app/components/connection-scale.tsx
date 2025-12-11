@@ -18,11 +18,20 @@ interface ConnectionScaleProps {
   initialRating?: number;
   mode?: 'connection' | 'audience';
   showConnectButton?: boolean;
+  initialNote?: string;
 }
 
-export function ConnectionScale({ onSubmit, isSubmitting = false, personName, initialRating, mode = 'connection', showConnectButton = true }: ConnectionScaleProps) {
+export function ConnectionScale({
+  onSubmit,
+  isSubmitting = false,
+  personName,
+  initialRating,
+  mode = 'connection',
+  showConnectButton = true,
+  initialNote,
+}: ConnectionScaleProps) {
   const [selectedValue, setSelectedValue] = useState<number | null>(initialRating || null);
-  const [connectionNote, setConnectionNote] = useState<string>('');
+  const [connectionNote, setConnectionNote] = useState<string>(initialNote || '');
 
   const handleSubmit = () => {
     if (selectedValue === null) return;
@@ -87,7 +96,7 @@ export function ConnectionScale({ onSubmit, isSubmitting = false, personName, in
         </div>
       </div>
 
-      {mode !== 'audience' && showConnectButton && (
+      {mode !== 'audience' && selectedValue !== 1 && showConnectButton && (
 
         <div className="space-y-2">
            <div className="rounded-lg border border-blue-100 bg-blue-50 px-5 py-4 text-sm text-blue-800 space-y-3 mb-4">
@@ -135,7 +144,7 @@ export function ConnectionScale({ onSubmit, isSubmitting = false, personName, in
             }
             className="bg-neutral-900 hover:bg-neutral-800 text-white"
           >
-            {isSubmitting ? "Connecting..." : "Connect"}
+            {isSubmitting ? "Submitting..." : "Submit"}
           </Button>
         </div>
       )}

@@ -33,6 +33,7 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
   const [dialogOpen, setDialogOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'none' | 'connected' | 'pending_sent' | 'requested'>('none');
   const [existingRating, setExistingRating] = useState<number | undefined>(undefined);
+  const [existingNote, setExistingNote] = useState<string | undefined>(undefined);
   const [bookmarkedCompanies, setBookmarkedCompanies] = useState<(CompanyData & { imageUrl: string | null })[]>([]);
   const [loadingBookmarks, setLoadingBookmarks] = useState(false);
   const [showReferralDialog, setShowReferralDialog] = useState(false);
@@ -98,6 +99,9 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
             if (connectedEntry.rating) {
               setExistingRating(connectedEntry.rating);
             }
+            if (connectedEntry.note) {
+              setExistingNote(connectedEntry.note);
+            }
             return;
           }
           
@@ -109,6 +113,9 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
             if (pendingEntry.rating) {
               setExistingRating(pendingEntry.rating);
             }
+            if (pendingEntry.note) {
+              setExistingNote(pendingEntry.note);
+            }
             return;
           }
           
@@ -119,6 +126,9 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
             setConnectionStatus('requested');
             if (requestedEntry.rating) {
               setExistingRating(requestedEntry.rating);
+            }
+            if (requestedEntry.note) {
+              setExistingNote(requestedEntry.note);
             }
             return;
           }
@@ -354,19 +364,23 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                     {(connectionStatus === 'connected') && existingRating && (
                       <div className="mb-4">
                         <ConnectionScale
-                          onSubmit={async (newRating) => {
+                          onSubmit={async (newRating, note) => {
                             try {
                               const response = await fetch('/api/post_connect', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                   connect_id: data?.id,
-                                  rating: newRating
+                                  rating: newRating,
+                                  note: note || existingNote
                                 })
                               });
                               
                               if (response.ok) {
                                 setExistingRating(newRating);
+                                if (note) {
+                                  setExistingNote(note);
+                                }
                                 console.log('Connection rating updated successfully');
                               } else {
                                 console.error('Failed to update connection rating');
@@ -378,7 +392,8 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                           isSubmitting={false}
                           personName={data.first_name}
                           initialRating={existingRating}
-                          showConnectButton={false}
+                          showConnectButton={true}
+                          initialNote={existingNote}
                         />
                       </div>
                     )}

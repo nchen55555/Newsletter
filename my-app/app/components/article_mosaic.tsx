@@ -37,10 +37,10 @@ function urlForImage(source: SanityImageSource) {
 // Normalize tags → role labels (title case)
 
 // --- Query --------------------------------------------------------------
-// Tags are simple strings in the Sanity schema - Limited to 20 posts for performance
-const POSTS_QUERY = `*[
+// Tags are simple strings in the Sanity schema
+const buildPostsQuery = (limit: number) => `*[
   _type == "post" && defined(slug.current) && !(slug.current match "*-beta*")
-]|order(publishedAt desc)[0...20]{
+]|order(publishedAt desc)[0...${limit}]{
   _id, title, slug, publishedAt, image, excerpt, author, tags
 }`;
 
@@ -104,9 +104,16 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
 
 
 // --- Newsfeed (one per row vibe) ----------------------------------------
-export async function ArticleNewsfeed() {
-  const posts = await client.fetch<Post[]>(POSTS_QUERY, {}, CACHE_OPTIONS.POSTS);
+export async function ArticleNewsfeed({ limit = 20 }: { limit?: number } = {}) {
+  const query = buildPostsQuery(limit);
 
+  let posts: Post[] = [];
+  try {
+    posts = await client.fetch<Post[]>(query, {}, CACHE_OPTIONS.POSTS);
+  } catch (error) {
+    console.warn("⚠️ Failed to fetch posts for ArticleNewsfeed:", error);
+    posts = [];
+  }
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       {/* Header */}

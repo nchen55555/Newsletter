@@ -90,8 +90,8 @@ export function ExternalProfile(props: ExternalProfileProps) {
   const [bookmarkedCompanies, setBookmarkedCompanies] = useState<CompanyWithImageUrl[]>([]);
   const [loadingBookmarks, setLoadingBookmarks] = useState(false);
 
-  const [userThreads, setUserThreads] = useState<FeedItem[]>([]);
-  const [loadingThreads, setLoadingThreads] = useState(false);
+  // const [userThreads, setUserThreads] = useState<FeedItem[]>([]);
+  // const [loadingThreads, setLoadingThreads] = useState(false);
 
   const [userReferrals, setUserReferrals] = useState<ReferralWithProfile[]>([]);
   const [loadingReferrals, setLoadingReferrals] = useState(false);
@@ -299,30 +299,30 @@ const [companyData, setCompanyData] = useState<CompanyData | null>(null);
     setUserProjects(prev => prev.filter(url => url !== deletedProjectUrl));
   };
 
-  const fetchUserThreads = useCallback(async () => {
-    // Simple cache: if we've already loaded threads, skip refetch
-    if (userThreads.length > 0) {
-      return;
-    }
+  // const fetchUserThreads = useCallback(async () => {
+  //   // Simple cache: if we've already loaded threads, skip refetch
+  //   if (userThreads.length > 0) {
+  //     return;
+  //   }
 
-    setLoadingThreads(true);
-    try {
-      const response = await fetch(`/api/get_user_threads?user_id=${props.id}`, {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const threads = await response.json();
-        setUserThreads(threads);
-      } else {
-        setUserThreads([]);
-      }
-    } catch (error) {
-      console.log("Error fetching user threads", error);
-      setUserThreads([]);
-    } finally {
-      setLoadingThreads(false);
-    }
-  }, [props.id, userThreads.length]);
+  //   setLoadingThreads(true);
+  //   try {
+  //     const response = await fetch(`/api/get_user_threads?user_id=${props.id}`, {
+  //       credentials: 'include'
+  //     });
+  //     if (response.ok) {
+  //       const threads = await response.json();
+  //       setUserThreads(threads);
+  //     } else {
+  //       setUserThreads([]);
+  //     }
+  //   } catch (error) {
+  //     console.log("Error fetching user threads", error);
+  //     setUserThreads([]);
+  //   } finally {
+  //     setLoadingThreads(false);
+  //   }
+  // }, [props.id, userThreads.length]);
 
   const fetchUserReferrals = useCallback(async () => {
     // Simple cache: if we've already loaded referrals, skip refetch
@@ -865,7 +865,7 @@ useEffect(() => {
     const availableTabs: AvailableTab[] = [];
     if (clientConfig.showSkillScores) availableTabs.push('scores');
     if (clientConfig.showBookmarks) availableTabs.push('bookmarks');
-    if (clientConfig.showThreads) availableTabs.push('threads');
+    // if (clientConfig.showThreads) availableTabs.push('threads');
     if (clientConfig.showReferrals) availableTabs.push('referrals');
     if (clientConfig.showProjects) availableTabs.push('projects');
     if (clientConfig.showConnections) availableTabs.push('connections');
@@ -900,7 +900,7 @@ useEffect(() => {
 
   useEffect(() => {
     fetchBookmarkedCompanies();
-    fetchUserThreads();
+    // fetchUserThreads();
     fetchUserReferrals();
     fetchUserProjects();
   }, [
@@ -908,7 +908,7 @@ useEffect(() => {
     props.company_recommendations,
     props.id,
     fetchBookmarkedCompanies,
-    fetchUserThreads,
+    // fetchUserThreads,
     fetchUserReferrals,
     fetchUserProjects,
   ]);
@@ -1201,10 +1201,9 @@ useEffect(() => {
           clientConfig={clientConfig}
           counts={{
             bookmarks: bookmarkedCompanies.length,
-            threads: userThreads.length,
+            // threads: userThreads.length,
             referrals: userReferrals.length,
             projects: userProjects.length,
-            connections: connectionProfiles.length,
             network: userNetwork.length,
           }}
           isExternalView={props.isExternalView}
@@ -1221,14 +1220,14 @@ useEffect(() => {
             />
           )}
 
-          {activeTab === 'threads' && clientConfig.showThreads && (
+          {/* {activeTab === 'threads' && clientConfig.showThreads && (
             <ThreadsTab
               isExternalView={props.isExternalView}
               firstName={props.first_name}
               userThreads={userThreads}
               loadingThreads={loadingThreads}
             />
-          )}
+          )} */}
 
           {activeTab === 'referrals' && clientConfig.showReferrals && (
             <ReferralsTab

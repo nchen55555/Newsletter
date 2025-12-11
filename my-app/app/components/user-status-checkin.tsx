@@ -79,6 +79,13 @@ export function UserStatusCheckin({ open, onStatusUpdate, userName }: UserStatus
 
   const handleStatusSelect = (status: UserStatus) => {
     setSelectedStatus(status)
+    // Reset dependent fields when they are no longer needed
+    if (!needsTimeline(status)) {
+      setSelectedTimeline(null)
+    }
+    if (!needsOutreach(status)) {
+      setSelectedOutreachFrequency(null)
+    }
   }
 
   const handleTimelineSelect = (timeline: string) => {
@@ -92,7 +99,7 @@ export function UserStatusCheckin({ open, onStatusUpdate, userName }: UserStatus
   const handleSubmit = async (status?: UserStatus, timeline?: string, outreachFreq?: number) => {
     const finalStatus = status || selectedStatus
     const finalTimeline = timeline || selectedTimeline
-    const finalOutreach = outreachFreq !== undefined ? outreachFreq : selectedOutreachFrequency
+    const finalOutreach = outreachFreq || selectedOutreachFrequency
     
     if (!finalStatus) return
     

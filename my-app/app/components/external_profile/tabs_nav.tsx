@@ -14,10 +14,9 @@ export function ProfileTabsNav({
   clientConfig: ReturnType<typeof getClientConfig>;
   counts: {
     bookmarks: number;
-    threads: number;
+    // threads: number;
     referrals: number;
     projects: number;
-    connections: number;
     network: number;
   };
   isExternalView?: boolean;
@@ -39,7 +38,7 @@ export function ProfileTabsNav({
             {counts.bookmarks})
           </button>
         )}
-        {clientConfig.showThreads && (
+        {/* {clientConfig.showThreads && (
           <button
             onClick={() => setActiveTab('threads')}
             className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -48,9 +47,9 @@ export function ProfileTabsNav({
                 : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
             }`}
           >
-            {isExternalView ? `${firstName}'s Threads` : 'Your Threads'} ({counts.threads})
+            {isExternalView ? `${firstName}'s Threads` : 'Your Threads'}
           </button>
-        )}
+        )} */}
         {clientConfig.showReferrals && (
           <button
             onClick={() => setActiveTab('referrals')}
@@ -88,7 +87,7 @@ export function ProfileTabsNav({
                 : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
             }`}
           >
-            {isExternalView ? `${firstName}'s Network` : 'Your Network'} ({counts.connections})
+            {isExternalView ? `${firstName}'s Network` : 'Your Network'} 
           </button>
         )}
         {clientConfig.showNetworkSimilarity && (

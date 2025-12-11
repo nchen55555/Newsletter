@@ -1,6 +1,7 @@
 export type ConnectionData = {
   connect_id: number;
   rating: number;
+  note?: string;
 };
 
 // Backend Profile Data
