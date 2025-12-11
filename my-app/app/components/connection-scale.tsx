@@ -110,7 +110,7 @@ export function ConnectionScale({
             </ul>
             <p className="text-xs text-blue-900">
               Your connections will not see your note or rating, but we&apos;ll
-              use it to power better recommendations for both of you.
+              use it to power better recommendations.
             </p>
           </div>
 

@@ -34,6 +34,7 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
   const [connectionStatus, setConnectionStatus] = useState<'none' | 'connected' | 'pending_sent' | 'requested'>('none');
   const [existingRating, setExistingRating] = useState<number | undefined>(undefined);
   const [existingNote, setExistingNote] = useState<string | undefined>(undefined);
+  const [isUpdatingConnection, setIsUpdatingConnection] = useState(false);
   const [bookmarkedCompanies, setBookmarkedCompanies] = useState<(CompanyData & { imageUrl: string | null })[]>([]);
   const [loadingBookmarks, setLoadingBookmarks] = useState(false);
   const [showReferralDialog, setShowReferralDialog] = useState(false);
@@ -366,6 +367,7 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                         <ConnectionScale
                           onSubmit={async (newRating, note) => {
                             try {
+                              setIsUpdatingConnection(true);
                               const response = await fetch('/api/post_connect', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -387,9 +389,11 @@ export default function PeopleProfilePage({ params }: { params: Promise<{ id: st
                               }
                             } catch (error) {
                               console.error('Error updating connection rating:', error);
+                            } finally {
+                              setIsUpdatingConnection(false);
                             }
                           }}
-                          isSubmitting={false}
+                          isSubmitting={isUpdatingConnection}
                           personName={data.first_name}
                           initialRating={existingRating}
                           showConnectButton={true}
