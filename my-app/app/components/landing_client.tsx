@@ -106,7 +106,7 @@ export default function LandingClient({ children }: { children?: React.ReactNode
     <div>
       {/* Top Hero: text + CTAs */}
       <section className="px-4 pt-16 pb-8">
-        <div className="max-w-5xl mx-auto text-center">
+        <div className="mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -121,7 +121,7 @@ export default function LandingClient({ children }: { children?: React.ReactNode
               </span>
             </h1>
             
-            <p className="text-lg max-w-2xl leading-relaxed mx-auto">
+            <p className="text-lg leading-relaxed max-w-7xl mx-auto">
               Curate your personalized, verified professional network by adding context to each connection, digitizing the real relationships behind your career. Discover opportunities that your most trusted circles are already looking at or have vetted directly on the Niche through our network-driven warm introductions.
             </p>
 
@@ -149,7 +149,7 @@ export default function LandingClient({ children }: { children?: React.ReactNode
         </div>
         <div className="hidden lg:flex items-center justify-center mt-8">
           {/* Taller fixed-height row so top/mid/bottom staggering is more pronounced */}
-          <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex h-74 items-stretch justify-between">
+          <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex h-74 items-stretch justify-between">
             {/* Top-aligned */}
             <div className="flex flex-col justify-start h-full">
               <FrontProfile 
@@ -202,7 +202,7 @@ export default function LandingClient({ children }: { children?: React.ReactNode
         id="how-the-niche-works"
         className="py-20 px-4 sm:px-6 lg:px-8"
       >
-        <div className="max-w-5xl mx-auto text-center">
+        <div className="text-center">
           <h1 className="text-4xl md:text-5xl font-semibold mb-4">
             How the Niche Works
             </h1>
@@ -239,7 +239,7 @@ export default function LandingClient({ children }: { children?: React.ReactNode
       </div>
 
           {/* Copy that changes with mode – brief summary above the step-by-step flow */}
-          <div className="mt-8 max-w-2xl mx-auto text-sm md:text-base text-neutral-200 leading-relaxed min-h-[96px] md:min-h-[72px] flex flex-col items-center justify-center gap-4">
+          <div className="mt-8 text-sm md:text-base text-neutral-200 leading-relaxed min-h-[96px] md:min-h-[72px] flex flex-col items-center justify-center gap-4">
             {howMode === "network" ? (
               <p className="text-center">
                 Use The Niche to build a verified, context-rich network: curate a highly personalized portfolio of your professional identity, curate your verified network of connections, and unlock warm introductions powered the intelligence from your digitalized professional network.
@@ -267,7 +267,7 @@ export default function LandingClient({ children }: { children?: React.ReactNode
           
           {/* Auto-advancing 3-step flow: one step visible at a time, below the summary text */}
           {howMode === "network" && (
-            <div ref={howStepsRef} className="mt-12 space-y-6 max-w-5xl mx-auto">
+            <div ref={howStepsRef} className="mt-12 space-y-6 max-w-7xl mx-auto">
               <div className="flex flex-col md:flex-row items-center gap-12">
                 {/* Video / animation side */}
                 <div className="w-full md:w-7/12">

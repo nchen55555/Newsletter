@@ -22,7 +22,7 @@ export default async function Home() {
 
   return (
     <LandingClient>
-      <div className="max-w-5xl mx-auto text-center py-8">
+      <div className="text-center py-8">
           <h1 className="text-4xl md:text-5xl font-semibold mb-4">
             Network-Driven Warm Introductions
             </h1>
