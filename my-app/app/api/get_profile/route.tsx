@@ -58,7 +58,6 @@ export async function GET(){
             opportunities_looking_for: subscriber?.opportunities_looking_for,
             company_recommendations: subscriber?.company_recommendations,
             interests: subscriber?.interests,
-            verified: subscriber?.verified,
             connections: subscriber?.connections,
             connections_new: subscriber?.connections_new,
             application_tracker_confirmed: subscriber?.application_tracker_confirmed,
@@ -77,6 +76,8 @@ export async function GET(){
             timeline_of_search: subscriber?.timeline_of_search,
             outreach_frequency: subscriber?.outreach_frequency, 
             github_url: subscriber?.github_url,
+            custom_links: subscriber?.custom_links,
+            visibility_profile_settings: subscriber?.visibility_profile_settings,
         })
 
     } catch (error) {

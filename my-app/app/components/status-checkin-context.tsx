@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, ReactNode } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { Edit} from 'lucide-react'
 
 interface StatusCheckinContextType {
   triggerStatusCheckin: () => void
@@ -33,16 +33,11 @@ export function useStatusCheckin() {
   return context
 }
 
-export function StatusCheckinTriggerButton({ className = '' }: { className?: string }) {
+export function StatusCheckinTriggerButton() {
   const { triggerStatusCheckin } = useStatusCheckin()
   
   return (
-    <button 
-      onClick={triggerStatusCheckin}
-      className={`flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg transition-colors ${className}`}
-    >
-      <RefreshCw className="w-4 h-4" />
-      Update Status
-    </button>
+    <Edit onClick={triggerStatusCheckin} className="w-4 h-4" />
+   
   )
 }

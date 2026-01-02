@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { CompanyData } from "@/app/types";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
-import Post from "../components/post";
 import Share from "../components/share";
 
 type CompanyWithImageUrl = CompanyData & {
@@ -32,10 +31,19 @@ export function CompanyRow({ company, potential = false }: { company: CompanyWit
 
   const title = company.alt || `Company ${company.company?.toString?.() ?? ""}`;
 
+  const handleRowClick = (e: React.MouseEvent) => {
+    // Check if click is on action buttons (bookmark/share)
+    const target = e.target as HTMLElement;
+    if (target.closest('.action-buttons')) {
+      return;
+    }
+    router.push(`/companies/${company.company}`);
+  };
+
   return (
-    <div 
+    <div
       className="group relative flex items-start gap-6 p-6 border border-neutral-200 bg-white rounded-lg shadow-sm cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200 min-h-[140px]"
-      onClick={() => router.push(`/companies/${company.company}`)}
+      onClick={handleRowClick}
     >
       {/* Company Logo */}
       <div className="flex-shrink-0">
@@ -125,14 +133,10 @@ export function CompanyRow({ company, potential = false }: { company: CompanyWit
           {/* Actions */}
           <div className="flex flex-col justify-between items-end flex-shrink-0 h-full">
             <div className="flex flex-col items-end gap-4">
-              <div className="flex items-end gap-2">
+              <div className="action-buttons flex items-end gap-2">
                 <RainbowBookmark company={company.company}/>
-                <div onClick={(e) => e.stopPropagation()}>
-                  <Share company={company.company} />
-                </div>
-                <div onClick={(e) => e.stopPropagation()}>
-                  <Post company={company.company} companyData={company} />
-                </div>
+                <Share company={company.company} />
+                {/* <Post company={company.company} companyData={company} /> */}
               </div>
 
               {company.external_media && (

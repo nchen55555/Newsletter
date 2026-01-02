@@ -148,14 +148,12 @@ export async function POST(request: Request) {
             error: updateError.message
           });
         } else {
-          console.log(`Database update result for profile ${profile.id}:`, updateData);
           successCount++;
           results.push({
             id: profile.id,
             name: `${profile.first_name} ${profile.last_name}`,
             status: 'success'
           });
-          console.log(`✅ Successfully processed profile ${profile.id}`);
         }
       } else {
         errorCount++;

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import GitHubProfileAnalyzer from '../../lib/github-profile-analyzer';
-import type { GitHubProfileAnalysis } from '../../types/github-analysis';
+import GitHubProfileAnalyzer from '@/app/lib/github-profile-analyzer';
+import type { GitHubProfileAnalysis } from '@/app/types/github-analysis';
 
 // JSON-like type used for sanitized analysis payloads
 type JSONPrimitive = string | number | boolean | null;

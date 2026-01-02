@@ -31,7 +31,9 @@ export default function RainbowBookmark({ company }: { company: number }) {
 
   if (!isSubscribed) return null;
 
-  const handleBookmark = async () => {
+  const handleBookmark = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     setLoading(true);
     try {
       const res = await fetch("/api/bookmark", {

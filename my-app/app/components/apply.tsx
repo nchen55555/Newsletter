@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2Icon, Terminal, Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import CalendarAuthGate from "./calendar_auth_gate";
 import { useRouter } from "next/navigation";
 
 

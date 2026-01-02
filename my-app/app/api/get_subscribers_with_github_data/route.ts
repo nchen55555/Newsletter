@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         serviceKey
       );
-      console.log('Using service role client for subscriber data fetch');
     } else {
       // Fallback to regular authenticated client
       const cookieStore = cookies();

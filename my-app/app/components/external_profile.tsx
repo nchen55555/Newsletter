@@ -1,33 +1,26 @@
-import { ProfileData, CompanyWithImageUrl, FeedItem, ReferralWithProfile } from "@/app/types";
+import { ProfileData, CompanyWithImageUrl,  ReferralWithProfile } from "@/app/types";
 import { GitHubProfileAnalysis } from "@/app/types/github-analysis";
 import { 
-  AvailableTab, 
   CompanyData, 
   ExternalProfileProps,
 } from "@/app/types/match-types";
-import { ProfileTabsNav } from "./external_profile/tabs_nav";
-import { BookmarksTab } from "./external_profile/bookmarks_tab";
-import { ThreadsTab } from "./external_profile/threads_tab";
-import { ReferralsTab } from "./external_profile/referrals_tab";
-import { ProjectsTab } from "./external_profile/projects_tab";
-import { ConnectionsTab } from "./external_profile/connections_tab";
-import { NetworkSimilarityTab } from "./external_profile/network_similarity_tab";
-import { ScoresTab } from "./external_profile/github_tab";
-import { TimelineTab } from "./external_profile/timeline_tab";
-import { getClientConfig } from "@/app/components/client-config";
-
 import { Button } from "@/components/ui/button";
-import { FileText, Linkedin, Globe, Edit, AlertCircle, Github } from "lucide-react";
+import { FileText, Linkedin, Globe, Github } from "lucide-react";
+import { Container } from './container'
+import { SidebarLayout } from "@/app/components/sidebar-layout";
+import { Toaster } from "@/components/ui/sonner";
 import { useEffect, useState, useCallback } from 'react';
 import ProfileAvatar from "./profile_avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { encodeSimple } from "../utils/simple-hash";
-import { ReferralDialog } from "./referral-dialog";
-import { ProjectsDialog } from "./projects_dialog";
-import { ProfileFormState } from "../types";
-import ProfileInfo from "./profile_info";
 import type { RepositoryEmbedding } from "./external_profile/repository_card";
+import { UserCheckInComponent, UserStatus } from "./user_check_in_component";
+import { NetworkConnectionsGrid } from "./network-connections-grid";
+import { BookmarkedCompaniesGrid } from "./bookmarked-companies-grid";
+import { ConnectDialog, type ConnectVerificationStatus, type ConnectionStatus } from "./connect_dialog";
+import { VerificationRequired } from "./verification-required";
+import { ProjectsTab } from "./external_profile/projects_tab";
 
 export interface RepositoryMatch {
   queryRepo: string;
@@ -68,22 +61,17 @@ type NetworkProfile = ProfileData & {
 
 export function ExternalProfile(props: ExternalProfileProps) {
   const router = useRouter();
+  const {
+    showBio = true,
+    showInterests = true,
+    showProjects = true,
+    showLinks = true,
+    showDocuments = true,
+    showNetwork = true,
+    showCompanies = true,
+    showPriorities = true,
+  } = props.visibilityResults || {};
 
-  // ---------- Basic profile / config ----------
-
-  const githubAnalysis: GitHubProfileAnalysis | null = (() => {
-    try {
-      if (typeof props.github_url_data === 'string') {
-        return JSON.parse(props.github_url_data);
-      }
-      return props.github_url_data || null;
-    } catch {
-      return null;
-    }
-  })();
-
-  const [isCompanyView, setIsCompanyView] = useState(false);
-  const clientConfig = getClientConfig(props.client_id, isCompanyView);
 
   // ---------- Bookmarks / content sections ----------
 
@@ -93,21 +81,17 @@ export function ExternalProfile(props: ExternalProfileProps) {
   // const [userThreads, setUserThreads] = useState<FeedItem[]>([]);
   // const [loadingThreads, setLoadingThreads] = useState(false);
 
-  const [userReferrals, setUserReferrals] = useState<ReferralWithProfile[]>([]);
-  const [loadingReferrals, setLoadingReferrals] = useState(false);
-
   const [connectionProfiles, setConnectionProfiles] = useState<ProfileData[]>([]);
   const [loadingConnections, setLoadingConnections] = useState(false);
 
-  const [userNetwork, setUserNetwork] = useState<NetworkProfile[]>([]);
-  const [loadingNetwork, setLoadingNetwork] = useState(false);
-
   const [userProjects, setUserProjects] = useState<string[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
-  const [projectsDialog, setProjectsDialog] = useState(false);
 
-  const [showReferralDialog, setShowReferralDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState<AvailableTab>('bookmarks');
+  const [showConnectDialog, setShowConnectDialog] = useState(false);
+  const [isSubmittingConnect, setIsSubmittingConnect] = useState(false);
+  const [connectVerificationStatus, setConnectVerificationStatus] = useState<ConnectVerificationStatus>('idle');
+  const [connectStatusMessage, setConnectStatusMessage] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
    // --- Academic similarity state ---
 // const [skillsLoading, setSkillsLoading] = useState(true);
@@ -137,71 +121,91 @@ export function ExternalProfile(props: ExternalProfileProps) {
 //   compatibility: CompanyCompatibilityResponse;
 // } | null>(null);
 
-// Cache company metadata so we don’t keep calling the same endpoint
-const [companyData, setCompanyData] = useState<CompanyData | null>(null);
 
+  const handleConnectSubmit = async (scaleValue: number, note?: string) => {
+    setIsSubmittingConnect(true);
+    setConnectVerificationStatus('idle');
 
-  // ---------- Repository / GitHub similarity ----------
+    try {
+      const response = await fetch('/api/post_connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          connect_id: props.id,
+          rating: scaleValue,
+          note: note
+        })
+      });
 
-  const [similarDevelopers, setSimilarDevelopers] = useState<SimilarDeveloper[]>([]);
-  const [loadingSimilarDevelopers, setLoadingSimilarDevelopers] = useState(false);
-  const [similarDevelopersError, setSimilarDevelopersError] = useState<string>('');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.type === 'mutual') {
+          setConnectVerificationStatus('success');
+          setConnectStatusMessage(`You are now connected with ${props.first_name}! The connection was mutual.`);
+        } else {
+          setConnectVerificationStatus('success');
+          setConnectStatusMessage(`Connection request sent to ${props.first_name}! They've received a notification.`);
+        }
+      } else {
+        setConnectVerificationStatus('error');
+        setConnectStatusMessage("Failed to send connection request. Please try again.");
+      }
+    } catch (error) {
+      console.error('Connection failed:', error);
+      setConnectVerificationStatus('error');
+      setConnectStatusMessage("Failed to send connection request. Please try again.");
+    } finally {
+      setIsSubmittingConnect(false);
+    }
+  };
 
-  // raw repo objects as returned from /api/repository-similarity
-  const [repositoryEmbeddings, setRepositoryEmbeddings] = useState<RepositoryEmbedding[]>([]);
+  // ---------- Fetch current user ID ----------
 
-  interface GitHubSimilarityAnalysisResult {
-    composite_success_score: number;
-    pca_pattern_match?: {
-      overall_score: number;
-      variance_explained?: number[];
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch('/api/get_profile', { credentials: 'include' });
+        if (response.ok) {
+          const userData = await response.json();
+          setCurrentUserId(userData.id);
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
     };
-    signature_dimension_match?: {
-      weighted_match: number;
-    };
-    range_compatibility?: {
-      dimensions_in_range: number;
-      total_dimensions_checked: number;
-    };
-    shared_cluster_match?: {
-      shared_cluster: boolean;
-    };
-  }
+    fetchCurrentUser();
+  }, []);
 
-  // High-level GitHub success pattern analysis from /api/github-similarity
-  const [githubSimilarityAnalysis, setGithubSimilarityAnalysis] = useState<GitHubSimilarityAnalysisResult | null>(null);
+  // ---------- Calculate connection status ----------
 
-  // If you later add company_repository_skills, you can add:
-  // const [repositoryCompanyCompatibility, setRepositoryCompanyCompatibility] = useState<YourType | null>(null);
+  const getConnectionStatus = (): ConnectionStatus => {
+    if (!currentUserId) return 'none';
 
-  // ---------- Edit state ----------
+    // Check if current user is in the viewed profile's connections
+    if (props.connections_new?.some(conn => conn.connect_id === currentUserId)) {
+      return 'connected';
+    }
 
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editForm, setEditForm] = useState<ProfileFormState>({
-    id: props.id,
-    email: props.email,
-    first_name: props.first_name || "",
-    last_name: props.last_name || "",
-    school: props.school || "",
-    linkedin_url: props.linkedin_url || "",
-    resume_url: props.resume_url || "",
-    personal_website: props.personal_website || "",
-    phone_number: props.phone_number || "",
-    resume_file: null,
-    profile_image_url: props.profile_image_url || null,
-    profile_image: null,
-    bio: props.bio || "",
-    is_public_profile: props.is_public_profile || false,
-    newsletter_opt_in: props.newsletter_opt_in || false,
-    status: props.status || "",
-    transcript_file: null,
-    transcript_url: props.transcript_url || "",
-    needs_visa_sponsorship: props.needs_visa_sponsorship || false,
-    interests: props.interests || "",
-    github_url: props.github_url || "",
-  });
-  const [editFormError, setEditFormError] = useState<string | null>(null);
-  const [editFormLoading, setEditFormLoading] = useState(false);
+    // Check if the viewed profile sent a request to current user (current user needs to accept)
+    if (props.pending_connections_new?.some(conn => conn.connect_id === currentUserId)) {
+      return 'requested';
+    }
+
+    // Check if current user sent a request to the viewed profile (waiting for acceptance)
+    if (props.requested_connections_new?.some(conn => conn.connect_id === currentUserId)) {
+      return 'pending_sent';
+    }
+
+    return 'none';
+  };
+
+  const getExistingConnectionRating = (): number | undefined => {
+    if (!currentUserId) return undefined;
+
+    // Find the connection object for the current user
+    const connection = props.connections_new?.find(conn => conn.connect_id === currentUserId);
+    return connection?.rating;
+  };
 
   // ---------- Derived helpers ----------
 
@@ -324,32 +328,8 @@ const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   //   }
   // }, [props.id, userThreads.length]);
 
-  const fetchUserReferrals = useCallback(async () => {
-    // Simple cache: if we've already loaded referrals, skip refetch
-    if (userReferrals.length > 0) {
-      return;
-    }
-
-    setLoadingReferrals(true);
-    try {
-      const response = await fetch(`/api/get_user_referrals?user_id=${props.id}`, {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const referrals = await response.json();
-        setUserReferrals(referrals);
-      } else {
-        setUserReferrals([]);
-      }
-    } catch (error) {
-      console.log("Error fetching user referrals", error);
-      setUserReferrals([]);
-    } finally {
-      setLoadingReferrals(false);
-    }
-  }, [props.id, userReferrals.length]);
-
   const fetchConnectionProfiles = useCallback(async () => {
+    console.log("fetchConnectionProfiles", props.connections_new);
     if (!props.connections_new || props.connections_new.length === 0) {
       setConnectionProfiles([]);
       return;
@@ -388,6 +368,7 @@ const [companyData, setCompanyData] = useState<CompanyData | null>(null);
       });
 
       const profiles = await Promise.all(profilePromises);
+      console.log("profiles", profiles);
       setConnectionProfiles(
         profiles.filter((p) => p !== null) as ProfileData[]
       );
@@ -397,7 +378,7 @@ const [companyData, setCompanyData] = useState<CompanyData | null>(null);
     } finally {
       setLoadingConnections(false);
     }
-  }, [props.connections_new, connectionProfiles.length, connectionProfiles]);
+  }, [props.connections_new]);
 
 // Academic skills from transcript → SkillScores (with repo_similarity always 0)
 // const getAcademicSkills = useCallback((): SkillScores | null => {
@@ -428,480 +409,9 @@ const [companyData, setCompanyData] = useState<CompanyData | null>(null);
 // });
 
 
-// Ensure we have company metadata (cached)
-const ensureCompanyMetadata = useCallback(async (): Promise<{
-  isCompanyView: boolean;
-  company: CompanyData | null;
-}> => {
-  // If we already have it, just reuse
-  if (companyData) {
-    setIsCompanyView(true);
-    return { isCompanyView: true, company: companyData };
-  }
-
-  setIsCompanyView(false);
-
-  if (!props.client_id) {
-    return { isCompanyView: false, company: null };
-  }
-
-  // setLoadingCompatibility(true);
-  try {
-    const response = await fetch(`/api/get_company_skills?client_id=${props.client_id}`, {
-      credentials: 'include',
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success) {
-        setIsCompanyView(true);
-        setCompanyData(data.company as CompanyData);
-        return { isCompanyView: true, company: data.company as CompanyData };
-      }
-    }
-
-    return { isCompanyView: false, company: null };
-  } catch (error) {
-    console.error("Error fetching company metadata", error);
-    return { isCompanyView: false, company: null };
-  }
-}, [props.client_id, companyData]);
-
-useEffect(() => {
-  if (!props.client_id) return;
-  if (companyData) return;          // already loaded
-
-  void ensureCompanyMetadata();
-}, [props.client_id, companyData, ensureCompanyMetadata]);
-
-// Build reference profiles from match_profiles + candidate matches
-// const buildReferenceProfiles = (
-//   matchProfiles: string[],
-//   matches: (CandidateMatch | MatchingCandidate)[]
-// ): ReferenceProfile[] => {
-//   return matchProfiles
-//     .map((profileId: string) => {
-//       const mc = matches.find(
-//         (candidate: any) => candidate.candidate_id?.toString() === profileId.toString()
-//       );
-//       if (!mc || !mc.skills) return null;
-
-//       return {
-//         systems_infrastructure: mc.skills.systems_infrastructure,
-//         theory_statistics_ml: mc.skills.theory_statistics_ml,
-//         product: mc.skills.product,
-//       } as ReferenceProfile;
-//     })
-//     .filter((p): p is ReferenceProfile => p !== null);
-// };
-
-// const skillsPayload = (skills: SkillScores) => {
-//   const academicSkills = getAcademicSkills();
-
-//   const hasAcademicSkills =
-//       academicSkills && Object.values(academicSkills).some((value) => value > 0);
-
-//   const hasRepoEmbeddings =
-//       Array.isArray(repositoryEmbeddings) && repositoryEmbeddings.length > 0;
-
-//   const repositoryEmbeddingsPayload = repositoryEmbeddings
-//     .map((repo: any) => repo?.embedding)
-//     .filter((emb: any) => Array.isArray(emb) && emb.length > 0);
-
-//   if (hasAcademicSkills && hasRepoEmbeddings) {
-//     return {
-//       ...academicSkills,
-//       repository_embeddings: repositoryEmbeddingsPayload,
-//     };
-//   } else if (hasAcademicSkills) {
-//     return {... academicSkills};
-//   } else if (hasRepoEmbeddings) {
-//     return {
-//       repository_embeddings: repositoryEmbeddingsPayload,
-//     };
-//   }
-//   return null;
-// }
-
-// // Shared fetch for “similar candidates + hydrate profiles” given skills + repo embeddings
-// const fetchSimilarCandidatesFromModel = useCallback(
-//   async ({
-//     skills,
-//     repoEmbeddings,
-//     weights,
-//   }: {
-//     skills: SkillScores | null;
-//     repoEmbeddings: any[] | null;
-//     weights: SimilarityWeights;
-//   }) => {
-
-//     const hasRepoEmbeddings =
-//       Array.isArray(repoEmbeddings) && repoEmbeddings.length > 0;
-
-//     const hasAcademicSkills =
-//       skills && Object.values(skills).some((value) => value > 0);
-
-
-//     const body: any = {
-//       candidate_id: props.id.toString(),
-//       top_k: 50,
-//       weights: similarityWeightsPayload(weights),
-//       add_to_model: false,
-//       ...skillsPayload(skills as SkillScores)
-//     };
-
-
-//     console.log("BODY IN EXTERNAL PROFILE ", body)
-
-//     const response = await fetch('/api/find_similar_candidates', {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       credentials: 'include',
-//       body: JSON.stringify(body),
-//     });
-
-//     if (!response.ok) return null;
-
-//     const data = await response.json();
-//     if (!data.success || !data.matches || data.matches.length === 0) return null;
-
-//     const matchesResponse = await fetch('/api/get_candidate_matches', {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       credentials: 'include',
-//       body: JSON.stringify({ matches: data.matches }),
-//     });
-
-//     if (!matchesResponse.ok) return null;
-//     const matchesData = await matchesResponse.json();
-//     if (!matchesData.success) return null;
-
-//     return matchesData.matches as CandidateMatch[];
-//   },
-//   [props.id, githubAnalysis, loadingSimilarDevelopers]
-// );
-
-// // ---------- Combined similarity (academic + portfolio) + company compatibility ----------
-
-// const runCompanyAndSimilar = useCallback(async () => {
-//   const academicSkills = getAcademicSkills();
-//   if (!props.client_id || !academicSkills) return;
-
-//    // If we expect GitHub data, wait until repository embeddings have finished loading
-//    const expectsRepos = githubAnalysis && Object.keys(githubAnalysis).length > 0;
-//    if (expectsRepos && loadingSimilarDevelopers) {
-//      // Defer similarity calculation until repository embeddings are ready
-//      return;
-//    }
-
-//   // 1) Ensure we know whether this is a company view + get company metadata
-//   const { isCompanyView: isCompany, company } = await ensureCompanyMetadata();
-
-//   // 2) Candidate similarity (combined / academic / portfolio based on available data)
-//   try {
-//     const matches = await fetchSimilarCandidatesFromModel({
-//       skills: academicSkills,
-//       repoEmbeddings: repositoryEmbeddings,
-//       weights: similarityWeights,
-//     });
-//     if (!matches || matches.length === 0) return;
-
-//     setSimilarCandidatesFromPipeline(matches);
-
-//     // 3) Academic company similarity (no GitHub)
-//     if (!isCompany || !company) return;
-
-//     const matchProfiles = company.match_profiles;
-//     if (!matchProfiles || matchProfiles.length === 0) return;
-
-//     const referenceProfiles = buildReferenceProfiles(matchProfiles, matches);
-//     if (referenceProfiles.length === 0) return;
-
-//     const companyCompatResponse = await fetch('/api/company-similarity', {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       credentials: 'include',
-//       body: JSON.stringify({
-//         candidate_skills: candidateSkillsForCompany,
-//         reference_profiles: referenceProfiles,
-//         weights: similarityWeightsPayload(companySimilarityWeights),
-//       }),
-//     });
-
-//     if (!companyCompatResponse.ok) return;
-//     const compatData = await companyCompatResponse.json();
-//     if (!compatData.success) return;
-
-//     setCalculatedCompanyCompatibility({
-//       company,
-//       compatibility: compatData.compatibility,
-//     });
-
-//     // Initialize company weights once with cluster_weights (if present)
-//     const clusterWeights = compatData.compatibility?.cluster_stats?.cluster_weights;
-//     if (clusterWeights && !hasInitializedCompanySimilarityWeights) {
-//       setCompanySimilarityWeights((prev: SimilarityWeights) => ({
-//         ...prev,
-//         systems_infrastructure:
-//           clusterWeights.systems_infrastructure ?? prev.systems_infrastructure,
-//         theory_statistics_ml:
-//           clusterWeights.theory_statistics_ml ?? prev.theory_statistics_ml,
-//         product: clusterWeights.product ?? prev.product,
-//       }));
-//       setHasInitializedCompanySimilarityWeights(true);
-//     }
-//   } catch (err) {
-//     console.error("Error in combined similarity pipeline", err);
-//   }
-// }, [
-//   props.client_id,
-//   getAcademicSkills,
-//   ensureCompanyMetadata,
-//   fetchSimilarCandidatesFromModel,
-//   similarityWeights,
-//   companySimilarityWeights,
-//   hasInitializedCompanySimilarityWeights,
-//   githubAnalysis,
-//   loadingSimilarDevelopers,
-// ]);
-
-// const handleManualRecalc = useCallback(async () => {
-//   if (manualRecalcLoading) return;
-//   setManualRecalcLoading(true);
-//   try {
-//     await runCompanyAndSimilar();
-//   } finally {
-//     setManualRecalcLoading(false);
-//   }
-// }, [manualRecalcLoading, runCompanyAndSimilar]);
-
-
-  // ---------- Repository / GitHub similarity pipeline ----------
-
-  const fetchGithub = useCallback(async () => {
-    // Simple cache: if we've already loaded repository embeddings, skip refetch
-    if (repositoryEmbeddings.length > 0 || similarDevelopers.length > 0) {
-      return;
-    }
-
-    setLoadingSimilarDevelopers(true);
-    setSimilarDevelopersError('');
-    
-    try {
-      const response = await fetch('/api/repository-similarity', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ 
-          querySubscriberId: props.id,
-          topK: 5,
-        }),
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        setSimilarDevelopersError(result.error || 'Failed to fetch similar developers');
-        return;
-      }
-
-      if (result.success) {
-        const enhancedDevelopers: SimilarDeveloper[] = (result.matches as SimilarDeveloper[]).map(
-          (match) => ({
-          ...match,
-          contributionSummary: githubAnalysis?.contributionSummary,
-          }),
-        );
-        setSimilarDevelopers(enhancedDevelopers);
-
-        // This includes repo names, techs, assessments, and embeddings.
-        if (result.queryUserRepositories) {
-          setRepositoryEmbeddings(result.queryUserRepositories);
-
-          // If we have a company with match_profiles, treat those profile IDs
-          // as the "ideal employees". We only send IDs here; the API route
-          // will look up their embeddings from github_repository_embeddings.
-          if (companyData?.match_profiles && companyData.match_profiles.length > 0) {
-            const matchProfileIds = companyData.match_profiles as (string | number)[];
-
-            console.log("<< MATCH PROFILE IDS", matchProfileIds);
-
-            console.log("<< RESULT.QUERYUSERREPOSITORIES", result.queryUserRepositories);
-
-            const candidateEmbeddings = result.queryUserRepositories
-              .map((r: RepositoryEmbedding) => {
-                const e = r.embedding;
-                if (Array.isArray(e)) return e;
-                if (typeof e === 'string') {
-                  try {
-                    const parsed = JSON.parse(e) as unknown;
-                    return Array.isArray(parsed) ? (parsed as number[]) : null;
-                  } catch {
-                    return null;
-                  }
-                }
-                return null;
-              })
-              .filter((e: number[] | null): e is number[] => Array.isArray(e) && e.length > 0);
-
-            console.log("<< CANDIDATE EMBEDDINGS", candidateEmbeddings);
-
-            if (candidateEmbeddings.length > 0) {
-              console.log("FETCHING GITHUB SIMILARITY", matchProfileIds, candidateEmbeddings);
-              const res = await fetch('/api/github-similarity', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  ideal_profile_ids: matchProfileIds,
-                  candidate_embeddings: candidateEmbeddings,
-                })
-              });
-              const data: { success?: boolean; analysis?: GitHubSimilarityAnalysisResult } =
-                await res.json();
-              console.log('<< GitHub similarity analysis', data);
-              if (data?.success && data.analysis) {
-                setGithubSimilarityAnalysis(data.analysis);
-              } else {
-                setGithubSimilarityAnalysis(null);
-              }
-            }
-          }
-        }
-      } else {
-        setSimilarDevelopersError(result.error || 'Failed to fetch similar developers');
-      }
-    } catch (error) {
-      setSimilarDevelopersError(
-        `Network error occurred while fetching similar developers: ${String(error)}`
-      );
-    } finally {
-      setLoadingSimilarDevelopers(false);
-    }
-  }, [props.id, githubAnalysis, repositoryEmbeddings.length, similarDevelopers.length, companyData]);
-
-  // ---------- Network similarity pipeline ----------
-
-  const fetchNetworkSimilarity = useCallback(async () => {
-    if (!props.id) return;
-
-    // Simple cache: if we've already loaded the network for this profile, skip refetch
-    if (userNetwork.length > 0) {
-      return;
-    }
-
-    setLoadingNetwork(true);
-
-    try {
-      const response = await fetch("/api/network-similarity", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          candidate_id: props.id,
-          min_similarity: 0.85,
-          top_k: 10,
-          exclude_existing: false,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || data.success === false) {
-        setUserNetwork([]);
-        return;
-      }
-
-      const similarCandidates = (data.similar_candidates || []) as {
-        candidate_id: number;
-        similarity: number;
-      }[];
-
-      if (!Array.isArray(similarCandidates) || similarCandidates.length === 0) {
-        setUserNetwork([]);
-        return;
-      }
-
-      const profilePromises = similarCandidates.map(async (match) => {
-        try {
-          const encodedId = encodeSimple(match.candidate_id);
-          const res = await fetch(`/api/get_external_profile?id=${encodedId}`, {
-            credentials: "include",
-          });
-          if (!res.ok) return null;
-          const profile = await res.json();
-          return {
-            ...(profile as ProfileData),
-            networkSimilarity: match.similarity,
-          } as NetworkProfile;
-        } catch (error) {
-          console.log("Error fetching network profile", error);
-          return null;
-        }
-      });
-
-      const profiles = await Promise.all(profilePromises);
-      const validProfiles = profiles.filter((p): p is NetworkProfile => p !== null);
-
-      // Sort by similarity descending
-      validProfiles.sort((a, b) => b.networkSimilarity - a.networkSimilarity);
-
-      setUserNetwork(validProfiles);
-    } catch (error) {
-      console.log("Error fetching network similarity", error);
-      setUserNetwork([]);
-    } finally {
-      setLoadingNetwork(false);
-    }
-  }, [props.id, userNetwork.length]);
-
-
-  useEffect(() => {
-    const availableTabs: AvailableTab[] = [];
-    if (clientConfig.showSkillScores) availableTabs.push('scores');
-    if (clientConfig.showBookmarks) availableTabs.push('bookmarks');
-    // if (clientConfig.showThreads) availableTabs.push('threads');
-    if (clientConfig.showReferrals) availableTabs.push('referrals');
-    if (clientConfig.showProjects) availableTabs.push('projects');
-    if (clientConfig.showConnections) availableTabs.push('connections');
-    if (clientConfig.showTimeline) availableTabs.push('timeline');
-    if (clientConfig.showNetworkSimilarity) availableTabs.push('network');
-    // if (isCompanyView) availableTabs.push('similar');
-
-    if (availableTabs.length > 0 && !availableTabs.includes(activeTab)) {
-      setActiveTab(availableTabs[0]);
-    }
-  }, [activeTab, clientConfig, isCompanyView]);
-
-  // // Dimensions available for similarity weighting (per-dimension gating)
-  // const availableSimilarityDimensions: WeightDimension[] = useMemo(() => {
-  //   const dims: WeightDimension[] = [];
-  //   if ((calculatedSkillScores?.systems_infrastructure ?? 0) > 0) {
-  //     dims.push('systems_infrastructure');
-  //   }
-  //   if ((calculatedSkillScores?.theory_statistics_ml ?? 0) > 0) {
-  //     dims.push('theory_statistics_ml');
-  //   }
-  //   if ((calculatedSkillScores?.product ?? 0) > 0) {
-  //     dims.push('product');
-  //   }
-  //   if (repositoryEmbeddings.length > 0) {
-  //     dims.push('repository_similarity');
-  //   }
-  //   return dims;
-  // }, [calculatedSkillScores, repositoryEmbeddings.length]);
-
-  // ---------- Initial load: basic content ----------
-
   useEffect(() => {
     fetchBookmarkedCompanies();
     // fetchUserThreads();
-    fetchUserReferrals();
     fetchUserProjects();
   }, [
     props.bookmarked_companies,
@@ -909,16 +419,8 @@ useEffect(() => {
     props.id,
     fetchBookmarkedCompanies,
     // fetchUserThreads,
-    fetchUserReferrals,
     fetchUserProjects,
   ]);
-
-  // ---------- Initial load: GitHub similarity ----------
-
-  useEffect(() => {
-    if (!githubAnalysis || Object.keys(githubAnalysis).length === 0) return;
-    fetchGithub();
-  }, [githubAnalysis, fetchGithub]);
 
   // ---------- Initial load: combined academic + portfolio similarity ----------
 
@@ -929,171 +431,64 @@ useEffect(() => {
 
   // Lazily load connection profiles only when the "connections" tab is active
   useEffect(() => {
-    if (activeTab !== 'connections') return;
-    if (loadingConnections) return;
     fetchConnectionProfiles();
-  }, [activeTab, loadingConnections, fetchConnectionProfiles]);
+  }, [fetchConnectionProfiles]);
 
-  // Lazily load network similarity only when the "network" tab is active
-  useEffect(() => {
-    if (activeTab !== 'network') return;
-    if (loadingNetwork) return;
-    fetchNetworkSimilarity();
-  }, [activeTab, loadingNetwork, fetchNetworkSimilarity]);
 
   // ---------- Edit form submit ----------
-
-  const handleEditFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setEditFormError(null);
-    setEditFormLoading(true);
-
-    try {
-      if (!editForm.first_name) {
-        setEditFormError("First name is required.");
-        return;
-      }
-      if (!editForm.last_name) {
-        setEditFormError("Last name is required.");
-        return;
-      }
-      if (!editForm.phone_number) {
-        setEditFormError("Phone number is required.");
-        return;
-      }
-      if (!editForm.linkedin_url) {
-        setEditFormError("LinkedIn URL is required.");
-        return;
-      }
-      if (!editForm.bio) {
-        setEditFormError("Bio is required.");
-        return;
-      }
-      if (!editForm.school) {
-        setEditFormError("School is required.");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('id', editForm.id.toString());
-      formData.append('first_name', editForm.first_name);
-      formData.append('last_name', editForm.last_name);
-      formData.append('linkedin_url', editForm.linkedin_url);
-      formData.append('personal_website', editForm.personal_website);
-      formData.append('phone_number', editForm.phone_number);
-      formData.append('email', editForm.email);
-      formData.append('bio', editForm.bio);
-      formData.append('is_public_profile', editForm.is_public_profile.toString());
-      formData.append('newsletter_opt_in', editForm.newsletter_opt_in.toString());
-      formData.append('needs_visa_sponsorship', editForm.needs_visa_sponsorship.toString());
-      formData.append('school', editForm.school);
-
-      if (editForm.interests) {
-        formData.append('interests', editForm.interests);
-      }
-      if (editForm.github_url) {
-        formData.append('github_url', editForm.github_url);
-      }
-      
-      if (editForm.resume_file) {
-        formData.append('resume_file', editForm.resume_file);
-      }
-      if (editForm.profile_image) {
-        formData.append('profile_image', editForm.profile_image);
-      }
-      if (editForm.transcript_file) {
-        formData.append('transcript_file', editForm.transcript_file);
-      }
-
-      const response = await fetch('/api/post_profile', {
-        method: 'PATCH',
-        body: formData,
-      });
-
-      if (response.ok) {
-        setIsEditMode(false);
-        window.location.reload();
-      } else {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        setEditFormError(`Failed to update profile: ${errorData.error || 'Unknown error'}`);
-      }
-    } catch {
-      setEditFormError('An unexpected error occurred.');
-    } finally {
-      setEditFormLoading(false);
-    }
-  };
 
   if (!props) return <Skeleton className="h-12 w-full" />;
 
   return (
-    <>
+    <SidebarLayout title={`${props.first_name} ${props.last_name}`}>
+        <Toaster />
+        <div className="pt-12 pb-8 px-6 relative">
+          <div className="absolute inset-0 pointer-events-none"></div>
+          <Container className="max-w-4xl mx-auto">
+    
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Edit mode form */}
-        {!props.isExternalView && isEditMode && (
-          <form onSubmit={handleEditFormSubmit} className="mb-10 space-y-4">
-            {editFormError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                {editFormError}
-              </div>
-            )}
-            <ProfileInfo form={editForm} setForm={setEditForm} />
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEditMode(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={editFormLoading}>
-                {editFormLoading ? "Saving..." : "Save profile"}
-              </Button>
-            </div>
-          </form>
-        )}
-
-        {/* Read-only header and content */}
-        {!isEditMode && (
-          <>
-      <div className="mb-12">
+       
+      <div className="mb-4">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-2">
-              {props.first_name} {props.last_name}
-            </h1>
-            <div className="text-base text-neutral-600 space-y-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="text-3xl md:text-4xl font-bold text-neutral-200">
+                {props.first_name} {props.last_name}
+              </h1>
+            </div>
+            <div className="text-base text-neutral-400 space-y-1">
               <div>
-                {props.status}
-                {props.is_public_profile && "Public Profile"}
-                {props.newsletter_opt_in && " · Newsletter Opt-in"}
+                <span>{props.status}</span>
+                {props.is_public_profile && (
+                  <span> · Public Profile</span>
+                )}
+                {props.newsletter_opt_in && (
+                  <span> · Newsletter Opt-in</span>
+                )}
                 {props.needs_visa_sponsorship !== undefined && (
-                  <span>
-                    {(props.is_public_profile || props.newsletter_opt_in) && " · "}
-                          {props.needs_visa_sponsorship
-                            ? "Needs Visa Sponsorship"
-                            : "No Visa Sponsorship Needed"}
-                  </span>
+                  <span> · {props.needs_visa_sponsorship ? "Needs Visa Sponsorship" : "No Visa Sponsorship Needed"}</span>
                 )}
               </div>
             </div>
           </div>
           <div className="flex gap-3">
-            {!props.isExternalView && (
-              <Button
-                onClick={() => setIsEditMode(true)}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Edit className="w-4 h-4" />
-                Edit Profile
-              </Button>
-            )}
+            <ConnectDialog
+              open={showConnectDialog}
+              onOpenChange={setShowConnectDialog}
+              firstName={props.first_name}
+              isSubmitting={isSubmittingConnect}
+              verificationStatus={connectVerificationStatus}
+              statusMessage={connectStatusMessage}
+              onSubmit={handleConnectSubmit}
+              connectionStatus={getConnectionStatus()}
+              existingRating={getExistingConnectionRating()}
+            />
+            
           </div>
         </div>
       </div>
 
-      <section className="space-y-8">
+      <section className="space-y-3">
           {/* Header with large profile picture */}
           <div className="flex flex-col lg:flex-row gap-8 lg:items-center">
             {/* Large Profile Picture - Left Side */}
@@ -1108,229 +503,257 @@ useEffect(() => {
             </div>
 
             {/* User Info, Bio, and Interests - Right Side */}
-            <div className="flex-1 space-y-6">
-              {/* Content starts with Bio section */}
+            <div className="flex-1 space-y-6 lg:self-center">
+              {/* Connect Button - Only show when viewing someone else's profile
+              {props.isExternalView && (
+                <Button
+                  onClick={() => setShowConnectDialog(true)}
+                  className="inline-flex items-center gap-2"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Add to Verified Network
+                </Button>
+              )} */}
 
               {/* Bio Section */}
-              <div className="space-y-3">
+              <div className="space-y-3 mb-8">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-neutral-900">Bio</h3>
+                  <h3 className="text-lg font-medium text-neutral-200">Bio</h3>
                 </div>
-                
-                <div className="bg-neutral-50 rounded-lg p-4">
-                  <div className="text-sm leading-relaxed text-neutral-700 whitespace-pre-line">
-                    {props.bio || 'No bio added yet.'}
+                {showBio ? (
+                  <div className="rounded-lg p-4">
+                    {props.bio && props.bio.trim() !== '' ? (
+                      <div className="text-sm text-neutral-400">
+                        {props.bio}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-neutral-400">
+                        No bio added yet.
+                      </div>
+                    )}
                   </div>
-                </div>
+                ) : (
+                  <VerificationRequired title="The visibility settings determine whether you can see this section" redirectUrl=""/>
+                )}
               </div>
 
               {/* Interests Section */}
-              <div className="space-y-3">
+              <div className="space-y-3 mb-8">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-medium text-neutral-900">Interests</h3>
-                    {!props.isExternalView && (!props.interests || props.interests.trim() === '') && (
-                      <AlertCircle className="w-4 h-4 text-amber-500" />
+                  <h3 className="text-lg font-medium text-neutral-200">Interests</h3>
+                </div>
+                {showInterests ? (
+                  <div className="rounded-lg p-4">
+                    {props.interests && props.interests.trim() !== '' ? (
+                      <div className="text-sm text-neutral-400">
+                        {props.interests}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-neutral-400">
+                        No interests added yet.
+                      </div>
                     )}
                   </div>
-                </div>
-                
-                <div className="bg-neutral-50 rounded-lg p-4">
-                  <div className="text-sm leading-relaxed text-neutral-700 whitespace-pre-line">
-                    {props.interests || 'No interests added yet.'}
-                  </div>
-                </div>
+                ) : (
+                  <VerificationRequired title="The visibility settings determine whether you can see this section" redirectUrl=""/>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Links and Documents */}
-          {(props.linkedin_url || props.personal_website || githubAnalysis?.username || (clientConfig.showTranscript && props.transcript_url) || (clientConfig.showResume && props.resume_url)) && (
-            <div className="flex flex-wrap gap-3">
-              {props.linkedin_url && (
-                <Button asChild variant="outline" size="sm">
-                  <a href={props.linkedin_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
-                    <Linkedin className="w-4 h-4 mr-2" />
-                    LinkedIn
-                  </a>
-                </Button>
-              )}
-              {props.personal_website && (
-                <Button asChild variant="outline" size="sm">
-                  <a href={props.personal_website.startsWith('http') ? props.personal_website : `https://${props.personal_website}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
-                    <Globe className="w-4 h-4 mr-2" />
-                    Website
-                  </a>
-                </Button>
-              )}
-              {props.github_url && (
-                <Button asChild variant="outline" size="sm">
-                  <a href={props.github_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
-                    <Github className="w-4 h-4 mr-2" />
-                    GitHub
-                  </a>
-                </Button>
-              )}
-              {clientConfig.showTranscript && props.transcript_url && (
-                <Button asChild variant="outline" size="sm">
-                  <a href={props.transcript_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
-                    <FileText className="w-4 h-4 mr-2" />
-                    Transcript
-                  </a>
-                </Button>
-              )}
-              {clientConfig.showResume && props.resume_url && (
-                <Button asChild variant="outline" size="sm">
-                  <a href={props.resume_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
-                    <FileText className="w-4 h-4 mr-2" />
-                    Resume
-                  </a>
-                </Button>
+          {/* Links and Documents - Two Column Layout */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-18 mt-8 mb-8">
+            {/* Left Column: Highlighted Links */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-lg font-medium text-neutral-200">Highlighted Media</h3>
+              </div>
+
+              {showLinks ? (
+                <div className="flex flex-wrap gap-3">
+                {/* LinkedIn URL */}
+                {props.linkedin_url && (
+                  <Button asChild variant="outline" size="sm">
+                    <a href={props.linkedin_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
+                      <Linkedin className="w-4 h-4 mr-2" />
+                      LinkedIn
+                    </a>
+                  </Button>
+                )}
+
+                {/* Personal Website */}
+                {props.personal_website && (
+                  <Button asChild variant="outline" size="sm">
+                    <a href={props.personal_website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
+                      <Globe className="w-4 h-4 mr-2" />
+                      Personal Website
+                    </a>
+                  </Button>
+                )}
+
+                {/* Github URL */}
+                {props.github_url && (
+                  <Button asChild variant="outline" size="sm">
+                    <a href={props.github_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
+                      <Github className="w-4 h-4 mr-2" />
+                      Github URL
+                    </a>
+                  </Button>
+                )}
+
+
+                {props.custom_links &&
+                  Object.entries(JSON.parse(props.custom_links)).map(([key, value]) => {
+                    // If value is null/empty skip
+                    if (!value || typeof value !== 'string' || value.trim() === '') return null;
+                    const label = key
+                    const icon = <FileText className="w-4 h-4 mr-2" />
+                    return (
+                      <Button key={key} asChild variant="outline" size="sm">
+                        <a
+                          href={value}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center"
+                        >
+                          {icon}
+                          {label}
+                        </a>
+                      </Button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <VerificationRequired title="The visibility settings determine whether you can see this section" redirectUrl=""/>
               )}
             </div>
-          )}
-          </section>
-          </>
-        )}
+
+            {/* Right Column: Highlighted Documents */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-lg font-medium text-neutral-200">Highlighted Documents</h3>
+              </div>
+
+              {showDocuments ? (
+
+              <div className="flex flex-wrap gap-3">
+                {/* Resume */}
+                {props.resume_url && (
+                  <Button asChild variant="outline" size="sm">
+                    <a href={props.resume_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Resume
+                    </a>
+                  </Button>
+                )}
+
+                {/* Transcript */}
+                {props.transcript_url && (
+                  <Button asChild variant="outline" size="sm">
+                    <a href={props.transcript_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Transcript
+                    </a>
+                  </Button>
+                )}
+              </div>
+              ) : (
+                <VerificationRequired title="The visibility settings determine whether you can see this section" redirectUrl=""/>
+              )}
+            </div>
+          </div>
 
 
-      <div className="w-full mt-8 mb-8">
-        <ProfileTabsNav
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          clientConfig={clientConfig}
-          counts={{
-            bookmarks: bookmarkedCompanies.length,
-            // threads: userThreads.length,
-            referrals: userReferrals.length,
-            projects: userProjects.length,
-            network: userNetwork.length,
-          }}
-          isExternalView={props.isExternalView}
-          firstName={props.first_name}
-        />
+          {/* Priorities Section */}
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-lg font-medium text-neutral-200">
+              Professional Priorities and Timelines
+            </h3>
+          </div>
 
-        <div className="space-y-6">
-          {activeTab === 'bookmarks' && clientConfig.showBookmarks && (
-            <BookmarksTab
-              isExternalView={props.isExternalView}
-              firstName={props.first_name}
-              bookmarkedCompanies={bookmarkedCompanies}
-              loadingBookmarks={loadingBookmarks}
+          {showPriorities ? (
+            <UserCheckInComponent
+              initialStatus={props.check_in_status as UserStatus}
+              initialTimeline={props.timeline_of_search}
+              initialOutreachFrequency={props.outreach_frequency}
+              isExternalView={true}
             />
+          ) : (
+            <VerificationRequired title="The visibility settings determine whether you can see this section" redirectUrl=""/>
           )}
 
-          {/* {activeTab === 'threads' && clientConfig.showThreads && (
-            <ThreadsTab
-              isExternalView={props.isExternalView}
-              firstName={props.first_name}
-              userThreads={userThreads}
-              loadingThreads={loadingThreads}
-            />
-          )} */}
+          {/* Projects Section */}
+          <div className="flex items-center justify-between mb-8 mt-8">
+            <h3 className="text-lg font-medium text-neutral-200">Projects</h3>
+          </div>
 
-          {activeTab === 'referrals' && clientConfig.showReferrals && (
-            <ReferralsTab
-              isExternalView={props.isExternalView}
-              firstName={props.first_name}
-              userReferrals={userReferrals}
-              loadingReferrals={loadingReferrals}
-              router={router}
-            />
-          )}
-
-          {activeTab === 'projects' && clientConfig.showProjects && (
+          {showProjects ? (
             <ProjectsTab
-              isExternalView={props.isExternalView}
+              isExternalView={true}
               userProjects={userProjects}
               loadingProjects={loadingProjects}
-              onOpenProjectsDialog={() => setProjectsDialog(true)}
+              onOpenProjectsDialog={() => {}}
               onProjectDeleted={handleProjectDeleted}
             />
+          ) : (
+            <VerificationRequired title="The visibility settings determine whether you can see this section" redirectUrl=""/>
           )}
 
-          {activeTab === 'connections' && clientConfig.showConnections && (
-            <ConnectionsTab
-              isExternalView={props.isExternalView}
-              firstName={props.first_name}
-              connectionProfiles={connectionProfiles}
-              loadingConnections={loadingConnections}
-              router={router}
-            />
+          {/* Network Section */}
+          {props.applied && (
+            <>
+              <div className="flex items-center justify-between mb-8 mt-8">
+                <h3 className="text-lg font-medium text-neutral-200">Network</h3>
+              </div>
+
+              {showNetwork ? (
+                <div className="space-y-4">
+                  <NetworkConnectionsGrid
+                    connections={connectionProfiles}
+                    onSeeAllConnections={() => router.push('/people')}
+                    showSeeAll={true}
+                    maxDisplay={7}
+                    appliedToTheNiche={props.applied}
+                    isExternalView={true}
+                    loading={loadingConnections}
+                  />
+                </div>
+              ) : (
+                <VerificationRequired title="The visibility settings determine whether you can see this section" redirectUrl=""/>
+              )}
+            </>
           )}
 
-          {/* {activeTab === 'similar' && isCompanyView && (
-            <SimilarCandidatesTab
-              isCompanyView={isCompanyView}
-              props={props}
-              similarCandidatesFromPipeline={similarCandidatesFromPipeline}
-              similarityWeights={similarityWeights}
-              setSimilarityWeights={setSimilarityWeights}
-              availableSimilarityDimensions={availableSimilarityDimensions}
-              loadingCompatibility={loadingCompatibility}
-              companyCompatibility={calculatedCompanyCompatibility}
-              companySimilarityWeights={companySimilarityWeights}
-              setCompanySimilarityWeights={setCompanySimilarityWeights}
-              isRecalculating={manualRecalcLoading}
-              onRecalculate={handleManualRecalc}
-              isCompanyRecalculating={companyRecalcLoading}
-              onCompanyRecalculate={handleCompanyCompatibilityRecalc}
-            />
-          )} */}
+          {/* Companies Section */}
+          {props.applied && (
+            <>
+              <div className="flex items-center justify-between mb-8 mt-8">
+                <h3 className="text-lg font-medium text-neutral-200">Bookmarked Companies</h3>
+              </div>
 
-          {activeTab === 'scores' && clientConfig.showSkillScores && (
-            <ScoresTab
-              repositoryEmbeddings={repositoryEmbeddings}
-              githubAnalysis={githubAnalysis}
-              githubSimilarityAnalysis={githubSimilarityAnalysis}
-              clientId={props.client_id}
-              similarDevelopers={similarDevelopers}
-              loadingSimilarDevelopers={loadingSimilarDevelopers}
-              similarDevelopersError={similarDevelopersError}
-              fetchSimilarDevelopers={fetchGithub}
-            />
+              {showCompanies ? (
+                <div className="space-y-4">
+                  <BookmarkedCompaniesGrid
+                    companies={bookmarkedCompanies}
+                    onSeeAllCompanies={() => router.push('/opportunities')}
+                    showSeeAll={true}
+                    maxDisplay={5}
+                    appliedToTheNiche={props.applied}
+                    isExternalView={true}
+                    loading={loadingBookmarks}
+                  />
+                </div>
+              ) : (
+                <VerificationRequired title="The visibility settings determine whether you can see this section" redirectUrl=""/>
+              )}
+            </>
           )}
 
-        {activeTab === 'network' && clientConfig.showNetworkSimilarity && (
-            <NetworkSimilarityTab
-              isExternalView={props.isExternalView}
-              firstName={props.first_name}
-              userNetwork={userNetwork}
-              loadingNetwork={loadingNetwork}
-            />
-          )}
 
-          {activeTab === 'timeline' && (
-            <TimelineTab
-              check_in_status={props.check_in_status}
-              timeline_of_search={props.timeline_of_search}
-              outreach_frequency={props.outreach_frequency}
-              isExternalView={props.isExternalView}
-            />
-          )}
-        </div>
+      </section>
       </div>
-      
-      {/* Referral Dialog - Only show for own profile */}
-      {!props.isExternalView && (
-        <ReferralDialog 
-          open={showReferralDialog} 
-          onOpenChange={setShowReferralDialog}
-          title="Refer Someone to The Niche"
-          description="We are personal referral only and will verify if your referral is a good fit for our partner companies!"
-        />
-      )}
-      {/* Projects Dialog - Only show for own profile */}
-      {!props.isExternalView && (
-        <ProjectsDialog
-          open={projectsDialog}
-          onOpenChange={setProjectsDialog}
-          title="Add Projects and Media"
-          description="Showcase your work and achievements to your network."
-          onProjectAdded={fetchUserProjects}
-        />
-      )}
+      </Container>
       </div>
-    </>
+    </SidebarLayout>
   );
 }

@@ -19,13 +19,14 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ['Zodiak', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['Manrope', 'Zodiak', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         // mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       backgroundImage: {
+        'landing-hero': "url('/images/landing-hero.png')",
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
-          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+          'conic-gradient(from 180deg at 50% 50s%, var(--tw-gradient-stops))',
       },
       animation: {
         'gradient': 'gradient 8s ease infinite',

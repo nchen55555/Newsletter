@@ -66,7 +66,7 @@ export function TableOfContents({ content }: TableOfContentsProps) {
   return (
     <div className="sticky top-24 h-fit">
       <div className="p-4">
-        <h3 className="text-sm font-semibold text-neutral-900 mb-3">Table of Contents</h3>
+        <h3 className="text-sm font-semibold text-neutral-200 mb-3">Table of Contents</h3>
         <nav className="space-y-1">
           {headings.length > 0 ? (
             headings.map(({ id, text, level }) => (
@@ -77,7 +77,7 @@ export function TableOfContents({ content }: TableOfContentsProps) {
                   block w-full text-left text-sm transition-colors
                   ${level === 1 ? 'font-medium' : level === 2 ? 'pl-3' : 'pl-6'}
                   ${activeId === id 
-                    ? 'text-blue-600 font-medium' 
+                    ? 'text-neutral-100 font-medium' 
                     : 'text-neutral-600 hover:text-neutral-900'
                   }
                 `}

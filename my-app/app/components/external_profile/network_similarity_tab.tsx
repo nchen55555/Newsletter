@@ -45,11 +45,6 @@ export function NetworkSimilarityTab({
             <div key={profile.id ?? `${profile.email}-${profile.first_name}`} className="space-y-2">
               <ProfileCard
                 profile={profile}
-                tags={
-                  typeof profile.networkSimilarity === "number"
-                    ? [`Network positioning similarity: ${(profile.networkSimilarity * 100).toFixed(1)}%`]
-                    : undefined
-                }
                 connectionRating={profile.connectionRating}
                 onClick={() => {
                   if (profile.id) {

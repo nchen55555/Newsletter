@@ -1,4 +1,4 @@
-import { Navigation } from '@/app/components/header'
+import { SidebarLayout } from '@/app/components/sidebar-layout'
 import { Container } from '@/app/components/container'
 import { client } from '@/lib/sanity/client'
 import CompanyCards from '@/app/companies/company-cards';
@@ -50,8 +50,7 @@ export default async function Bookmarks() {
 
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
-            <Navigation />
+        <SidebarLayout title="Bookmarked Companies">
             <div className="pt-12 pb-4 relative">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.02),transparent)] pointer-events-none"></div>
             <Container>
@@ -67,6 +66,6 @@ export default async function Bookmarks() {
               </div>
             </Container>
             </div>
-        </div>
+        </SidebarLayout>
     )
 }

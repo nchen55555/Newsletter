@@ -212,12 +212,12 @@ export function PaywallContent({
       
       {/* Gradient overlay */}
       {showGradient && (
-        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent pointer-events-none" />
       )}
       
       {/* Verification protected content for remaining article */}
       <VerificationProtectedContent
-        fallbackDescription="Request to join The Niche network to read the full article."
+        fallbackDescription="You need a Niche profile to access this content."
         className="mt-6"
         redirectUrl="/access"
       >

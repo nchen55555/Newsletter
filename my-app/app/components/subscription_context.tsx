@@ -79,29 +79,23 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user?.email) {
-        console.log('SIGNED_IN event triggered, session:', session);
         
         // Try to get Google's refresh token from provider_refresh_token
         const googleRefreshToken = (session as ExtendedSession)?.provider_refresh_token;
-        console.log('Google refresh token found:', !!googleRefreshToken);
         
         if (googleRefreshToken) {
-          console.log('Making request to store Google refresh token...');
           fetch('/api/oauth/google/store', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({ provider_refresh_token: googleRefreshToken }),
           }).then(async response => {
-            console.log('Store Google refresh token response:', response.status);
             const data = await response.json();
             if (!response.ok) {
               throw new Error(`HTTP ${response.status}: ${data.error || 'Unknown error'}`);
             }
             return data;
-          }).then(data => {
-            console.log('Store Google refresh token result:', data);
-          }).catch(error => {
+          }).catch((error) => {
             console.error('Failed to store Google refresh token:', error);
             // Don't block the rest of the flow if token storage fails
           })
@@ -114,7 +108,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             setShowSubscribeDialog(true); // replaces onSignInSuccess for subscribe
           } else if (flowType === 'calendar_auth') {
             // Calendar authentication completed - redirect back to the original page
-            console.log('Calendar authentication completed');
             const returnUrl = localStorage.getItem('calendarAuthReturnUrl');
             if (returnUrl) {
               localStorage.removeItem('calendarAuthReturnUrl');

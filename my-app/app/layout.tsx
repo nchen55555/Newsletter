@@ -18,8 +18,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased font-sans bg-[#FFFCF8] min-h-screen">
+    <html lang="en" className="dark">
+      <body className="antialiased font-sans min-h-screen">
           <SubscriptionProvider>
             <StatusCheckinProvider>
               {children}

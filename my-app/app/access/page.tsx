@@ -1,5 +1,4 @@
 'use server'
-import { Navigation } from "../components/header";
 import LandingClient from "../components/landing_client";
 import { client } from "@/lib/sanity/client";
 import { LIMITED_POSTS_QUERY, CACHE_OPTIONS } from "@/lib/sanity/queries";
@@ -24,9 +23,10 @@ export default async function Access() {
   ];
   
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white flex flex-col">
-      <Navigation />
-      <LandingClient posts={posts} mediaLibrary={mediaLibrary} />
+   
+    <div className="min-h-screen flex flex-col">
+      {/* <Navigation /> */}
+      <LandingClient />
     </div>
   );
 }

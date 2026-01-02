@@ -60,9 +60,6 @@ export async function POST(request: NextRequest) {
       dryRun = false 
     } = body;
 
-    console.log(`🚀 Starting batch GitHub analysis...`);
-    console.log(`📊 Settings: limit=${limit}, skipExisting=${skipExisting}, maxConcurrent=${maxConcurrent}, dryRun=${dryRun}`);
-
     // Get subscribers with GitHub URLs
     let query = supabase
       .from('subscribers')
@@ -114,8 +111,6 @@ export async function POST(request: NextRequest) {
         summary: { totalRepositories: 0, totalRepositoryEmbeddings: 0, embeddingsGenerated: 0 }
       });
     }
-
-    console.log(`📋 Found ${subscribers.length} subscribers to process`);
 
     const results: BatchAnalysisResult[] = [];
     let processed = 0;
@@ -186,7 +181,6 @@ export async function POST(request: NextRequest) {
         // All subscribers returned by the query should be eligible for processing
 
         if (dryRun) {
-          console.log(`🔍 [DRY RUN] Would analyze GitHub profile for user ${subscriber.id}: ${username}`);
           processed++;
           return {
             subscriberId: subscriber.id,
@@ -235,8 +229,6 @@ export async function POST(request: NextRequest) {
             if (result.embeddingGenerated) {
               embeddingsGenerated++;
             }
-
-            console.log(`✅ User ${subscriber.id}: ${username} - success (${repoCount} repository groups, ${repoEmbeddingsCount} embeddings)`);
             
             return {
               subscriberId: subscriber.id,
@@ -248,7 +240,6 @@ export async function POST(request: NextRequest) {
             };
           } else {
             errors++;
-            console.log(`❌ User ${subscriber.id}: ${username} - error: ${result.error}`);
             
             return {
               subscriberId: subscriber.id,
@@ -260,7 +251,6 @@ export async function POST(request: NextRequest) {
         } catch (error) {
           errors++;
           const errorMsg = error instanceof Error ? error.message : String(error);
-          console.log(`❌ User ${subscriber.id}: ${username} - error: ${errorMsg}`);
           
           return {
             subscriberId: subscriber.id,
@@ -291,14 +281,6 @@ export async function POST(request: NextRequest) {
         embeddingsGenerated
       }
     };
-
-    console.log(`\n📊 BATCH PROCESSING SUMMARY`);
-    console.log(`✅ Successfully processed: ${processed}`);
-    console.log(`❌ Errors: ${errors}`);
-    console.log(`⏭️ Skipped: ${skipped}`);
-    console.log(`📈 Repository groups analyzed: ${totalRepositories}`);
-    console.log(`🧠 Repository embeddings generated: ${totalRepositoryEmbeddings}`);
-    console.log(`👥 Users with embeddings: ${embeddingsGenerated}/${processed}`);
 
     return NextResponse.json(response);
 

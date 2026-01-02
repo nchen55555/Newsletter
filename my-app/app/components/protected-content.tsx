@@ -11,7 +11,7 @@ export function ProtectedContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     
     const LoadingSkeleton = () => (
-        <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
+        <div>
             <Navigation />
             <Container>
                 <div className="pt-12 pb-16 relative">

@@ -62,7 +62,6 @@ export function LayoutDialogs() {
       <UserStatusCheckin
         open={isOpen}
         onStatusUpdate={handleStatusUpdate}
-        userName={currentUser?.first_name}
       />
     </>
   )

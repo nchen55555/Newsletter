@@ -32,7 +32,6 @@ function createRepositoryEmbeddingText(repoGroup: {
     25000 // Max 25KB per individual file
   );
   
-  console.log(`[EMBEDDING] Repo ${repoGroup.repositoryName}: ${repoGroup.fileCount} files, ${budgetPerFile} chars/file`);
 
   const embeddingParts = [
     `Repository: ${repoGroup.repositoryFullName}`,
@@ -130,7 +129,6 @@ ${embeddingText}`;
   }
 
   // All models failed - wait and retry once
-  console.log('[TECH ANALYSIS] All models failed, waiting 60s...');
   await new Promise(resolve => setTimeout(resolve, 60000));
   
   // One final attempt
@@ -202,7 +200,6 @@ export async function POST(request: NextRequest) {
 
     // Process repository groups - this is our new primary approach
     if (data.repositoryGroups && data.repositoryGroups.length > 0) {
-      console.log(`[EMBEDDING] Processing ${data.repositoryGroups.length} repository groups for user ${data.username}`);
       
       const repositoryEmbeddings = [];
       
@@ -246,7 +243,6 @@ export async function POST(request: NextRequest) {
             summary: techAnalysis.summary
           });
           
-          console.log(`[EMBEDDING] Generated embedding and tech analysis for ${repoGroup.repositoryName} (${repoGroup.fileCount} files)`);
         } catch (embeddingError) {
           console.error(`Error generating embedding for ${repoGroup.repositoryName}:`, embeddingError);
           continue;
@@ -314,7 +310,6 @@ export async function POST(request: NextRequest) {
 
     } else {
       // No repository groups found - this means no files were successfully processed
-      console.log(`[EMBEDDING] No repository groups found for user ${data.username}`);
       
       return NextResponse.json({
         success: false,

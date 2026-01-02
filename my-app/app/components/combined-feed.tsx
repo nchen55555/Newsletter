@@ -79,8 +79,8 @@ export function CombinedFeed({ posts }: CombinedFeedProps) {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6 sm:gap-7 w-full">
-        {[...Array(3)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-7 w-full">
+        {[...Array(4)].map((_, i) => (
           <div key={i} className="animate-pulse">
             <div className="rounded-3xl border border-neutral-200 bg-white p-6 sm:p-8">
               <div className="flex gap-4 mb-4">
@@ -115,8 +115,8 @@ export function CombinedFeed({ posts }: CombinedFeedProps) {
 
   return (
     <>
-      {/* Feed: one item per row - Full width */}
-      <div className="flex flex-col gap-6 sm:gap-7 w-full">
+      {/* Feed: two items per row on medium+ screens */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-7 w-full">
         {combinedFeed.map((item, index) => {
           if (item.type === 'post') {
             const post = item.data as Post;
@@ -130,7 +130,7 @@ export function CombinedFeed({ posts }: CombinedFeedProps) {
 
       {/* Empty state */}
       {combinedFeed.length === 0 && !loading && (
-        <div className="mx-auto my-24 max-w-xl rounded-3xl border border-dashed p-10 text-center text-neutral-600 dark:border-neutral-800 dark:text-neutral-300">
+        <div className="mx-auto my-24 rounded-3xl border border-dashed p-10 text-center text-neutral-600 dark:border-neutral-800 dark:text-neutral-300">
           <p className="text-lg">No posts or threads yet. Check back soon for fresh content.</p>
         </div>
       )}

@@ -3,12 +3,13 @@ import Link from "next/link"
 import { NavActions } from "./navActions"
 import React, { useEffect, useState } from "react";
 import { useSubscriptionContext } from "./subscription_context";
-
-export function Navigation() {
+import { LandingPageSearch } from "./landing-page-search";
+export function Navigation({isLandingPage = false} : {isLandingPage?: boolean}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isSubscribed, loading: subLoading } = useSubscriptionContext();
 
   const [requestedConnectionsCount, setRequestedConnectionsCount] = useState(0);
+  const [appliedToTheNiche, setAppliedToTheNiche] = useState(false);
 
   // Fetch profile only once subscription state is ready & user is subscribed
   useEffect(() => {
@@ -33,6 +34,7 @@ export function Navigation() {
         if (!didSet) {
           const requestedConnections = profile.requested_connections_new || [];
           setRequestedConnectionsCount(requestedConnections.length);
+          setAppliedToTheNiche(profile.applied);
         }
       } catch (e) {
         console.error("Failed to fetch profile:", e);      
@@ -47,9 +49,10 @@ export function Navigation() {
 
   return (
     <nav className="">
-      <div className="max-w-[1400px] mx-auto px-8 py-5 flex justify-between items-center">
-        <div className="flex items-center">
+      <div className="mx-auto px-8 py-5 flex justify-between items-center">
+        <div className="flex items-center gap-12 flex-1">
           <Link href="/" className="text-lg font-medium tracking-tight transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">the niche</Link>
+          {isSubscribed && <LandingPageSearch isLandingPage={isLandingPage} isSubscribed={isSubscribed} variant="compact" />}
         </div>
 
         <button
@@ -65,15 +68,15 @@ export function Navigation() {
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-12 text-sm font-medium">
           {!isSubscribed && (
-          <Link href="/privacy" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">privacy policy</Link>)
+          <Link href="/privacy" className='py-2'>privacy policy</Link>)
           }
           {isSubscribed && (
             <>
-            <Link href="/opportunities" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">opportunities</Link>
+            {appliedToTheNiche && <Link href="/opportunities" className= {!appliedToTheNiche ? 'disabled-link' : "py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text"}>opportunities</Link>}
             <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">feed</Link>
-            <Link href="/ats" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">ats</Link>
+            {/* <Link href="/ats" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">ats</Link> */}
             <div className="relative inline-block">
-              <Link href="/people" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">
+              <Link href="/people" className= {!appliedToTheNiche ? 'disabled-link' : "py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text"}>
                 people
               </Link>
               {requestedConnectionsCount > 0 && (
@@ -98,12 +101,12 @@ export function Navigation() {
           {/* <Link href="/about" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>about</Link> */}
           {isSubscribed && (
             <>
-              <Link href="/opportunities" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>opportunities</Link>
+              <Link href="/opportunities" className= {!appliedToTheNiche ? 'disabled-link' : "py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text"} onClick={() => setMenuOpen(false)}>opportunities</Link>
               <Link href="/articles" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>feed</Link>
-              <Link href="/ats" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>ats</Link>
+              {/* <Link href="/ats" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>ats</Link> */}
               {/* <Link href="/feed" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text">feed</Link> */}
               <div className="relative inline-block">
-                <Link href="/people" className="py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text" onClick={() => setMenuOpen(false)}>
+                <Link href="/people" className= {!appliedToTheNiche ? 'disabled-link' : "py-2 transition-colors duration-200 hover:text-transparent hover:bg-gradient-to-r hover:from-yellow-400 hover:via-pink-400 hover:to-blue-400 hover:bg-clip-text"}  onClick={() => setMenuOpen(false)}>
                   people
                 </Link>
                 {requestedConnectionsCount > 0 && (

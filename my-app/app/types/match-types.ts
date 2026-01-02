@@ -3,7 +3,7 @@
  */
 
 import { ProfileData } from "../types";
-
+import { VisibilityResults } from "../components/visibility";
 // Tab types for profile navigation
 export type AvailableTab = "scores" | "bookmarks" | "threads" | "referrals" | "projects" | "connections" | "similar" | "timeline" | "network";
 
@@ -59,6 +59,8 @@ export interface ExternalProfileProps extends ProfileData {
   isExternalView?: boolean;
   client_id?: number;
   is_client_specific?: boolean;
+  onRefresh?: () => Promise<void>;
+  visibilityResults?: VisibilityResults;
 }
 
 // Similarity calculation weights

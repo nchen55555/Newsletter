@@ -23,15 +23,12 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
 
    // Calculate referrer ID directly from URL (memoized)
   const referrerIdFromUrl = useMemo(() => {
-    const refParam = searchParams.get('ref');
-    console.log("refParam in memoized function:", refParam);
+    const refParam = searchParams.get('referral_id');
     if (!refParam) return undefined;
     
     try {
       const referrerUserId = decodeSimple(refParam);
-      console.log("decoded referrerUserId in memoized function:", referrerUserId);
       const result = (referrerUserId && referrerUserId > 0) ? referrerUserId : undefined;
-      console.log("final referrerIdFromUrl result:", result);
       return result;
     } catch (error) {
       console.error("Failed to decode referral parameter:", error);
@@ -44,22 +41,17 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
     const checkLoginStatus = async () => {
       try {
         const res = await fetch('/api/get_profile', { credentials: 'include' });
-        console.log('Login check response status:', res.status);
         
         if (res.ok) {
           const data = await res.json();
-          console.log('Login check response data:', data);
           
           // Check if user is subscribed (has valid profile) and has required fields
           const hasValidProfile = data && data.isSubscribed && data.id && data.email;
-          console.log('Has valid profile:', hasValidProfile);
           setIsLoggedIn(hasValidProfile);
         } else {
-          console.log('Login check failed with status:', res.status);
           setIsLoggedIn(false);
         }
-      } catch (error) {
-        console.error('Error checking login status:', error);
+      } catch {
         setIsLoggedIn(false);
       }
     };
@@ -133,7 +125,6 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
       
       // Check if user has scrolled to within 100px of the bottom
       if (scrollTop + windowHeight >= documentHeight - 100 && !hasScrolledToBottom) {
-        console.log('User scrolled to bottom, setting hasScrolledToBottom to true');
         setHasScrolledToBottom(true);
       }
     };
@@ -146,19 +137,10 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
     // Wait for both loading states to complete
     if (loading || isLoggedIn === null) return;
 
-    console.log('ReferralInviteDialog conditions:', {
-      loading,
-      referrerName,
-      isLoggedIn,
-      hasScrolledToBottom,
-      shouldShow: referrerName || (isLoggedIn === false && hasScrolledToBottom)
-    });
-
     // Show dialog if:
     // 1. There's a referrer (from URL param) - show immediately
     // 2. OR user is not logged in and has scrolled to bottom
     if (referrerName || (isLoggedIn === false && hasScrolledToBottom)) {
-      console.log('Opening ReferralInviteDialog');
       setOpen(true);
     }
   }, [loading, referrerName, isLoggedIn, hasScrolledToBottom]);
@@ -196,7 +178,7 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
               </>
             ) : (
               <>
-                Welcome to The Niche! You could be a great fit for <strong>{companyName || 'this company'}</strong>. Request access to join our network of top talent and get warm intros to startups like this one. <Link href="/" className="text-blue-600 hover:text-blue-800 underline">Learn more</Link>
+                Welcome to The Niche! Request access to start building your personalized professional network, surfacing warm intros to startups like this one. <Link href="/" className="text-blue-600 hover:text-blue-800 underline">Learn more</Link>
               </>
             )}
           </DialogDescription>
@@ -206,8 +188,8 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
           <Subscribe referral_id={referrerIdFromUrl} />
         </div>
         
-        <p className="text-xs text-neutral-500 text-center mt-4">
-          Introductions to opportunities and founders at some of the highest talent density startups.
+        <p className="text-xs text-neutral-200 text-center mt-4">
+        Your Niche Profile is your curated professional presence, digitializing the connections that pave your career and surfacing the opportunities that will take you to the next level.
         </p>
       </DialogContent>
     </Dialog>

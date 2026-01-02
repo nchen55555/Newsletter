@@ -13,16 +13,12 @@ import {
   Trash2, 
   Plus, 
   Building2, 
-  Target, 
-  CheckCircle, 
-  Copy, 
   AlertCircle,
-  Forward,
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
-import { Navigation } from "@/app/components/header";
+import { SidebarLayout } from "@/app/components/sidebar-layout";
 import { debounce } from "@/app/utils/debounce"
 
 // Types
@@ -52,81 +48,6 @@ const ACTION_COLORS: Record<string, string> = {
   "TBD": "bg-yellow-100 text-yellow-800"
 }
 
-// Email Forwarding Setup Component
-function EmailForwardingSetup({ 
-  trackingEmail, 
-  acknowledged, 
-  onAcknowledge,
-}: { trackingEmail: string; acknowledged: boolean; onAcknowledge: () => void }) {
-  const [copied, setCopied] = useState(false)
-  
-  const copyEmail = async () => {
-    await navigator.clipboard.writeText(trackingEmail)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Forward className="w-5 h-5 text-blue-600" />
-          Email Forwarding Setup
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Info alert */}
-        <Alert className="border-blue-200 bg-blue-50">
-          <AlertCircle className="h-4 w-4 text-blue-600" />
-          <AlertDescription>
-            <strong>Track All Your Applications</strong> Forward, CC, or BCC interview emails to the address below to automatically track and update your applications&apos; status and progress.
-          </AlertDescription>
-        </Alert>
-
-        {/* Consent alert */}
-        {!acknowledged && (
-          <Alert className="border-yellow-300 bg-yellow-50">
-            <AlertDescription className="flex flex-col gap-2">
-              CC your Niche-specific email for processes both on and off The Niche to get better recommendations!
-              <Button 
-                size="sm" 
-                onClick={onAcknowledge} 
-                className="self-start bg-yellow-500 hover:bg-yellow-600 text-white"
-              >
-                I Understand
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Tracking Email (blurred/disabled until acknowledged) */}
-        <div className={`${!acknowledged ? 'opacity-50 pointer-events-none select-none' : ''}`}>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">
-            Forward or bcc interview emails to:
-          </label>
-          <div className="flex items-center gap-2">
-            <Input 
-              value={trackingEmail}
-              readOnly 
-              className="font-mono text-sm bg-gray-50 border-blue-200"
-            />
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={copyEmail}
-              className="border-blue-200 text-blue-700 hover:bg-blue-50"
-            >
-              <Copy className="w-4 h-4" />
-              {copied ? 'Copied!' : 'Copy'}
-            </Button>
-          </div>
-        </div>
-
-      </CardContent>
-    </Card>
-  )
-}
-
 // Main ATS Component
 function EmailForwardingATSContent() {
   const searchParams = useSearchParams()
@@ -134,10 +55,6 @@ function EmailForwardingATSContent() {
   const [applications, setApplications] = useState<Application[]>([])
   const [actionFilter, setActionFilter] = useState<'All' | 'Yes' | 'No' | 'TBD'>('All')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [isEmailSetupDialogOpen, setIsEmailSetupDialogOpen] = useState(false)
-  const [trackingEmail, setTrackingEmail] = useState<string>('')
-  const [acknowledged, setAcknowledged] = useState(false)
-  const [profileLoaded, setProfileLoaded] = useState(false)
   const [showLoadingMessage, setShowLoadingMessage] = useState(false)
   
   const [newApplication, setNewApplication] = useState({
@@ -242,10 +159,6 @@ function EmailForwardingATSContent() {
       return b.dateAdded.getTime() - a.dateAdded.getTime()
     })
 
-  const stats = applications.reduce((acc, app) => {
-    acc[app.stage] = (acc[app.stage] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
 
   // Check for loading parameter from apply redirect
   useEffect(() => {
@@ -261,24 +174,25 @@ function EmailForwardingATSContent() {
   }, [searchParams])
 
   // Check if user has already confirmed application tracker setup
-  useEffect(() => {
-    const checkProfileConfirmation = async () => {
-      try {
-        const res = await fetch('/api/get_profile', { credentials: 'include' });
-        if (res.ok) {
-          const profile = await res.json();
-          const isConfirmed = profile.application_tracker_confirmed || false;
-          setAcknowledged(isConfirmed);
-          setProfileLoaded(true);
-        }
-      } catch (error) {
-        console.error('Error checking profile confirmation:', error);
-        setProfileLoaded(true); // Allow the component to continue functioning
-      }
-    };
+  // NOTE: Email agreement requirement removed - keep tracker accessible without confirmation
+  // useEffect(() => {
+  //   const checkProfileConfirmation = async () => {
+  //     try {
+  //       const res = await fetch('/api/get_profile', { credentials: 'include' });
+  //       if (res.ok) {
+  //         const profile = await res.json();
+  //         const isConfirmed = profile.application_tracker_confirmed || false;
+  //         setAcknowledged(isConfirmed);
+  //         setProfileLoaded(true);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error checking profile confirmation:', error);
+  //       setProfileLoaded(true); // Allow the component to continue functioning
+  //     }
+  //   };
 
-    checkProfileConfirmation();
-  }, []);
+  //   checkProfileConfirmation();
+  // }, []);
 
   useEffect(() => {
   fetch("/api/get_all_applications", { credentials: "include" })
@@ -307,28 +221,21 @@ function EmailForwardingATSContent() {
       }))
 
       setApplications(mapped)
-      setTrackingEmail(data.tracking_email)
     })
     .catch(err => console.error("Error fetching applications", err))
 }, [])
 
-  // Open the Email Setup dialog on initial load once we have the trackingEmail
-  useEffect(() => {
-    if (trackingEmail && !acknowledged && profileLoaded) {
-      setIsEmailSetupDialogOpen(true)
-    }
-  }, [trackingEmail, acknowledged, profileLoaded])
+  // Previously auto-opened Email Setup dialog; disabled now so tracker is always accessible
+  // useEffect(() => {
+  //   if (trackingEmail && !acknowledged && profileLoaded) {
+  //     setIsEmailSetupDialogOpen(true)
+  //   }
+  // }, [trackingEmail, acknowledged, profileLoaded])
 
   // Show loading message like opportunities page
   if (showLoadingMessage) {
     return (
-      <div className="min-h-screen" style={{
-          background: `
-            radial-gradient(ellipse 700px 500px at 85% 15%, rgba(34, 197, 94, 0.3) 0%, rgba(124, 211, 87, 0.25) 15%, rgba(253, 224, 71, 0.3) 35%, rgba(253, 224, 71, 0.2) 60%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 1) 100%),
-            white
-          `
-        }}>
-        <Navigation />
+      <SidebarLayout title="Application Tracker">
         <div className="pt-12 pb-8 px-6 relative">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.02),transparent)] pointer-events-none"></div>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -340,18 +247,12 @@ function EmailForwardingATSContent() {
             </div>
           </div>
         </div>
-      </div>
+      </SidebarLayout>
     )
   }
 
   return (
-    <div className="min-h-screen" style={{
-        background: `
-          radial-gradient(ellipse 700px 500px at 85% 15%, rgba(34, 197, 94, 0.3) 0%, rgba(124, 211, 87, 0.25) 15%, rgba(253, 224, 71, 0.3) 35%, rgba(253, 224, 71, 0.2) 60%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 1) 100%),
-          white
-        `
-      }}>
-      <Navigation />
+    <SidebarLayout title="Application Tracker">
       <div className="pt-12 pb-8 px-6 relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.02),transparent)] pointer-events-none"></div>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -362,20 +263,21 @@ function EmailForwardingATSContent() {
                   Your Application Tracker
                 </h1>
                 <p className="text-lg md:text-xl text-neutral-500 leading-relaxed font-light max-w-3xl mx-auto mb-8">
-                  Track any application process. Forward, BCC, or CC interview emails to update your progress for processes both on and off The Niche. Every introduction with a Niche company will have your Niche-specific email already CC&apos;d on the email exchange. 
+                  Track any application process. Every application you send through The Niche will show up here and you can customize the stage of your application accordingly. 
                 </p>
-                <Button 
+                {/* Email setup entry point disabled; tracker no longer gated on this */}
+                {/* <Button 
                   variant="outline" 
                   onClick={() => setIsEmailSetupDialogOpen(true)}
                   className="flex items-center gap-2"
                 >
                   <Forward className="w-4 h-4" />
                   Email Setup
-                </Button>
+                </Button> */}
               </div>
 
-              {/* Email Setup Dialog (opens on load if not acknowledged) */}
-              <Dialog open={isEmailSetupDialogOpen} onOpenChange={setIsEmailSetupDialogOpen}>
+              {/* Email Setup Dialog + soft gate removed; tracker is usable without explicit email consent */}
+              {/* <Dialog open={isEmailSetupDialogOpen} onOpenChange={setIsEmailSetupDialogOpen}>
                 <DialogContent className="sm:max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Email Forwarding Setup</DialogTitle>
@@ -404,7 +306,6 @@ function EmailForwardingATSContent() {
                 </DialogContent>
               </Dialog>
 
-              {/* If not acknowledged, show a soft gate message */}
               {!acknowledged && (
                 <Card className="mb-8 w-full max-w-4xl">
                   <CardContent className="py-6">
@@ -413,55 +314,10 @@ function EmailForwardingATSContent() {
                     </p>
                   </CardContent>
                 </Card>
-              )}
+              )} */}
 
-              {/* Stats Cards */}
-              {acknowledged && (
-                <div className="flex justify-center mb-8 w-full">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl">
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <Building2 className="w-8 h-8 text-blue-600" />
-                          <div>
-                            <p className="text-sm text-neutral-600">Total Applications</p>
-                            <p className="text-2xl font-bold">{applications.length}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <Target className="w-8 h-8 text-orange-600" />
-                          <div>
-                            <p className="text-sm text-neutral-600">In Progress</p>
-                            <p className="text-2xl font-bold">
-                              {applications.filter(app => !['Rejected', 'Withdrawn', 'Offer Received'].includes(app.stage)).length}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="w-8 h-8 text-green-600" />
-                          <div>
-                            <p className="text-sm text-neutral-600">Offers</p>
-                            <p className="text-2xl font-bold">{stats['Offer Received'] || 0}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-              )}
-
-              {/* Applications Table */}
-              {acknowledged && (
+             
+              {/* Applications Table - always visible now */}
                 <Card className="w-full max-w-6xl">
                   <CardHeader>
                     <div className="flex justify-between items-center">
@@ -672,11 +528,10 @@ function EmailForwardingATSContent() {
                     )}
                   </CardContent>
                 </Card>
-              )}
             </div>
         </div>
       </div>
-    </div>
+    </SidebarLayout>
   )
 }
 
@@ -684,13 +539,7 @@ function EmailForwardingATSContent() {
 export default function EmailForwardingATS() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen" style={{
-          background: `
-            radial-gradient(ellipse 700px 500px at 85% 15%, rgba(34, 197, 94, 0.3) 0%, rgba(124, 211, 87, 0.25) 15%, rgba(253, 224, 71, 0.3) 35%, rgba(253, 224, 71, 0.2) 60%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 1) 100%),
-            white
-          `
-        }}>
-        <Navigation />
+      <SidebarLayout title="Application Tracker">
         <div className="pt-12 pb-8 px-6 relative">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.02),transparent)] pointer-events-none"></div>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -702,7 +551,7 @@ export default function EmailForwardingATS() {
             </div>
           </div>
         </div>
-      </div>
+      </SidebarLayout>
     }>
       <EmailForwardingATSContent />
     </Suspense>

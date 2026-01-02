@@ -4,9 +4,11 @@ import { client } from "@/lib/sanity/client";
 import imageUrlBuilder from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { Container } from "@/app/components/container";
-import { Navigation } from "@/app/components/header";
 import { CompanyData } from "@/app/types";
 import CompanyPageClient from "../../components/company-page-client";
+import { SidebarLayout } from "@/app/components/sidebar-layout";
+import { ReferralInviteDialog } from "@/app/components/referral-invite-dialog";
+import { Navigation } from "@/app/components/header";
 
 const { projectId, dataset } = client.config();
 const urlFor = (source: SanityImageSource) =>
@@ -34,15 +36,14 @@ export default async function CompanyPage({
 
   if (isNaN(companyId)) {
     return (
-      <div className="min-h-screen bg-white">
-        <Navigation />
+      <SidebarLayout title="Opportunities">
         <Container>
           <div className="pt-20 pb-16 text-center">
-            <h1 className="text-2xl font-semibold text-neutral-900 mb-4">Invalid Company ID</h1>
+            <h1 className="text-2xl  font-semibold text-neutral-900 mb-4">Invalid Company ID</h1>
             <p className="text-neutral-600">The company ID provided is not valid.</p>
           </div>
         </Container>
-      </div>
+      </SidebarLayout>
     );
   }
 
@@ -55,15 +56,15 @@ export default async function CompanyPage({
 
     if (!companyData) {
       return (
-        <div className="min-h-screen bg-white">
-          <Navigation />
+        <>
+        <Navigation/>
           <Container>
             <div className="pt-20 pb-16 text-center">
               <h1 className="text-2xl font-semibold text-neutral-900 mb-4">Company Not Found</h1>
               <p className="text-neutral-600">The requested company could not be found.</p>
             </div>
           </Container>
-        </div>
+          </>
       );
     }
 
@@ -73,27 +74,27 @@ export default async function CompanyPage({
     };
 
     return (
-      <div className="min-h-screen bg-white">
-        <Navigation />
-        <CompanyPageClient 
+     <>
+        <CompanyPageClient
           company={companyWithImage}
           companyPost={postData}
         />
-      </div>
+        <ReferralInviteDialog companyName={companyWithImage.title} />
+        </>
     );
 
   } catch (error) {
     console.error('Error fetching company data:', error);
     return (
-      <div className="min-h-screen bg-white">
-        <Navigation />
+      <>
+      <Navigation/>
         <Container>
           <div className="pt-20 pb-16 text-center">
             <h1 className="text-2xl font-semibold text-neutral-900 mb-4">Error Loading Company</h1>
             <p className="text-neutral-600">Failed to load company information. Please try again later.</p>
           </div>
         </Container>
-      </div>
+      </>
     );
   }
 }

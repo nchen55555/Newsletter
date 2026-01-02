@@ -1,38 +1,54 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import MultiStepProfileForm from "../components/multi_step_profile_form";
-import { Navigation } from "../components/header";
-import { Container } from "../components/container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileData } from "@/app/types";
-import { ExternalProfile } from "../components/external_profile";
+import { PersonalProfile } from "../components/personal_profile";
+import { ProtectedContent } from "../components/protected-content";
 
-export default function Profile() {
+function ProfileContent() {
   const [data, setData] = useState<ProfileData | null>(null);
+  const searchParams = useSearchParams();
+  const flow = searchParams.get("flow");
+  const isOnboardingFlow = flow === "onboarding";
+
+  const fetchProfileData = async () => {
+    try {
+      const res = await fetch("/api/get_profile", { credentials: "include" });
+      const profileData = await res.json();
+      setData(profileData);
+    } catch (error) {
+      console.error('Error fetching profile data:', error);
+    }
+  };
 
   useEffect(() => {
-    fetch("/api/get_profile", { credentials: "include" })
-      .then(res => res.json())
-      .then(setData);
+    fetchProfileData();
   }, []);
 
   if (!data) return <Skeleton className="h-12 w-full" />; // or customize size;
 
+  const shouldShowForm = isOnboardingFlow;
+
   // If user hasn't applied yet, show the form only
   // if (!data.applied) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
-        <Navigation />
-        <div className="pt-12 pb-8 px-6 relative">
-          <div className="absolute inset-0 pointer-events-none"></div>
-          <Container className="max-w-4xl mx-auto">
-            {!data.applied && <MultiStepProfileForm {...data} />}
-            {data.applied && <ExternalProfile {...data} />}
-          
-          </Container>
-        </div>
-      </div>
+      <ProtectedContent>
+      {shouldShowForm ? (
+        <MultiStepProfileForm {...data} />
+      ) : (
+        <PersonalProfile {...data} onRefresh={fetchProfileData} />
+      )}
+      </ProtectedContent>   
     );
-  // }
 
+}
+
+export default function Profile() {
+  return (
+    <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+      <ProfileContent />
+    </Suspense>
+  );
 }

@@ -2,19 +2,11 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 import { SanityDocument } from "next-sanity"
 import { SanityImageSource } from "@sanity/image-url/lib/types/types"
-import imageUrlBuilder from "@sanity/image-url"
-import { client } from "@/lib/sanity/client";
-import Image from "next/image"
-import Link from "next/link"
-import { Info, Repeat2, Send, Users } from "lucide-react";
+import { Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VerificationProtectedContent } from "../components/verification-protected-content";
 import { CompanyCard } from "../companies/company-cards";
-import { Button } from "@/components/ui/button";
-import { ReferralDialog } from "../components/referral-dialog";
 import { CommitmentPledgeDialog } from "../components/commitment-pledge-dialog";
-import Post from "../components/post";
-import ApplyCompanies from "../components/apply-companies";
 
 export interface CompanyData extends SanityDocument {
   company: number
@@ -39,36 +31,20 @@ type CompanyWithImageUrl = CompanyData & {
   imageUrl: string | null;
 };
 
-interface Post {
-  _id: string;
-  title: string;
-  slug: { current: string };
-  publishedAt: string;
-  image?: SanityImageSource;
-}
-
 interface OpportunitiesProp{
   featuredOpportunities: CompanyWithImageUrl[]
-  posts: Post[]
 }
 
-// Image URL builder
-const builder = imageUrlBuilder(client);
-function urlForImage(source: SanityImageSource) {
-  return builder.image(source);
-}
-
-export default function Opportunities({ featuredOpportunities, posts }: OpportunitiesProp) {
+export default function Opportunities({ featuredOpportunities }: OpportunitiesProp) {
     const [first_name, setFirstName] = useState("")
     const [profile_image_url, setProfileImage] = useState("")
     const [generated_interest_profile, setGeneratedInterestProfile] = useState("")
     const [isLoading, setIsLoading] = useState(true)
     const [companyRecommendations, setCompanyRecommendations] = useState<number[]>([])
     const [bookmarkedCompanies, setBookmarkedCompanies] = useState<number[]>([])
-    const [verifiedToTheNiche, setVerifiedToTheNiche] = useState(false)
-    const [activeTab, setActiveTab] = useState<'recommended' | 'bookmarks' | 'other'>('recommended')
     const [hasAcceptedCommitment, setHasAcceptedCommitment] = useState(false)
-    const [showReferralDialog, setShowReferralDialog] = useState(false)
+    const [appliedToNiche, setAppliedToNiche] = useState(false)
+
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -84,9 +60,8 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
                     setProfileImage(profile.profile_image_url || "")
                     setGeneratedInterestProfile(profile.generated_interest_profile || "")
                     setCompanyRecommendations(profile.company_recommendations || [])
-                    setVerifiedToTheNiche(profile.verified)
                     setHasAcceptedCommitment(profile.professional_agreement || false);
-                    
+                    setAppliedToNiche(profile.applied || false);
                 }
             } catch (e) {
                 console.error("Failed to fetch profile:", e);
@@ -119,7 +94,6 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
     }, [first_name, generated_interest_profile, profile_image_url])
 
     const handleAcceptCommitment = () => {
-      console.log("accepted commitment")
       setHasAcceptedCommitment(true);
   };
 
@@ -143,241 +117,90 @@ export default function Opportunities({ featuredOpportunities, posts }: Opportun
       
         <div >
           {/* Commitment Pledge Dialog - Non-cancellable until accepted */}
-          {verifiedToTheNiche && !hasAcceptedCommitment && (
+          {!isLoading && !hasAcceptedCommitment && (
             <CommitmentPledgeDialog
               open={true}
               onAccept={handleAcceptCommitment}
             />
           )}
 
-          {/* Referral Dialog */}
-          <ReferralDialog 
-            open={showReferralDialog}
-            onOpenChange={setShowReferralDialog}
-          />
 
-          {/* Only show opportunities content after commitment is accepted */}
-          {hasAcceptedCommitment && (
+          {/* Main opportunities layout (header + gated content) */}
             <div className="animate-in fade-in-50 duration-700">
               {!isLoading && (
-                <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col gap-4 w-full">
                     {/* Welcome Header */}
                     <div className="text-center pt-16 pb-2">
-                        <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-black">
+                        <h1 className="text-4xl md:text-5xl font-semibold mb-4">
                             Welcome, {first_name}
                         </h1>
-                        <div className="max-w-8xl mx-auto mb-6">
+                        <div className="mb-6">
                             <p className="text-lg text-neutral-600 leading-relaxed font-light text-center mb-6">
-                                We have partnered with some of the highest-talent startups so that every connect is fast-tracked to the founder&apos;s inbox. 
+                                We have partnered with some of the highest-talent startups so that every connect is fast-tracked to the founder&apos;s inbox.
                             </p>
-                            
-                            {/* Recent Posts Ticker */}
-                            {posts && posts.length > 0 && (
-                                <div className="max-w-6xl mx-auto overflow-hidden whitespace-nowrap mb-4 py-4">
-                                    <div className="inline-block animate-scroll-x">
-                                        {posts.map((post) => (
-                                            <Link key={post._id} href={`/articles/${post.slug.current}`} className="inline-flex items-center bg-white border border-neutral-200 px-4 py-2 rounded-full shadow-sm mr-4 hover:shadow-md transition-shadow cursor-pointer">
-                                                {post.image ? (
-                                                    <div className="w-6 h-6 rounded-full overflow-hidden mr-2 flex-shrink-0">
-                                                        <Image
-                                                            src={urlForImage(post.image).width(24).height(24).fit("crop").url()}
-                                                            alt={post.title}
-                                                            width={24}
-                                                            height={24}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <span className="w-2 h-2 rounded-full mr-2 bg-neutral-300"></span>
-                                                )}
-                                                <span className="text-sm text-neutral-700 font-medium">
-                                                    {post.title}
-                                                </span>
-                                                <span className="text-xs text-neutral-500 ml-2">
-                                                    {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                                </span>
-                                            </Link>
-                                        ))}
-                                        {/* Duplicate for seamless loop */}
-                                        {posts.map((post) => (
-                                            <Link key={`${post._id}-duplicate`} href={`/articles`} className="inline-flex items-center bg-white border border-neutral-200 px-4 py-2 rounded-full shadow-sm mr-4 hover:shadow-md transition-shadow cursor-pointer">
-                                                {post.image ? (
-                                                    <div className="w-6 h-6 rounded-full overflow-hidden mr-2 flex-shrink-0">
-                                                        <Image
-                                                            src={urlForImage(post.image).width(24).height(24).fit("crop").url()}
-                                                            alt={post.title}
-                                                            width={24}
-                                                            height={24}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <span className="w-2 h-2 rounded-full mr-2 bg-neutral-300"></span>
-                                                )}
-                                                <span className="text-sm text-neutral-700 font-medium">
-                                                    {post.title}
-                                                </span>
-                                                <span className="text-xs text-neutral-500 ml-2">
-                                                    {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                                </span>
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+
+
                         </div>
                     </div>
-                    <div className="w-full max-w-6xl mx-auto">
-                        <VerificationProtectedContent 
+                        <VerificationProtectedContent
                           sectionTitle=""
                           fallbackTitle="Verification Required for Opportunity Access"
                           fallbackDescription="Request to join The Niche network to view personalized opportunities and connect with startup founders"
-                          className="mb-16"
-                          hideWhenNotVerified={true}
+                          className="mb-16 w-full"
                         >
-                          {verifiedToTheNiche && (
+                        {hasAcceptedCommitment && (
                             <div className="w-full">
-                              {/* Action Buttons */}
-                              <div className="flex justify-end mb-6 gap-2">
-                                <Button
-                                  onClick={() => setShowReferralDialog(true)}
-                                  size="sm"
-                                  className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
-                                >
-                                  <Users className="w-4 h-4" />
-                                  Refer Someone to The Niche
-                                </Button>
-                                <Post
-                                  triggerElement={
-                                    <Button
-                                      size="sm"
-                                      className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
-                                    >
-                                      <Repeat2 className="w-4 h-4" />
-                                      Thread Thoughts
-                                    </Button>
-                                  }
-                                />
-                                <ApplyCompanies
-                                  triggerElement={
-                                    <Button
-                                      size="sm"
-                                      className="bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-2"
-                                    >
-                                      <Send className="w-4 h-4" />
-                                      Request an Intro to an Opportunity
-                                    </Button>
-                                  }
-                                />
-                              </div>
-                              
-                              {/* Tab Navigation */}
-                              <div className="flex border-b border-neutral-200 mb-8">
-                                <button
-                                  onClick={() => setActiveTab('recommended')}
-                                  className={`px-6 py-3 text-base font-medium transition-colors duration-200 border-b-2 ${
-                                    activeTab === 'recommended'
-                                      ? 'border-black text-black'
-                                      : 'border-transparent text-neutral-500 hover:text-neutral-700'
-                                  }`}
-                                >
-                                  High Potential Mutual Interest ({recommendedOpportunities.length})
-                                </button>
-                                <button
-                                  onClick={() => setActiveTab('bookmarks')}
-                                  className={`px-6 py-3 text-base font-medium transition-colors duration-200 border-b-2 ${
-                                    activeTab === 'bookmarks'
-                                      ? 'border-black text-black'
-                                      : 'border-transparent text-neutral-500 hover:text-neutral-700'
-                                  }`}
-                                >
-                                  Your Bookmarks ({bookmarkedOpportunities.length})
-                                </button>
-                                <button
-                                  onClick={() => setActiveTab('other')}
-                                  className={`px-6 py-3 text-base font-medium transition-colors duration-200 border-b-2 ${
-                                    activeTab === 'other'
-                                      ? 'border-black text-black'
-                                      : 'border-transparent text-neutral-500 hover:text-neutral-700'
-                                  }`}
-                                >
-                                  Other Opportunities on The Niche ({otherOpportunities.length})
-                                </button>
-                              </div>
-
-                              {/* Tab Content */}
-                              <div className="min-h-[600px]">
-                                {activeTab === 'recommended' && (
-                                  <>
-                                    {recommendedOpportunities.length > 0 ? (
-                                      <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-2">
-                                        {recommendedOpportunities.map((company) => (
-                                          <CompanyCard key={company._id} company={company} showHighMutualInterest={true} external={false}/>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <Alert className="max-w-4xl mx-auto">
-                                        <Info className="h-4 w-4" />
-                                        <AlertDescription>
-                                          Your recommendations are still generating and will be available in 24 hours. Expand your verified network and bookmark or connect with companies in &quot;Other Opportunities&quot; to get more personalized recommendations here.
-                                        </AlertDescription>
-                                      </Alert>
-                                    )}
-                                  </>
-                                )}
-
-                                {activeTab === 'bookmarks' && (
-                                  <>
-                                    {bookmarkedOpportunities.length > 0 ? (
-                                      <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-2">
-                                        {bookmarkedOpportunities.map((company) => (
-                                          <CompanyCard key={company._id} company={company} showHighMutualInterest={false} external={false}/>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <Alert className="max-w-4xl mx-auto">
-                                        <Info className="h-4 w-4" />
-                                        <AlertDescription>
-                                          You haven&apos;t bookmarked any companies yet. Bookmark companies from &quot;High Potential Mutual Interest&quot; or &quot;Other Opportunities&quot; to save them here for easy access.
-                                        </AlertDescription>
-                                      </Alert>
-                                    )}
-                                  </>
-                                )}
-
-                                {activeTab === 'other' && (
-                                  <>
-                                    {otherOpportunities.length > 0 ? (
-                                      <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-2">
-                                        {otherOpportunities.map((company) => (
-                                          <CompanyCard key={company._id} company={company} showHighMutualInterest={false} external={false}/>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <Alert className="max-w-4xl mx-auto">
-                                        <Info className="h-4 w-4" />
-                                        <AlertDescription>
-                                          No other opportunities available at this time.
-                                        </AlertDescription>
-                                      </Alert>
-                                    )}
-                                  </>
+                              {/* All Opportunities Grid */}
+                                {featuredOpportunities.length > 0 ? (
+                                  <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                    {recommendedOpportunities.map((company) => (
+                                      <CompanyCard
+                                        appliedToNiche={appliedToNiche}
+                                        key={company._id}
+                                        company={company}
+                                        showHighMutualInterest={true}
+                                        external={false}
+                                      />
+                                    ))}
+                                    {bookmarkedOpportunities.map((company) => (
+                                      <CompanyCard
+                                        appliedToNiche={appliedToNiche}
+                                        key={company._id}
+                                        company={company}
+                                        showHighMutualInterest={false}
+                                        external={false}
+                                      />
+                                    ))}
+                                    {otherOpportunities.map((company) => (
+                                      <CompanyCard
+                                        appliedToNiche={appliedToNiche}
+                                        key={company._id}
+                                        company={company}
+                                        showHighMutualInterest={false}
+                                        external={false}
+                                      />
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <Alert>
+                                    <Info className="h-4 w-4" />
+                                    <AlertDescription>
+                                      Your recommendations are still generating. Expand your verified network and bookmark companies to get personalized recommendations.
+                                    </AlertDescription>
+                                  </Alert>
                                 )}
                               </div>
-                            </div>
                           )}
                         </VerificationProtectedContent>
                     </div> 
-                </div>
             )}
             {isLoading && (
-                <div className="flex flex-col items-center justify-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 mb-4"></div>
-                    <p className="text-sm font-medium text-neutral-700">Loading your opportunities database</p>
-                </div>
+              <div className="flex flex-col items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neutral-900 mb-4"></div>
+                <p className="text-sm font-medium text-neutral-400">Loading your opportunities database</p>
+              </div>
             )}
             </div>
-          )}
         </div>
           
     );

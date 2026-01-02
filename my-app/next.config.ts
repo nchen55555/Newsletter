@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
     ],
     domains: ['cdn.sanity.io'],
   },
+  env: {
+    NEXT_DISABLE_SYNC_DYNAMIC_APIS_WARNING: 'true',
+  },
 };
 
 export default nextConfig;

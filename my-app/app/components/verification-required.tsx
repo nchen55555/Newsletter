@@ -12,7 +12,7 @@ interface VerificationRequiredProps {
 }
 
 export function VerificationRequired({ 
-  title = "Request to join The Niche network for access to this content",
+  title = "You need a Niche profile to access this content",
   redirectUrl = "/profile"
 }: VerificationRequiredProps) {
   const router = useRouter();
@@ -22,7 +22,7 @@ export function VerificationRequired({
   };
 
   return (
-      <Alert className="cursor-pointer hover:bg-gray-50" onClick={handleRequestAccess}>
+      <Alert onClick={handleRequestAccess}>
           <Lock className="h-4 w-4" />
           <AlertDescription>
             <span className="font-medium">{title}</span>

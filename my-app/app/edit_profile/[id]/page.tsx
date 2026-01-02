@@ -34,6 +34,7 @@ export default function ExternalProfilePage({ params }: { params: Promise<{ id: 
     getParams();
   }, [params]);
 
+
   if (!data || !profileId) return <Skeleton className="h-12 w-full" />
 
   return (

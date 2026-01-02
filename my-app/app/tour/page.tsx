@@ -516,7 +516,6 @@ const copyEmail = async () => {
                 companyPost={companyPost}
                 isDemo={true}
                 onIntroRequested={() => markActionCompleted('opportunities', 'requestIntro')}
-                onRepost={() => markActionCompleted('opportunities', 'repost')}
                 onShare={() => markActionCompleted('opportunities', 'share')}
               />
             )}

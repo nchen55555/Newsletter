@@ -44,18 +44,18 @@ export function CommitmentPledgeDialog({ open, onAccept }: CommitmentPledgeDialo
         
         <div className="space-y-6 py-4">
           {/* Main pledge text */}
-          <div className="prose prose-sm max-w-none text-neutral-700 leading-relaxed">
+          <div className="prose prose-sm max-w-none text-neutral-400 leading-relaxed">
             <p>
-              By joining The Niche Network, you pledge to uphold a professional standard that respects the time of both our team and partner companies. This includes a commitment to providing timely responses (within 5 business days) to all messages and interview requests, and a strict no-ghosting policy. If your interest in an opportunity changes, you agree to communicate this proactively so we can efficiently reallocate resources.
+              By joining The Niche Network, you pledge to uphold a professional standard that respects the time of both our team and partner companies. This includes a commitment to providing timely responses (within 10 business days) to all messages and interview requests if you initiate them, and a strict no-ghosting policy. If your interest in an opportunity changes, you agree to communicate this proactively so we can efficiently reallocate resources.
             </p>
             <br></br>
             <p>
-              Furthermore, you are responsible for setting clear and accurate expectations within your profile—including your skills, salary requirements, and current commitment level—as this foundational honesty is critical for creating the high-quality matches our community is built on. This information is not sent to our partner companies but rather makes it so that our platform can match most efficiently.
+              Furthermore, you are responsible for setting clear and accurate expectations within your profile—including your skills and search interests—as this foundational honesty is critical for creating the high-quality matches our community is built on. This information is not sent to our partner companies but rather makes it so that our platform can match most efficiently.
             </p>
           </div>
 
           {/* Agreement checkbox */}
-          <div className="flex items-start gap-3 p-4 bg-neutral-50 rounded-lg border">
+          <div className="flex items-start gap-3 p-4 rounded-lg border">
             <button
               onClick={handleAgreementToggle}
               className={`flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
@@ -68,7 +68,7 @@ export function CommitmentPledgeDialog({ open, onAccept }: CommitmentPledgeDialo
             </button>
             <label 
               onClick={handleAgreementToggle}
-              className="text-sm text-neutral-700 cursor-pointer leading-relaxed"
+              className="text-sm text-neutral-400 cursor-pointer leading-relaxed"
             >
               I understand and agree to uphold The Niche Commitment Pledge, including timely communication, accurate profile information, and professional conduct standards outlined above.
             </label>

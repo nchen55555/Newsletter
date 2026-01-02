@@ -5,27 +5,31 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const cookieStore = cookies();
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError || !session) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  }
+
+  // Check session, but don't block unauthenticated users – we just return less data
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const selectFields = session
+    ? 'id, email, linkedin_url, phone_number, personal_website, first_name, last_name, profile_image_url, bio, school'
+    : 'first_name, last_name, profile_image_url';
 
   const { data, error } = await supabase
     .from('subscribers')
-    .select('id, email, linkedin_url, phone_number, personal_website, first_name, last_name, profile_image_url, bio, school')
-    .eq('is_public_profile', 'TRUE')
-    .eq('applied', 'TRUE')
+    .select(selectFields)
+    .eq('applied', 'TRUE');
 
 
   if (error) {
-    console.log(error.message)
+    console.log(error.message);
     return NextResponse.json({
       error: 'Failed to fetch cohort profiles',
       details: error.message,
     }, { status: 500 });
   }
 
-  return NextResponse.json({profiles : data });
+  return NextResponse.json({ profiles: data });
 }
 
     

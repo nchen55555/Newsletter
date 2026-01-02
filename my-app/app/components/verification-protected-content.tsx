@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import { useEffect, useState } from "react";
 import { VerificationRequiredSection } from "./verification-required";
 
 interface VerificationProtectedContentProps {
@@ -8,45 +9,42 @@ interface VerificationProtectedContentProps {
   fallbackTitle?: string;
   fallbackDescription?: string;
   className?: string;
-  hideWhenNotVerified?: boolean;
   redirectUrl?: string;
 }
 
+// Protected content wrapper:
+// - If the user has *not* applied (`applied === false`), show the fallback.
+// - If the user *has* applied (`applied === true`), show the children.
 export function VerificationProtectedContent({ 
   children, 
   sectionTitle = "",
-  fallbackTitle = "Request to join The Niche network for access to this content",
-  fallbackDescription = "Request to join The Niche network for access to this content",
+  fallbackTitle = "You need a Niche profile to access this content",
+  fallbackDescription = "You need a Niche profile to access this content",
   className = "",
-  hideWhenNotVerified = false,
-  redirectUrl = "/profile"
+  redirectUrl = "/profile",
 }: VerificationProtectedContentProps) {
-  const [isVerified, setIsVerified] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
   const [hasApplied, setHasApplied] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkVerificationStatus = async () => {
+    const checkAppliedStatus = async () => {
       try {
         const response = await fetch("/api/get_profile", { credentials: "include" });
         if (response.ok) {
           const profile = await response.json();
-          setIsVerified(profile.verified || false);
-          setHasApplied(profile.applied || false);
+          setHasApplied(!!profile.applied);
         } else {
-          setIsVerified(false);
           setHasApplied(false);
         }
       } catch (error) {
-        console.error("Error checking verification status:", error);
-        setIsVerified(false);
+        console.error("Error checking applied status:", error);
         setHasApplied(false);
       } finally {
         setLoading(false);
       }
     };
 
-    checkVerificationStatus();
+    checkAppliedStatus();
   }, []);
 
   if (loading) {
@@ -54,7 +52,7 @@ export function VerificationProtectedContent({
       <div className={`space-y-6 ${className}`}>
         {sectionTitle && (
           <div>
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">{sectionTitle}</h2>
+            <h2 className="text-2xl font-bold text-neutral-200 mb-2">{sectionTitle}</h2>
           </div>
         )}
         <div className="animate-pulse">
@@ -66,10 +64,9 @@ export function VerificationProtectedContent({
     );
   }
 
-  if (!isVerified) {
-    if ((hideWhenNotVerified && hasApplied) || (!isVerified && !hasApplied)) {
+  // If user has not applied yet, show the gated fallback
+  if (!hasApplied) {
       return (
-        <div>
         <VerificationRequiredSection 
           title={fallbackTitle}
           description={fallbackDescription}
@@ -78,20 +75,19 @@ export function VerificationProtectedContent({
         >
           {sectionTitle && (
             <div>
-              <h2 className="text-2xl font-bold text-neutral-900 mb-2">{sectionTitle}</h2>
+              <h2 className="text-2xl font-bold text-neutral-200 mb-2">{sectionTitle}</h2>
             </div>
           )}
         </VerificationRequiredSection>
-        </div>
       );
-    }
   }
 
+  // Applied users see the protected content
   return (
     <div className={className}>
       {sectionTitle && (
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-neutral-900 mb-2">{sectionTitle}</h2>
+          <h2 className="text-2xl font-bold text-neutral-200 mb-2">{sectionTitle}</h2>
         </div>
       )}
       {children}

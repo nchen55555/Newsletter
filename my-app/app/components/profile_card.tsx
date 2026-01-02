@@ -1,110 +1,127 @@
+"use client";
+
+import { useState } from "react";
 import { ProfileData } from "@/app/types";
 import ProfileAvatar from "@/app/components/profile_avatar";
-import { connectionLabels } from "./connection-scale";
+import {
+  type ConnectionStatusType
+} from "./connection-status-helpers";
+import { ConnectDialog } from "./connect_dialog";
+import type { ConnectVerificationStatus } from "./connect_dialog";
 
 function ProfileCard({
   profile,
   onClick,
   connectionStatus = 'none',
   connectionRating,
-  tags,
+  size = 'default',
 }: {
   profile: ProfileData;
   onClick: () => void;
-  connectionStatus?: 'connected' | 'pending_sent' | 'requested' | 'none';
+  connectionStatus?: ConnectionStatusType;
   connectionRating?: number;
-  tags?: string[];
+  size?: 'default' | 'compact';
 }) {
+  const [showConnectDialog, setShowConnectDialog] = useState(false);
+  const [isSubmittingConnect, setIsSubmittingConnect] = useState(false);
+  const [connectVerificationStatus, setConnectVerificationStatus] = useState<ConnectVerificationStatus>("idle");
+  const [connectStatusMessage, setConnectStatusMessage] = useState("");
 
-  const getConnectionBadges = () => {
-    const badges = [];
-    
-    // Connection status badge
-    switch (connectionStatus) {
-      case 'connected':
-        badges.push(
-          <div key="status" className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
-            Connected
-          </div>
-        );
-        break;
-      case 'pending_sent':
-        badges.push(
-          <div key="status" className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
-            Request Sent
-          </div>
-        );
-        break;
-      case 'requested':
-        badges.push(
-          <div key="status" className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
-            Requested
-          </div>
-        );
-        break;
-    }
-    
-    // Rating badge (only if we have a rating and connection)
-    if (connectionRating && connectionStatus !== 'none') {
-      console.log("rating badge", connectionLabels[connectionRating - 1]);
-      badges.push(
-        <div key="rating" className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
-          {connectionLabels[connectionRating - 1]}
-        </div>
-      );
-    }
-    
-    return badges.length > 0 ? (
-      <div className="flex gap-2">
-        {badges}
-      </div>
-    ) : null;
+  const getConnectionStatus = () => {
+    return connectionStatus;
   };
 
+  const getExistingConnectionRating = () => {
+    return connectionRating;
+  };
+
+  const handleConnectSubmit = async (scaleValue: number, note?: string) => {
+    setIsSubmittingConnect(true);
+    setConnectVerificationStatus("pending");
+
+    try {
+      const response = await fetch("/api/post_connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          connect_id: profile.id,
+          rating: scaleValue,
+          note: note || "",
+        }),
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        setConnectVerificationStatus("success");
+        setConnectStatusMessage("Connection request sent successfully!");
+        setTimeout(() => {
+          setShowConnectDialog(false);
+          window.location.reload();
+        }, 1500);
+      } else {
+        setConnectVerificationStatus("error");
+        setConnectStatusMessage("Failed to send connection request");
+      }
+    } catch {
+      setConnectVerificationStatus("error");
+      setConnectStatusMessage("An error occurred");
+    } finally {
+      setIsSubmittingConnect(false);
+    }
+  };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button')) {
+      e.stopPropagation();
+      return;
+    }
+    onClick();
+  };
+
+  // Size-based styling
+  const cardMinHeight = size === 'compact' ? 'min-h-[300px]' : 'min-h-[400px]';
+  const imageHeight = size === 'compact' ? 'h-[200px]' : 'h-[300px]';
+
   return (
-    <div className="group cursor-pointer" onClick={onClick}>
-      <div className="bg-white border border-neutral-200 rounded-2xl hover:shadow-lg transition-all duration-300 p-6 relative flex items-center gap-6 min-h-[120px]">
-        {/* Profile Image */}
-        <div className="flex-shrink-0">
+    <div className="group cursor-pointer" onClick={handleCardClick}>
+      <div className={`bg-card border border-border rounded-3xl hover:shadow-lg transition-all duration-300 flex flex-col ${cardMinHeight}`}>
+        {/* Profile Image - Full width, fixed height */}
+        <div className={`w-full ${imageHeight} flex-shrink-0 overflow-hidden rounded-t-3xl`}>
           <ProfileAvatar
             name={`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email || 'User'}
             imageUrl={profile.profile_image_url || undefined}
-            size={80}
+            size={400}
+            shape="square"
             editable={false}
-            className="w-20 h-20 rounded-full transition-all duration-300"
+            className="w-full h-full"
           />
         </div>
-        
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          {/* Name and Connection Badge */}
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-xl font-semibold text-neutral-900">
+
+        {/* Content section - Flexible height */}
+        <div className="p-4 flex flex-col flex-1">
+          {/* Name with verification badge */}
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-lg font-semibold text-foreground">
               {profile.first_name} {profile.last_name}
             </h3>
-            {getConnectionBadges()}
           </div>
-          
-          {/* Bio */}
-          {profile.bio && (
-            <p className="text-neutral-600 text-sm leading-relaxed line-clamp-3 text-left">
-              {profile.bio}
-            </p>
-          )}
 
-          {/* Optional tagged text */}
-          {tags && tags.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {tags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
+          {/* Bio text */}
+          {/* <p className="text-neutral-600 text-sm leading-relaxed mb-3 line-clamp-2">
+            {profile.bio || getConnectionRatingText() || 'No bio available'}
+          </p> */}
+          <ConnectDialog
+              open={showConnectDialog}
+              onOpenChange={setShowConnectDialog}
+              firstName={profile.first_name}
+              isSubmitting={isSubmittingConnect}
+              verificationStatus={connectVerificationStatus}
+              statusMessage={connectStatusMessage}
+              onSubmit={handleConnectSubmit}
+              connectionStatus={getConnectionStatus()}
+              existingRating={getExistingConnectionRating()}
+              compact={true}
+            />
         </div>
       </div>
     </div>

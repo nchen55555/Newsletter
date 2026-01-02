@@ -25,7 +25,7 @@ export async function GET(
     // Get the current user's profile to check their connections
     const { data: currentUser, error: userError } = await supabase
       .from('subscribers')
-      .select('id, connections, connections_new')
+      .select('id, connections_new')
       .eq('email', session.user.email)
       .single();
 

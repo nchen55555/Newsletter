@@ -57,25 +57,23 @@ export default function Post({
     },
   });
 
-  // Check if user is verified
+  // Load current user profile + connections (verification no longer gated)
   useEffect(() => {
     let isMounted = true;
-    async function checkVerification() {
+    async function loadProfile() {
       try {
         const res = await fetch("/api/get_profile", { credentials: "include" });
         if (!res.ok) return;
         const profile = await res.json();
         if (isMounted) {
-          setIsVerified(profile.verified || false);
+          setIsVerified(true); // always allow posting for logged-in users
           setUserProfile({
             id: profile.id,
             first_name: profile.first_name || '',
             last_name: profile.last_name || '',
             profile_image_url: profile.profile_image_url
-
           });
           
-          // Combine connections and pending connections
           const allConnections = [
             ...(profile.connections_new || []),
             ...(profile.pending_connections_new || [])
@@ -83,13 +81,10 @@ export default function Post({
           setConnections(allConnections);
         }
       } catch (e) {
-        console.log("Failed to fetch verification status:", e);
-        if (isMounted) {
-          setIsVerified(false);
-        }
+        console.log("Failed to fetch profile:", e);
       }
     }
-    checkVerification();
+    loadProfile();
     return () => { isMounted = false; };
   }, []);
 
@@ -119,8 +114,6 @@ export default function Post({
   // Handle audience selection and filter connections
   const handleAudienceSelection = async (scale: number) => {
     setAudienceScale(scale);
-
-    console.log("SCALE ", scale)
     
     // Filter connections based on rating that matches the selected scale
     const filtered = connections.filter(connection => connection.rating === scale);
@@ -205,8 +198,8 @@ export default function Post({
     }
   };
 
-  // Don't render if user is not verified
-  if (!isVerified) return null;
+  // If profile hasn't loaded yet, don't render the dialog trigger
+  if (!isVerified || !userProfile) return null;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

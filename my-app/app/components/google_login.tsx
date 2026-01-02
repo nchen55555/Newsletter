@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useSubscriptionContext } from "./subscription_context"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Loader2 } from "lucide-react"
 
 interface GoogleLoginProps {
     buttonText: string
@@ -30,7 +31,7 @@ export function GoogleLogin({
         supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo:  flowType === 'subscribe' ? `${location.origin+"/access"}` : `${location.origin}`,
+                redirectTo:  flowType === 'subscribe' ? `${location.origin+"/access"}` : `${location.origin+"/login"}`,
                 // scopes: 'openid email profile https://www.googleapis.com/auth/calendar.readonly',
                 queryParams: {
                     // access_type: 'offline',
@@ -54,35 +55,20 @@ export function GoogleLogin({
         onClick={handleGoogleLogin}
         disabled={isAuthLoading || loading}
         variant="default"
-        size="lg"
-        className="bg-black hover:bg-black/90 text-lg px-8 py-4 h-14"
+        size={flowType === 'subscribe' ? 'lg' : 'sm'}
+        className={flowType === 'subscribe'
+          ? "bg-white hover:bg-white/90 text-lg px-8 py-4 h-14"
+          : "bg-white hover:bg-white/90 ml-auto"
+        }
         >
         {(loading || isAuthLoading) ? (
             <>
-            <svg
-                className="mr-2 h-4 w-4 animate-spin"
-                viewBox="0 0 24 24"
-                fill="none"
-            >
-                <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                />
-                <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                />
-            </svg>
-            loading...
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <link rel="alternate" href="atom.xml" type="application/atom+xml" title="Atom" />loading...
             </>
         ) : buttonText}
         </Button>)}
-        </div>   
+        </div>
     )
 
 }

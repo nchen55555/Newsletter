@@ -33,7 +33,6 @@ export type ProfileData = {
     connections_new?: ConnectionData[];
     pending_connections_new?: ConnectionData[];
     requested_connections_new?: ConnectionData[];
-    verified?: boolean;
     application_tracker_confirmed?: boolean,
     bookmarked_companies?: number[];
     needs_visa_sponsorship?: boolean;
@@ -49,6 +48,17 @@ export type ProfileData = {
     interview_status_updated_at?: string;
     timeline_of_search?: string;  
     github_url?: string;
+    custom_links?: string;
+    visibility_profile_settings?: {
+      bio: string;
+      interests: string;
+      projects: string;
+      links: string;
+      documents: string;
+      network: string;
+      companies: string;
+      priorities: string;
+    };
   };
 
 // UI Form State for Profile
@@ -78,7 +88,6 @@ export type ProfileFormState = {
   pending_connections_new?: ConnectionData[];
   interests?: string;
   network_recommendations?: NetworkRecommendation[];
-  verified?: boolean;
   outreach_frequency?: number;
   onboarding_step?: number;
   github_url?: string;
@@ -211,7 +220,6 @@ export interface Step3UpdateData {
   opportunities_looking_for?: string;
   network_recommendations?: NetworkRecommendation[];
   applied?: boolean;
-  verified?: boolean;
 }
 
 // Google Calendar API types

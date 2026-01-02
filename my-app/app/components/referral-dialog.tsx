@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2Icon, Terminal, Copy, Link } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CompanyWithImageUrl } from "@/app/types";
 import { Users } from "lucide-react";
 
@@ -18,20 +18,23 @@ interface ReferralDialogProps {
   title?: string;
   description?: string;
   forceFormMode?: boolean;
+  allowClose?: boolean;
 }
 
-export function ReferralDialog({ 
-  open, 
-  onOpenChange, 
+export function ReferralDialog({
+  open,
+  onOpenChange,
   triggerElement,
   title = "Refer Someone to The Niche",
   description = "Access to the Niche is strictly referral-based.",
-  forceFormMode = false
+  forceFormMode = false,
+  allowClose = false
 }: ReferralDialogProps) {
   const [referralType, setReferralType] = useState<"link" | "form">(forceFormMode ? "form" : "link");
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | undefined>(undefined);
   const [selectedCompany, setSelectedCompany] = useState<CompanyWithImageUrl | null>(null);
   const [allCompanies, setAllCompanies] = useState<CompanyWithImageUrl[]>([]);
+  const [companySearch, setCompanySearch] = useState("");
   const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [referralName, setReferralName] = useState("");
@@ -48,7 +51,6 @@ export function ReferralDialog({
     setProfileLoading(true);
     fetch("/api/get_profile", { credentials: "include" })
       .then(res => {
-        console.log("Profile response status:", res.status);
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
@@ -177,6 +179,11 @@ export function ReferralDialog({
 
   // Reset form when dialog closes
   const handleOpenChange = (newOpen: boolean) => {
+    // Only allow closing if allowClose is true, or a referral was successfully submitted
+    if (!newOpen && !allowClose && !referralFormSuccess) {
+      return;
+    }
+
     onOpenChange(newOpen);
     if (!newOpen) {
       // Reset form state when closing
@@ -198,44 +205,44 @@ export function ReferralDialog({
           {triggerElement}
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[600px] p-8" showCloseButton={false}>
+      <DialogContent className="sm:max-w-[600px] p-8" showCloseButton={allowClose}>
         <DialogHeader className="mb-2">
           <DialogTitle className="text-2xl font-semibold">{title}</DialogTitle>
-          <DialogDescription className="text-neutral-600 mt-2">
+          <DialogDescription className="text-neutral-200 mt-2">
             {description}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
           {/* Referral Type Selection */}
           {!forceFormMode && (
-            <div className="flex gap-4 p-4 bg-neutral-50 rounded-lg">
+            <div className="flex gap-4 p-4 rounded-lg">
             <button
               onClick={() => setReferralType("link")}
               className={`flex-1 p-3 rounded-md border-2 transition-colors ${
                 referralType === "link"
-                  ? "border-neutral-900 bg-white shadow-sm"
-                  : "border-neutral-200 hover:border-neutral-300"
+                  ? "border-neutral-100 hover:border-neutral-300"
+                  : "border-neutral-900 shadow-sm"
               }`}
             >
               <div className="flex items-center gap-2 mb-2">
                 <Link className="w-4 h-4" />
                 <span className="font-medium">Share Link</span>
               </div>
-              <p className="text-sm text-neutral-600">If there is a specific opportunity that you think would be a great fit for a friend, share this link to them!</p>
+              <p className="text-sm text-neutral-400">If there is a specific opportunity that you think would be a great fit for a friend, share this link to them for them to request access.</p>
             </button>
             <button
               onClick={() => setReferralType("form")}
               className={`flex-1 p-3 rounded-md border-2 transition-colors ${
                 referralType === "form"
-                  ? "border-neutral-900 bg-white shadow-sm"
-                  : "border-neutral-200 hover:border-neutral-300"
+                  ? "border-neutral-100 hover:border-neutral-300"
+                  : "border-neutral-900 shadow-sm"
               }`}
             >
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-4 h-4" />
                 <span className="font-medium">Submit Form</span>
               </div>
-              <p className="text-sm text-neutral-600">Fill out a quick form with your friends&apos; details and we will reach out to them directly if they are a good fit.</p>
+              <p className="text-sm text-neutral-400">Fill out a quick form with your friends&apos; details and we will reach out to them!</p>
             </button>
           </div>
           )}
@@ -244,30 +251,55 @@ export function ReferralDialog({
           {!forceFormMode && referralType === "link" && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-base font-medium">Select Company</Label>
-                <Select value={selectedCompanyId?.toString() || ""} onValueChange={(value) => {
-                  const companyId = parseInt(value);
-                  const company = allCompanies.find(c => c.company === companyId);
-                  setSelectedCompany(company || null);
-                  setSelectedCompanyId(companyId);
-                }} disabled={loadingCompanies}>
-                  <SelectTrigger className="h-12">
-                    <SelectValue placeholder={loadingCompanies ? "Loading companies..." : "Choose a company to refer to..."} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allCompanies.map((company) => (
-                      <SelectItem key={company._id} value={company.company.toString()}>
-                        {company.alt || company.caption || `Company ${company.company}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="text-base font-medium text-neutral-200">Search Company</Label>
+                <Input
+                  value={companySearch}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setCompanySearch(value);
+                    // Reset selection when search changes
+                    setSelectedCompanyId(undefined);
+                    setSelectedCompany(null);
+                  }}
+                  placeholder={loadingCompanies ? "Loading companies..." : "Start typing a company name..."}
+                  className="h-12"
+                />
+                {!loadingCompanies && companySearch.trim().length > 0 && (
+                  <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-neutral-200 shadow-sm">
+                    {allCompanies
+                      .filter((company) => {
+                        const name = company.alt || company.caption || `Company ${company.company}`;
+                        return name.toLowerCase().includes(companySearch.toLowerCase());
+                      })
+                      .slice(0, 8)
+                      .map((company) => {
+                        const name = company.alt || company.caption || `Company ${company.company}`;
+                        const isSelected = selectedCompanyId === company.company;
+                        return (
+                          <button
+                            key={company._id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCompany(company);
+                              setSelectedCompanyId(company.company);
+                              setCompanySearch(name);
+                            }}
+                            className={`w-full text-left px-4 py-2 text-sm ${
+                              isSelected ? "font-medium" : ""
+                            }`}
+                          >
+                            {name}
+                          </button>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
 
               {selectedCompany && selectedCompanyId && (
                 <div className="space-y-4">
-                  <div className="p-4 bg-neutral-50 rounded-lg">
-                    <Label className="text-sm font-medium text-neutral-700">Your Referral Link</Label>
+                  <div className="p-4 rounded-lg">
+                    <Label className="text-sm font-medium text-neutral-200">Your Referral Link</Label>
                     <div className="flex gap-2 mt-2">
                       <Input
                         value={generateReferralLink()}

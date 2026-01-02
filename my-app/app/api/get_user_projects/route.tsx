@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
       details: error.message,
     }, { status: 500 });
   }
-  console.log("Project Data ", data);
 
     return NextResponse.json({
       project_urls: data?.[0]?.project_urls || [],

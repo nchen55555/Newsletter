@@ -62,6 +62,23 @@ export function ConnectionScale({
 
   return (
     <div className="space-y-6">
+      {mode !== 'audience' && selectedValue !== 1 && showConnectButton && (
+        <div className="rounded-lg border border-blue-100 bg-blue-50 px-5 py-4 text-sm text-blue-800 space-y-3">
+          <p className="font-medium">
+            Only connect with people you&apos;d actually want to:
+          </p>
+
+          <ul className="text-xs text-blue-900 list-disc list-inside space-y-2">
+            <li>Use as a benchmark for opportunities recommended to you</li>
+            <li>See what opportunities they have been interested in</li>
+          </ul>
+          <p className="text-xs text-blue-900">
+            Your connections will not see your note or rating, but we&apos;ll
+            use it to power better recommendations.
+          </p>
+        </div>
+      )}
+
       <div>
         <Label className="text-base font-medium">
           {mode === 'audience' 
@@ -97,29 +114,13 @@ export function ConnectionScale({
       </div>
 
       {mode !== 'audience' && selectedValue !== 1 && showConnectButton && (
-
         <div className="space-y-2">
-           <div className="rounded-lg border border-blue-100 bg-blue-50 px-5 py-4 text-sm text-blue-800 space-y-3 mb-4">
-            <p className="font-medium">
-              Only connect with people you&apos;d actually want to:
-            </p>
-
-            <ul className="text-xs text-blue-900 list-disc list-inside space-y-2">
-              <li>Use as a benchmark for opportunities recommended to you</li>
-              <li>See what opportunities they have been interested in</li>
-            </ul>
-            <p className="text-xs text-blue-900">
-              Your connections will not see your note or rating, but we&apos;ll
-              use it to power better recommendations.
-            </p>
-          </div>
-
-          <Label className="text-sm font-medium text-neutral-800">
+          <Label className="text-sm font-medium text-neutral-200">
             How do you know {personName || "this person"}?{" "}
             <span className="text-neutral-500">(min 50 characters)</span>
           </Label>
           <textarea
-            className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-neutral-900 resize-none"
+            className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-400 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-neutral-900 resize-none"
             rows={3}
             value={connectionNote}
             onChange={(e) => setConnectionNote(e.target.value)}
@@ -142,9 +143,9 @@ export function ConnectionScale({
               selectedValue === null ||
               (showConnectButton && connectionNote.trim().length < 50)
             }
-            className="bg-neutral-900 hover:bg-neutral-800 text-white"
+            className="bg-transparent text-neutral-200 hover:bg-neutral-900"
           >
-            {isSubmitting ? "Submitting..." : "Submit"}
+            {isSubmitting ? "submitting..." : "submit"}
           </Button>
         </div>
       )}

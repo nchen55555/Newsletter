@@ -82,6 +82,8 @@ export async function GET(request: Request){
             bookmarked_companies: subscriber?.bookmarked_companies,
             parsed_transcript_json: subscriber?.parsed_transcript_json,
             connections_new: subscriber?.connections_new,
+            pending_connections_new: subscriber?.pending_connections_new,
+            requested_connections_new: subscriber?.requested_connections_new,
             company_recommendations: subscriber?.company_recommendations,
             github_url_data: subscriber?.github_url_data, 
             github_vector_embeddings: subscriber?.github_vector_embeddings,
@@ -90,7 +92,8 @@ export async function GET(request: Request){
             interview_status_updated_at: subscriber?.interview_status_updated_at,
             // Client information from URL - not from database
             client_id: clientId,
-            is_client_specific: clientId !== null
+            is_client_specific: clientId !== null,
+            visibility_profile_settings: subscriber?.visibility_profile_settings
         })
 
     } catch (error) {

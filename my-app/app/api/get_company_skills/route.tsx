@@ -35,7 +35,6 @@ export async function GET(request: Request) {
 
     // Get match profiles (already parsed by Supabase)
     const matchProfiles = company.candidate_profiles_good || [];
-    console.log('📊 API: Match profiles:', matchProfiles)
 
     const response = {
       success: true,

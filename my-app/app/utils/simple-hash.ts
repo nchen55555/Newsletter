@@ -179,8 +179,7 @@ export function decodeWithClient(hash: string): { candidateId: number; clientId:
     }
     
     return { candidateId, clientId };
-  } catch (error) {
-    console.log('Error decoding candidate_client hash:', error);
+  } catch{
     return null;
   }
 }

@@ -1,16 +1,14 @@
 'use client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { ProfileFormState, ProfileData, CompanyWithImageUrl, ConnectionData } from '@/app/types'
-import ProfileAvatar from './profile_avatar'
+import { ProfileFormState, ProfileData, CompanyWithImageUrl } from '@/app/types'
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { Upload, Search, UserPlus, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Upload, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { CompanyCard } from '@/app/companies/company-cards'
-import ProfileCard from './profile_card'
 import { ReferralDialog } from './referral-dialog'
-import { ConnectDialog } from './connect_dialog'
-
+import { PeopleSearch } from './people-search'
+import { useRouter } from 'next/navigation'
 interface Question {
   id: string
   index: number
@@ -24,101 +22,83 @@ interface Question {
 }
 
 const questions: Question[] = [
-  {
-    id: 'welcome',
-    index: 0,
-    field: 'first_name', // Using existing field as placeholder
-    question: "Welcome to The Niche!",
-    description: "We are excited to get to know you better. Our goal is to introduce you directly to opportunities and founders at some of the highest growth startups while helping you curate a personalized, professional network that aligns with your interests, skillsets, and verified by your existing professional community. \nIn the next coming steps, we ask for a profile pic, your transcript, resume, and for you to write a quick bio about yourself. It takes us 2-3 days for us to verify your profile if there is a mutual fit to give you access to the network. Let's get started!",
-    type: 'button',
-    required: true
-  },
+  // {
+  //   id: 'welcome',
+  //   index: 0,
+  //   field: 'first_name', // Using existing field as placeholder
+  //   question: "Welcome to The Niche!",
+  //   description: "Our goal is to help you curate a personalized, professional network that aligns with your interests, skillsets, and verified by your existing professional community. We introduce you directly to opportunities and founders at some of the highest growth startups while helping you build your network. \nLet's build your profile!",
+  //   type: 'button',
+  //   required: true
+  // },
   {
     id: 'profile_image',
-    index: 1, 
+    index: 0, 
     field: 'profile_image',
     question: "Let's start with your profile picture",
     description: "Upload a photo to help us get to know you better",
     type: 'file',
     required: true
   },
-  {
-    id: 'first_name',
-    index: 2, 
-    field: 'first_name',
-    question: "What's your first name?",
-    type: 'text',
-    required: true,
-    placeholder: 'Your first name'
-  },
-  {
-    id: 'last_name',
-    index: 3, 
-    field: 'last_name',
-    question: "And your last name?",
-    type: 'text',
-    required: true,
-    placeholder: 'Your last name'
-  },
-  {
-    id: 'school',
-    index: 4, 
-    field: 'school',
-    question: "Which school do you attend or did you graduate from?",
-    type: 'text',
-    required: true,
-    placeholder: 'Start typing your school name...',
-    options: ['MIT', 'Harvard', 'Brown', 'Columbia', 'Georgia Tech', 'Stanford', 'Waterloo', 'UIUC', 'University of Michigan', 'UT Austin', 'Yale']
-  },
-  {
-    id: 'phone',
-    index: 5, 
-    field: 'phone_number',
-    question: "What's the best phone number to reach you at?",
-    type: 'tel',
-    required: true,
-    placeholder: 'e.g. 555-123-4567'
-  },
-  {
-    id: 'linkedin',
-    index: 6, 
-    field: 'linkedin_url',
-    question: "What's your LinkedIn profile URL?",
-    type: 'url',
-    required: true,
-    placeholder: 'https://www.linkedin.com/in/...'
-  },
-  {
-    id: 'resume',
-    index: 7, 
-    field: 'resume_file',
-    question: "Please upload your resume",
-    description: "PDF, DOC, or DOCX files only (max 5MB)",
-    type: 'file',
-    required: true
-  },
-  {
-    id: 'transcript',
-    index: 8, 
-    field: 'transcript_file',
-    question: "Upload your transcript",
-    description: "PDF, DOC, or DOCX files only (max 5MB)",
-    type: 'file',
-    required: true
-  },
+  // {
+  //   id: 'school',
+  //   index: 2, 
+  //   field: 'school',
+  //   question: "Which school do you attend or did you graduate from?",
+  //   type: 'text',
+  //   required: true,
+  //   placeholder: 'Start typing your school name...',
+  //   options: ['MIT', 'Harvard', 'Brown', 'Columbia', 'Georgia Tech', 'Stanford', 'Waterloo', 'UIUC', 'University of Michigan', 'UT Austin', 'Yale']
+  // },
+  // {
+  //   id: 'phone',
+  //   index: 1, 
+  //   field: 'phone_number',
+  //   question: "What's the best phone number to reach you at?",
+  //   type: 'tel',
+  //   required: true,
+  //   placeholder: 'e.g. 555-123-4567'
+  // },
+  // {
+  //   id: 'linkedin',
+  //   index: 4, 
+  //   field: 'linkedin_url',
+  //   question: "What's your LinkedIn profile URL?",
+  //   type: 'url',
+  //   required: true,
+  //   placeholder: 'https://www.linkedin.com/in/...'
+  // },
+  // {
+  //   id: 'resume',
+  //   index: 2, 
+  //   field: 'resume_file',
+  //   question: "Please upload your resume",
+  //   description: "PDF, DOC, or DOCX files only (max 5MB)",
+  //   type: 'file',
+  //   required: true
+  // },
+  // {
+  //   id: 'transcript',
+  //   index: 6, 
+  //   field: 'transcript_file',
+  //   question: "Upload your transcript",
+  //   description: "PDF, DOC, or DOCX files only (max 5MB)",
+  //   type: 'file',
+  //   required: true
+  // },
   {
     id: 'bio',
-    index: 9, 
+    index: 1, 
     field: 'bio',
     question: "Tell us about yourself",
-    description: "Give us an introduction of who you are, what you are interested in, and what you are currently doing!",
+    description: "Give us an introduction of who you are, what you are interested in, and what you are currently doing.",
     type: 'textarea',
     required: true,
     placeholder: 'I currently lead product at OpenMind, a Series A startup building out software to help robots learn from each other...'
   },
   {
     id: 'website',
-    index: 10, 
+    index: 2, 
     field: 'personal_website',
     question: "Do you have a personal website?",
     description: "Optional - share if you have one",
@@ -128,9 +108,9 @@ const questions: Question[] = [
   },
   {
     id: 'github_url',
-    index: 11, 
+    index: 3, 
     field: 'github_url',
-    question: "Do you have a github?",
+    question: "Share your github",
     description: "Share the link - it should be of the format of https://github.com/username",
     type: 'url',
     required: true,
@@ -138,52 +118,52 @@ const questions: Question[] = [
   },
   {
     id: 'companies',
-    index: 12, 
+    index: 4, 
     field: 'bookmarked_companies', 
     question: "Explore opportunities",
-    description: "The Niche works with a select cohort of high-talent density startups. We want to get a better understanding of your interests. Please bookmark companies that interest you!",
+    description: "The Niche partners with a select cohort of high talent-density startups. We want to get a better understanding of your interests. Please bookmark companies that interest you!",
     type: 'companies',
     required: false
   },
-  {
-    id: 'public_profile',
-    index: 13, 
-    field: 'is_public_profile',
-    question: "Allow founders to view your Niche profile?",
-    description: "Allow your profile to be public to our partner companies so that when we warm intro, they can see your curated Niche profile.",
-    type: 'toggle',
-    required: true
-  },
-  {
-    id: 'newsletter',
-    index: 14, 
-    field: 'newsletter_opt_in',
-    question: "Stay updated with new company profiles?",
-    description: "Get an email when we cover a new company. We drop a maximum of two company profiles each week.",
-    type: 'toggle',
-    required: true
-  },
-  {
-    id: 'visa',
-    index: 15, 
-    field: 'needs_visa_sponsorship',
-    question: "Do you need visa sponsorship?",
-    description: "For employment in the US",
-    type: 'toggle',
-    required: true
-  },
+  // {
+  //   id: 'public_profile',
+  //   index: 8, 
+  //   field: 'is_public_profile',
+  //   question: "Allow founders to view your Niche profile?",
+  //   description: "Allow your profile to be public to our partner companies so that when we warm intro, they can see your curated Niche profile.",
+  //   type: 'toggle',
+  //   required: true
+  // },
+  // {
+  //   id: 'newsletter',
+  //   index: 9, 
+  //   field: 'newsletter_opt_in',
+  //   question: "Stay updated with new company profiles?",
+  //   description: "Get an email when we cover a new company. We drop a maximum of two company profiles each week.",
+  //   type: 'toggle',
+  //   required: true
+  // },
+  // {
+  //   id: 'visa',
+  //   index: 10, 
+  //   field: 'needs_visa_sponsorship',
+  //   question: "Do you need visa sponsorship?",
+  //   description: "For employment in the US",
+  //   type: 'toggle',
+  //   required: true
+  // },
   {
     id: 'networking',
-    index: 16, 
+    index: 5, 
     field: 'pending_connections_new', 
-    question: "Build your verifiable professional network",
-    description: "Connect with 1-2 people that you would consider part of your closest verifiable professional network. We use your connections to tailor recommendations and opportunities for you.",
+    question: "Curate your Professional Network",
+    description: "Connect with 2-3 People Who You Want to Define Your Career Trajectory. We use your connections to tailor recommendations and opportunities for you.",
     type: 'networking',
     required: true
   },
   {
     id: 'network_recommendations',
-    index: 17, 
+    index: 6, 
     field: 'network_recommendations',
     question: "Recommend 2 or more of your smartest technical friends to The Niche.",
     description: "Build your verified professional network on The Niche. We index on your network to recommend you opportunities.",
@@ -201,7 +181,7 @@ export default function ProfileInfoChatbot({
 }: {
   form: ProfileFormState,
   setForm: React.Dispatch<React.SetStateAction<ProfileFormState>>
-  onComplete?: (isComplete: boolean) => void
+  onComplete?: (isComplete: boolean) => Promise<void> | void
   initialStep?: number
 }) {
   const initialQuestionIndex = useMemo(() => {
@@ -221,17 +201,9 @@ export default function ProfileInfoChatbot({
   const [loadingCompanies, setLoadingCompanies] = useState(false)
   const [allProfiles, setAllProfiles] = useState<ProfileData[]>([])
   const [loadingProfiles, setLoadingProfiles] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  
-  // Dialog and networking state
-  const [selectedProfile, setSelectedProfile] = useState<ProfileData | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'error' | 'pending'>('idle')
-  const [statusMessage, setStatusMessage] = useState('')
   const [isUploadingProfileImage, setIsUploadingProfileImage] = useState(false)
   const [isUploadingFile, setIsUploadingFile] = useState(false)
   const [uploadComplete, setUploadComplete] = useState<{[key: string]: boolean}>({})
-  const [dialogOpen, setDialogOpen] = useState(false)
   const [currentUserData, setCurrentUserData] = useState<ProfileData | null>(null)
   const [buttonClicked, setButtonClicked] = useState<{[key: string]: boolean}>({})
   const [showNetworkReferralDialog, setShowNetworkReferralDialog] = useState(false)
@@ -243,6 +215,8 @@ export default function ProfileInfoChatbot({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const toggleRef = useRef<HTMLDivElement>(null)
   const toggleRef2 = useRef<HTMLDivElement>(null)
+
+  const router = useRouter()
 
   const currentQuestion = questions[currentQuestionIndex]
   const isComplete = currentQuestionIndex >= questions.length
@@ -481,7 +455,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     <div className="relative">
       {/* Carousel Container */}
       <div className="overflow-hidden rounded-lg">
-        <CompanyCard key={currentCompany._id} company={currentCompany} potential={currentCompany.pending_partner} external={!currentCompany.partner}/>
+        <CompanyCard key={currentCompany._id} company={currentCompany} external={!currentCompany.partner}/>
       </div>
 
       {/* Navigation Controls */}
@@ -529,121 +503,6 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     </div>
   )
 }
-  // Filter profiles based on search query (same logic as /people/ page)
-  const searchResults = allProfiles.filter(profile => {
-    const hasNames = profile.first_name && 
-                    profile.last_name && 
-                    profile.first_name.trim() !== '' && 
-                    profile.last_name.trim() !== '';
-    
-    if (!hasNames || !searchQuery.trim()) return false; // Only show results when searching
-    
-    const fullName = `${profile.first_name} ${profile.last_name}`.toLowerCase();
-    const query = searchQuery.toLowerCase();
-    return fullName.includes(query);
-  }).slice(0, 8) // Limit to 8 results like the people page
-
-  // Get connection status between current user and another profile (same logic as /people/ page)
-  const getConnectionStatus = (profile?: ProfileData | null): 'connected' | 'pending_sent' | 'requested' | 'none' => {
-    // If we don't have the current user OR the other profile/id, bail early.
-    if (!currentUserData || !profile || !profile.id) return 'none';
-
-    // Normalize arrays in case backend returns null/undefined
-    const userConnections = Array.isArray(currentUserData.connections_new) ? currentUserData.connections_new : [];
-    const userPendingConnections = Array.isArray(currentUserData.pending_connections_new) ? currentUserData.pending_connections_new : [];
-    const userRequestedConnections = Array.isArray(currentUserData.requested_connections_new) ? currentUserData.requested_connections_new : [];
-
-    // Normalize the profile id (stringify to be safe if backend mixes types)
-    const pid = String(profile.id);
-
-    const isConnected = userConnections.some((conn: ConnectionData) => String(conn.connect_id) === pid);
-    if (isConnected) return 'connected';
-
-    const isPendingSent = userPendingConnections.some((conn: ConnectionData) => String(conn.connect_id) === pid);
-    if (isPendingSent) return 'pending_sent';
-
-    const isRequested = userRequestedConnections.some((conn: ConnectionData) => String(conn.connect_id) === pid);
-    if (isRequested) return 'requested';
-
-    return 'none';
-  };
-
-
-  // Networking helper functions
-  const handleDialogChange = (open: boolean) => {
-    setDialogOpen(open)
-    if (!open) {
-      // Reset status when dialog closes
-      setVerificationStatus('idle')
-      setStatusMessage('')
-      setSelectedProfile(null)
-    }
-  }
-
-  const handleConnectClick = (profile: ProfileData) => {
-    setSelectedProfile(profile)
-    setDialogOpen(true)
-  }
-
-  const handleConnectionScale = async (scaleValue: number, note?: string) => {
-    if (!selectedProfile) return
-
-    setIsSubmitting(true)
-    setVerificationStatus('idle')
-    
-    try {
-      const response = await fetch('/api/post_connect', {
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          connect_id: selectedProfile.id,
-          rating: scaleValue,
-          note: note
-        })
-      })
-      
-      if (response.ok) {
-        const result = await response.json()
-        if (result.type === 'mutual') {
-          setVerificationStatus('success')
-          setStatusMessage(`You are now connected with ${selectedProfile.first_name}! The connection was mutual.`)
-        } else {
-          setVerificationStatus('success')
-          setStatusMessage(`Connection request sent to ${selectedProfile.first_name}! They've received a notification.`)
-        }
-        // Update current user data to reflect new connection
-        if (result.type === 'mutual') {
-          // Mutual connection - update connections
-          setCurrentUserData((prev: ProfileData | null) => 
-            prev ? {
-              ...prev,
-              connections_new: [...(prev.connections_new || []), {connect_id: selectedProfile.id, rating: scaleValue}],
-              connections: [...(prev.connections || []), selectedProfile.id]
-            } : null
-          )
-        } else {
-          // Pending connection - update pending_connections
-          setCurrentUserData((prev: ProfileData | null) => 
-            prev ? {
-              ...prev,
-              pending_connections_new: [...(prev.pending_connections_new || []), {connect_id: selectedProfile.id, rating: scaleValue}],
-              pending_connections: [...(prev.pending_connections || []), selectedProfile.id]
-            } : null
-          )
-        }
-        setDialogOpen(false)
-      } else {
-        setVerificationStatus('error')
-        setStatusMessage('Failed to send connection request. Please try again.')
-      }
-    } catch (error) {
-      console.error('Connection failed:', error)
-      setVerificationStatus('error')
-      setStatusMessage('Failed to send connection request. Please try again.')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
 
 
   // Typewriter effect hook
@@ -776,12 +635,20 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     setInputValue('')
     setShowSchoolSuggestions(false)
     setShowQuestion(false)
-    setTimeout(() => {
-      const newIndex = currentQuestionIndex + 1
+
+    const newIndex = currentQuestionIndex + 1
+    const isCompleting = newIndex >= questions.length
+
+    setTimeout(async () => {
       setCurrentQuestionIndex(newIndex)
-      // Notify parent component of completion status
-      if (onComplete) {
-        onComplete(newIndex >= questions.length)
+
+      // If completing, notify parent and wait for it to finish before redirecting
+      if (isCompleting && onComplete) {
+        await onComplete(true)
+        router.push('/profile')
+      } else if (onComplete) {
+        // Not completing, just notify parent
+        onComplete(false)
       }
     }, 200)
   }
@@ -804,18 +671,26 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
 
   const handleToggleResponse = async (value: boolean) => {
     if (!currentQuestion) return
-    
+
     setForm(prev => ({ ...prev, [currentQuestion.field]: value }))
-    
+
     // Post the field update to the server
     await postFieldUpdate(currentQuestion.field, value)
-    
+
     // For toggle questions, automatically proceed since they're simple yes/no choices
-    setTimeout(() => {
-      const newIndex = currentQuestionIndex + 1
+    const newIndex = currentQuestionIndex + 1
+    const isCompleting = newIndex >= questions.length
+
+    setTimeout(async () => {
       setCurrentQuestionIndex(newIndex)
-      if (onComplete) {
-        onComplete(newIndex >= questions.length)
+
+      // If completing, notify parent and wait for it to finish before redirecting
+      if (isCompleting && onComplete) {
+        await onComplete(true)
+        router.push('/profile')
+      } else if (onComplete) {
+        // Not completing, just notify parent
+        onComplete(false)
       }
     }, 200)
   }
@@ -906,22 +781,13 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     }
   }
 
-  useEffect(() => {
-    if (isComplete) {
-      const timer = setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [isComplete]);
-
   if (isComplete) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center max-w-md mx-auto">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">All done!</h2>
           <p className="text-lg text-gray-600">
-            Your profile information has been collected successfully. We&apos;re refreshing your workspace to reflect your updates.
+            We&apos;re creating your profile. You&apos;ll be able to see it soon...
           </p>
         </div>
       </div>
@@ -938,96 +804,82 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
       {/* Progress Bar */}
       {showQuestion && (
         <div className="w-full max-w-6xl mx-auto px-8 mb-8">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-gray-600">
-              ~5 min to complete
-            </span>
+          <div className="flex justify-between items-center mb-4">
+            {/* Back button */}
+            {currentQuestionIndex > 0 ? (
+              <Button
+                onClick={previousQuestion}
+                variant="ghost"
+                className="flex items-center gap-2 text-neutral-400 hover:text-neutral-800 p-0"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+            ) : (
+              <div className="text-sm text-neutral-400">
+                ~3 min to complete
+              </div>
+            )}
+
+            {/* Next/Complete button */}
+            {currentQuestion.type !== 'button' && (
+              <Button
+                onClick={nextQuestion}
+                disabled={!canProceedToNext()}
+                variant="ghost"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {currentQuestionIndex >= questions.length - 1 ? 'Activate Profile' : 'Next'}
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            )}
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-neutral-900 h-2 rounded-full transition-all duration-300 ease-out"
+          <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+            <div
+              className="bg-neutral-900 dark:bg-neutral-100 h-2 rounded-full transition-all duration-300 ease-out"
               style={{ width: `${Math.min(progressPercentage, 100)}%` }}
             ></div>
           </div>
         </div>
       )}
-      {/* Two-column layout when profile image exists */}
-      {showQuestion && hasProfileImage && currentQuestionIndex > 1 ? (
-        <div className="flex-1 flex items-center max-w-6xl mx-auto w-full gap-12">
-          {/* Left side - Profile Picture */}
-          <div className="w-1/3">
-            <div className="text-center">
-              <ProfileAvatar
-                name={`${form.first_name || ''} ${form.last_name || ''}`.trim() || form.email || 'User'}
-                imageUrl={form.profile_image_url || undefined}
-                size={250}
-                editable={false}
-                className="w-64 h-64 rounded-full mx-auto"
-              />
-              {/* <p className="text-sm text-gray-500 mt-4">Click to change photo</p> */}
-            </div>
-          </div>
 
-          {/* Right side - Question area */}
-          <div className="w-2/3">
-            {showQuestion && (
-              <>
-                {/* Navigation buttons */}
-                <div className="mb-6 flex justify-between items-center">
-                  {/* Back button */}
-                  {currentQuestionIndex > 0 ? (
-                    <Button
-                      onClick={previousQuestion}
-                      variant="ghost"
-                      className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      Back
-                    </Button>
-                  ) : (
-                    <div></div> // Empty div to maintain layout
-                  )}
-
-                  {/* Next/Complete button */}
-                  {currentQuestion.type !== 'button' && (
-                    <Button
-                      onClick={nextQuestion}
-                      disabled={!canProceedToNext()}
-                      variant="ghost"
-                      className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {currentQuestionIndex >= questions.length - 1 ? 'Complete' : 'Next'}
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-
-                {/* Animated question */}
-                <h1 className="text-4xl font-bold text-gray-900 mb-4 min-h-[3rem]">
+      {/* Two-column layout for all questions */}
+      {showQuestion ? (
+        <div className="flex-1 flex items-center max-w-6xl mx-auto w-full px-8">
+          <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-start text-center ">
+            {/* Left side - Question and Description */}
+            <div className="flex items-center min-h-full">
+              <div className="space-y-3">
+              {/* Animated question */}
+              <div>
+                <h1 className="text-4xl font-bold text-neutral-200">
                   {typedQuestion}
                   {!questionComplete && <span className="animate-pulse">|</span>}
                 </h1>
-                
+              </div>
 
-                {/* Animated description */}
-                {currentQuestion.description && (
-                  <div className="text-xl text-gray-600 mb-8 min-h-[1.5rem] space-y-4">
-                    {questionComplete ? (
-                      <>
-                        {typedDescription.split('\n').map((line, index, array) => (
-                          <p key={index} className={line.trim() === '' ? 'h-4' : ''}>
-                            {line}
-                            {index === array.length - 1 && !descriptionComplete && <span className="animate-pulse">|</span>}
-                          </p>
-                        ))}
-                      </>
-                    ) : null}
-                  </div>
-                )}
+              {/* Animated description */}
+              {currentQuestion.description && (
+                <div>
+                  {questionComplete && (
+                    <div className="text-lg text-neutral-400 space-y-2">
+                      {typedDescription.split('\n').map((line, index, array) => (
+                        <p key={index} className={line.trim() === '' ? 'h-4' : ''}>
+                          {line}
+                          {index === array.length - 1 && !descriptionComplete && <span className="animate-pulse">|</span>}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              </div>
+            </div>
 
-                {/* Input area - only show after question is fully typed */}
-                {questionComplete && (descriptionComplete || !currentQuestion.description) && (
-                  <div className="space-y-4">
+            {/* Right side - Input area */}
+            <div className="flex items-center justify-center min-h-full">
+              {questionComplete && (descriptionComplete || !currentQuestion.description) && (
+                <div className="space-y-4 w-full">
                     {currentQuestion.type === 'toggle' && (
                   <div 
                     ref={toggleRef}
@@ -1139,21 +991,29 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                       {loadingCompanies ? (
                         <div className="text-center py-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900 mx-auto"></div>
-                          <p className="mt-2 text-neutral-600">Loading companies...</p>
+                          <p className="mt-2 text-neutral-400">Loading companies...</p>
                         </div>
                       ) : companies.length > 0 ? (
                           <CompanyCarousel companies={companies} />
                           
                       ) : (
                         <div className="text-center py-8">
-                          <p className="text-neutral-600 mb-4">No companies available at the moment.</p>
+                          <p className="text-neutral-400 mb-4">No companies available at the moment.</p>
                           <Button
                             onClick={() => {
-                              setTimeout(() => {
-                                const newIndex = currentQuestionIndex + 1
+                              const newIndex = currentQuestionIndex + 1
+                              const isCompleting = newIndex >= questions.length
+
+                              setTimeout(async () => {
                                 setCurrentQuestionIndex(newIndex)
-                                if (onComplete) {
-                                  onComplete(newIndex >= questions.length)
+
+                                // If completing, notify parent and wait for it to finish before redirecting
+                                if (isCompleting && onComplete) {
+                                  await onComplete(true)
+                                  router.push('/profile')
+                                } else if (onComplete) {
+                                  // Not completing, just notify parent
+                                  onComplete(false)
                                 }
                               }, 200)
                             }}
@@ -1167,159 +1027,23 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                   )}
 
                   {currentQuestion.type === 'networking' && (
-                    <div className="space-y-6">
-                      {loadingProfiles ? (
-                        <div className="text-center py-8">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900 mx-auto"></div>
-                          <p className="mt-2 text-neutral-600">Loading people...</p>
-                        </div>
-                      ) : (
-                        <>
-                          {/* Search Bar */}
-                          <div className="max-w-md mx-auto relative mb-8">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4 z-10" />
-                            <Input
-                              type="text"
-                              placeholder="Search by name..."
-                              value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
-                              className="pl-10 pr-4 py-2 w-full rounded-full border-neutral-200 focus:border-black focus:ring-black"
-                            />
-                          </div>
-
-                          {/* Recommended Profiles from Same School */}
-                          {!searchQuery.trim() && form.school && (
-                            <div className="max-w-4xl mx-auto mb-8">
-                              <h4 className="text-lg font-semibold text-neutral-900 mb-4 text-center">
-                                Recommended To You
-                              </h4>
-                              <div className="grid gap-4 md:grid-cols-2">
-                                {allProfiles
-                                  .filter(profile => profile.school === form.school && profile.id !== form.id)
-                                  .slice(0, 4)
-                                  .map((profile) => (
-                                    <div key={profile.id}>
-                                      <ProfileCard
-                                        profile={profile}
-                                        onClick={() => {
-                                          handleConnectClick(profile);
-                                          handleDialogChange(true);
-                                        }}
-                                        connectionStatus={getConnectionStatus(profile)}
-                                      />
-                                    </div>
-                                  ))}
-                              </div>
-                              {allProfiles.filter(profile => profile.school === form.school && profile.id !== form.id).length === 0 && (
-                                <p className="text-center text-neutral-500 text-sm">
-                                  No other students from {form.school} have joined yet.
-                                </p>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Search Results - Profile Rows */}
-                          {searchQuery.trim() && (
-                            <div className="max-w-4xl mx-auto space-y-4 mb-8">
-                              {searchResults.length > 0 ? (
-                                searchResults.slice(0, 6).map((profile) => (
-                                  <div key={profile.id} className="bg-white border border-neutral-200 rounded-2xl p-6 flex items-start justify-between gap-4">
-                                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                                      <ProfileAvatar
-                                        name={`${profile.first_name} ${profile.last_name}`}
-                                        imageUrl={profile.profile_image_url || undefined}
-                                        size={64}
-                                        editable={false}
-                                        className="w-16 h-16 rounded-full flex-shrink-0"
-                                      />
-                                      <div className="flex-1 text-left min-w-0">
-                                        <h3 className="text-lg font-semibold text-neutral-900">
-                                          {profile.first_name} {profile.last_name}
-                                        </h3>
-                                        {profile.bio && (
-                                          <p className="text-sm text-neutral-600 line-clamp-2 mt-1 pr-2">
-                                            {profile.bio}
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex-shrink-0 ml-4">
-                                      {(() => {
-                                        const status = getConnectionStatus(profile);
-                                        if (status === 'connected') {
-                                          return (
-                                            <Button disabled className="inline-flex items-center gap-2 whitespace-nowrap">
-                                              <UserPlus className="w-4 h-4" />
-                                              Connected
-                                            </Button>
-                                          );
-                                        } else if (status === 'pending_sent') {
-                                          return (
-                                            <Button disabled className="inline-flex items-center gap-2  whitespace-nowrap">
-                                              <UserPlus className="w-4 h-4" />
-                                              Request Sent
-                                            </Button>
-                                          );
-                                        } else {
-                                          return (
-                                            status === 'requested' ? (
-                                              <Button
-                                                className="inline-flex items-center gap-2 whitespace-nowrap"
-                                                onClick={() => {
-                                                  handleConnectClick(profile);
-                                                  handleDialogChange(true);
-                                                }}
-                                              >
-                                                <UserPlus className="w-4 h-4" />
-                                                Accept Request
-                                              </Button>
-                                            ) : (
-                                              <Button
-                                                className="inline-flex items-center gap-2 whitespace-nowrap"
-                                                onClick={() => {
-                                                  handleConnectClick(profile);
-                                                  handleDialogChange(true);
-                                                }}
-                                              >
-                                                <UserPlus className="w-4 h-4" />
-                                                Add to Network
-                                              </Button>
-                                            )
-                                          );
-                                        }
-                                      })()}
-                                    </div>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="text-center py-8 text-neutral-600">
-                                  No people found matching {searchQuery}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-
-                          {/* Global Connection Dialog */}
-                          <ConnectDialog
-                            open={dialogOpen}
-                            onOpenChange={handleDialogChange}
-                            trigger={null}
-                            firstName={selectedProfile?.first_name || ""}
-                            isSubmitting={isSubmitting}
-                            verificationStatus={verificationStatus}
-                            statusMessage={statusMessage}
-                            onSubmit={handleConnectionScale}
-                          />
-                        </>
-                      )}
+                    <div>
+                      <PeopleSearch
+                        allProfiles={allProfiles}
+                        currentUserData={currentUserData}
+                        loadingProfiles={loadingProfiles}
+                        currentUserId={form.id}
+                        onConnectionUpdate={() => {
+                          // Reload user data when connection is updated
+                          loadAllProfiles()
+                        }}
+                      />
                     </div>
                   )}
 
                   {currentQuestion.type === 'network_recommendations' && (
                     <div className="space-y-6">
-                      <div className="flex justify-start">
+                      <div className="flex justify-center">
                         <Button
                           onClick={() => setShowNetworkReferralDialog(true)}
                           className="px-8 py-4 text-lg bg-neutral-900 hover:bg-neutral-800 text-white"
@@ -1374,7 +1098,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                       
                       {/* School suggestions dropdown */}
                       {showSchoolSuggestions && filteredSchools.length > 0 && currentQuestion.field === 'school' && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
+                        <div className="absolute top-full left-0 right-0 mt-2 border-2 border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
                           {filteredSchools.map((school, index) => (
                             <div
                               key={index}
@@ -1405,293 +1129,8 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                   )}
                 </div>
               )}
-            </>
-          )}
+            </div>
           </div>
-        </div>
-      ) : showQuestion ? (
-        /* Single-column layout for first question (profile picture) or when no image */
-        <div className="flex-1 flex flex-col justify-center max-w-2xl mx-auto w-full">
-          {showQuestion && (
-            <>
-              {/* Navigation buttons */}
-              <div className="mb-6 flex justify-between items-center">
-                {/* Back button */}
-                {currentQuestionIndex > 0 ? (
-                  <Button
-                    onClick={previousQuestion}
-                    variant="ghost"
-                    className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    Back
-                  </Button>
-                ) : (
-                  <div></div> // Empty div to maintain layout
-                )}
-
-                {/* Next/Complete button */}
-                {currentQuestion.type !== 'button' && (
-                  <Button
-                    onClick={nextQuestion}
-                    disabled={!canProceedToNext()}
-                    variant="ghost"
-                    className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {currentQuestionIndex >= questions.length - 1 ? 'Complete' : 'Next'}
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-
-              {/* Animated question */}
-              <h1 className="text-4xl font-bold text-gray-900 mb-4 min-h-[3rem]">
-                {typedQuestion}
-                {!questionComplete && <span className="animate-pulse">|</span>}
-              </h1>
-              
-
-              {/* Animated description */}
-              {currentQuestion.description && (
-                <div className="text-xl text-gray-600 mb-8 min-h-[1.5rem] space-y-4">
-                  {questionComplete ? (
-                    <>
-                      {typedDescription.split('\n').map((line, index, array) => (
-                        <p key={index} className={line.trim() === '' ? 'h-4' : ''}>
-                          {line}
-                          {index === array.length - 1 && !descriptionComplete && <span className="animate-pulse">|</span>}
-                        </p>
-                      ))}
-                    </>
-                  ) : null}
-                </div>
-              )}
-
-              {/* Input area - only show after question is fully typed */}
-              {questionComplete && (descriptionComplete || !currentQuestion.description) && (
-                <div className="space-y-4">
-                  
-                  {currentQuestion.type === 'toggle' && (
-                    <div 
-                      ref={toggleRef2}
-                      className="flex gap-4"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          handleToggleResponse(true) // Default to "Yes" on Enter
-                        }
-                      }}
-                    >
-                      <Button
-                        onClick={() => handleToggleResponse(true)}
-                        className="flex-1 py-6 text-lg bg-neutral-900 hover:bg-neutral-800 text-white"
-                      >
-                        Yes
-                      </Button>
-                      <Button
-                        onClick={() => handleToggleResponse(false)}
-                        variant="outline"
-                        className="flex-1 py-6 text-lg hover:bg-gray-50"
-                      >
-                        No
-                      </Button>
-                    </div>
-                  )}
-
-                  {currentQuestion.type === 'file' && (
-                    <div className="space-y-4">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept={currentQuestion.field === 'profile_image' ? 'image/*' : 'application/pdf,.pdf,.doc,.docx'}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) handleFileUpload(file)
-                        }}
-                        className="hidden"
-                      />
-                      <Button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={(isUploadingProfileImage && currentQuestion.field === 'profile_image') || (isUploadingFile && currentQuestion.field !== 'profile_image')}
-                        className="w-full py-6 text-lg flex items-center justify-center gap-3"
-                        variant="outline"
-                      >
-                        <Upload className="w-5 h-5" />
-                        {(isUploadingProfileImage && currentQuestion.field === 'profile_image') || (isUploadingFile && currentQuestion.field !== 'profile_image')
-                          ? 'Uploading...' 
-                          : uploadComplete[currentQuestion.field]
-                          ? 'Upload Complete ✓'
-                          : (currentQuestion.field === 'profile_image' ? 'Upload Photo' : 'Choose File')
-                        }
-                      </Button>
-                      {currentQuestion.field === 'resume_file' && form.resume_url && !form.resume_file && (
-                        <p className="text-sm text-gray-600 text-center">
-                          Current: <a href={form.resume_url} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">View uploaded resume</a>
-                        </p>
-                      )}
-                      {currentQuestion.field === 'transcript_file' && form.transcript_url && !form.transcript_file && (
-                        <p className="text-sm text-gray-600 text-center">
-                          Current: <a href={form.transcript_url} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">View uploaded transcript</a>
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                 
-
-                  {currentQuestion.type === 'textarea' && (
-                    <form onSubmit={handleSubmit}>
-                      <textarea
-                        ref={textareaRef}
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        placeholder={currentQuestion.placeholder}
-                        className="w-full min-h-[120px] p-4 text-lg border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-neutral-900 resize-none transition-all"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                            e.preventDefault()
-                            handleSubmit(e as React.FormEvent)
-                          }
-                        }}
-                      />
-                      <div className="flex justify-between items-center mt-4">
-                        <p className="text-sm text-gray-500">Press Cmd+Enter to continue</p>
-                        {!currentQuestion.required && (
-                          <Button
-                            type="button"
-                            onClick={nextQuestion}
-                            variant="ghost"
-                            className="text-gray-500 hover:text-gray-700"
-                          >
-                            Skip
-                          </Button>
-                        )}
-                      </div>
-                    </form>
-                  )}
-
-                  {currentQuestion.type === 'network_recommendations' && (
-                    <div className="space-y-6">
-                      <div className="flex justify-start">
-                        <Button
-                          onClick={() => setShowNetworkReferralDialog(true)}
-                          className="px-8 py-4 text-lg bg-neutral-900 hover:bg-neutral-800 text-white"
-                        >
-                          Recommend a Friend
-                        </Button>
-                      </div>
-                      
-                      {/* Show submitted recommendations count */}
-                      {userReferralsCount > 0 && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                          <p className="text-green-800">
-                            ✓ {userReferralsCount} recommendation(s) submitted
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {currentQuestion.type === 'button' && (
-                    <div className="space-y-6">
-                      <div className="flex justify-start">
-                        <Button
-                          onClick={() => {
-                            setButtonClicked(prev => ({ ...prev, [currentQuestion.id]: true }))
-                            nextQuestion()
-                          }}
-                          className="px-12 py-6 text-lg bg-neutral-900 hover:bg-neutral-800 text-white"
-                        >
-                          Build my Niche Profile
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {currentQuestion.type === 'outreach_frequency' && (
-                    <div className="flex gap-4">
-                      {Array.isArray(currentQuestion.options) && currentQuestion.options.every(opt => typeof opt === 'object' && 'display' in opt && 'value' in opt) && 
-                        (currentQuestion.options as { display: string; value: number }[]).map((option) => (
-                          <Button
-                            key={option.value}
-                            onClick={() => {
-                              setForm(prev => ({ ...prev, [currentQuestion.field]: option.value }))
-                              postFieldUpdate(currentQuestion.field, option.value).then(() => {
-                                setTimeout(() => {
-                                  const newIndex = currentQuestionIndex + 1
-                                  setCurrentQuestionIndex(newIndex)
-                                  if (onComplete) {
-                                    onComplete(newIndex >= questions.length)
-                                  }
-                                }, 200)
-                              })
-                            }}
-                            variant={form[currentQuestion.field] === option.value ? "default" : "outline"}
-                            className="flex-1 py-6 text-lg"
-                          >
-                            {option.display}
-                          </Button>
-                        ))
-                      }
-                    </div>
-                  )}
-
-                  {currentQuestion.type !== 'toggle' && currentQuestion.type !== 'file' && currentQuestion.type !== 'textarea' && currentQuestion.type !== 'companies' && currentQuestion.type !== 'networking' && currentQuestion.type !== 'network_recommendations' && currentQuestion.type !== 'button' && currentQuestion.type !== 'outreach_frequency' && (
-                    <form onSubmit={handleSubmit}>
-                      <div className="relative">
-                        <Input
-                          ref={inputRef}
-                          type={currentQuestion.type}
-                          value={inputValue}
-                          onChange={(e) => {
-                            if (currentQuestion.field === 'school') {
-                              handleSchoolSearch(e.target.value)
-                            } else {
-                              setInputValue(e.target.value)
-                            }
-                          }}
-                          placeholder={currentQuestion.placeholder}
-                          className="w-full py-6 px-4 text-lg border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-neutral-900 transition-all"
-                          onKeyDown={handleKeyPress}
-                        />
-                        
-                        {/* School suggestions dropdown */}
-                        {showSchoolSuggestions && filteredSchools.length > 0 && currentQuestion.field === 'school' && (
-                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
-                            {filteredSchools.map((school, index) => (
-                              <div
-                                key={index}
-                                onClick={() => selectSchool(school)}
-                                className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 text-lg"
-                              >
-                                {school}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex justify-between items-center mt-4">
-                        <p className="text-sm text-gray-500">Press Enter to continue</p>
-                        {!currentQuestion.required && (
-                          <Button
-                            type="button"
-                            onClick={nextQuestion}
-                            variant="ghost"
-                            className="text-gray-500 hover:text-gray-700"
-                          >
-                            Skip
-                          </Button>
-                        )}
-                      </div>
-                    </form>
-                  )}
-                </div>
-              )}
-            </>
-          )}
         </div>
       ) : null}
 

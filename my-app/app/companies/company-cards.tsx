@@ -1,13 +1,14 @@
 "use client";
 
-import { useId, useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Info, Loader2 } from "lucide-react";
 import { CompanyData } from "@/app/types";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import Post from "../components/post";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardTitle, CardHeader, CardFooter } from "@/components/ui/card";
 import Share from "../components/share";
 
 type CompanyWithImageUrl = CompanyData & {
@@ -16,249 +17,125 @@ type CompanyWithImageUrl = CompanyData & {
 
 interface CompanyCardsProps {
   priority: CompanyWithImageUrl[];
-  bookmarks:CompanyWithImageUrl[];
+  bookmarks: CompanyWithImageUrl[];
   other: CompanyWithImageUrl[];
   external?: CompanyWithImageUrl[];
   pendingPartner?: CompanyWithImageUrl[];
 }
 
 
-export function CompanyCard({ company, showHighMutualInterest = false, potential = false, disableNavigation = false}: { company: CompanyWithImageUrl; showHighMutualInterest?: boolean; potential?: boolean, external?: boolean, disableNavigation?: boolean}) {
-  const aboutId = useId();
+export function CompanyCard({
+  appliedToNiche = true,
+  company,
+  showHighMutualInterest = false,
+  disableNavigation = false,
+  isNavigatingExternal,
+  onNavigateStart,
+}: {
+  appliedToNiche?: boolean;
+  company: CompanyWithImageUrl;
+  showHighMutualInterest?: boolean;
+  potential?: boolean;
+  external?: boolean;
+  disableNavigation?: boolean;
+  isNavigatingExternal?: boolean;
+  onNavigateStart?: () => void;
+}) {
   const router = useRouter();
-  const [appliedToNiche, setAppliedToNiche] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
 
-  // Check if user has applied to The Niche
-  useEffect(() => {
-    const checkAppliedStatus = async () => {
-      try {
-        const res = await fetch('/api/get_profile', { credentials: 'include' });
-        if (res.ok) {
-          const profile = await res.json();
-          setAppliedToNiche(profile.verified || false);
-        }
-      } catch (error) {
-        console.error('Error checking applied status:', error);
-      }
-    };
-
-    checkAppliedStatus();
-  }, []);
+  const isNavigating = isNavigatingExternal ?? false;
 
   const title = company.alt || `Company ${company.company?.toString?.() ?? ""}`;
 
   const handleCardClick = () => {
+    console.log("handleCardClick", disableNavigation, appliedToNiche, isNavigating);
     if (disableNavigation || !appliedToNiche || isNavigating) return;
-    setIsNavigating(true);
+    onNavigateStart?.();
     router.push(`/companies/${company.company}`);
   };
 
   return (
-    <article 
-      className={`group relative flex h-80 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition-all duration-200 ${
-        !disableNavigation ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02]' : ''
-      } ${isNavigating ? 'pointer-events-none opacity-70' : ''}`}
-      onClick={handleCardClick}
-    >
+    <Card className="group relative overflow-hidden pt-0 transition-all duration-200 hover:shadow-lg">
       {/* Badge */}
       {showHighMutualInterest && company.partner && (
-        <button
-          className="mb-6 absolute right-3 top-3 inline-flex items-center rounded-full bg-gradient-to-r from-green-50 via-yellow-50 to-green-50 px-3 py-2 text-xs font-medium text-neutral-600 hover:from-green-100 hover:via-yellow-100 hover:to-green-100 transition-all cursor-pointer z-10 border border-neutral-200"
-        >
+        <div className="absolute right-3 top-3 inline-flex items-center rounded-full bg-gradient-to-r from-green-50 via-yellow-50 to-green-50 px-3 py-2 text-xs font-medium text-neutral-600 z-10 border border-neutral-200">
           High Potential Mutual Interest
-        </button>
+        </div>
       )}
-      
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 border-b border-neutral-100 bg-white/80 p-5 pt-12 backdrop-blur supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
-      <div className="flex min-w-0 items-center gap-4">
-        <div className="grid h-20 w-28 flex-shrink-0 place-items-center overflow-hidden rounded-xl bg-neutral-100">
+
+      {/* Image Section */}
+      <CardContent className="px-0 pb-0 pt-0">
+        <div
+          className={`relative aspect-[5/3] bg-gradient-to-br from-neutral-50 to-neutral-100 overflow-hidden rounded-t-xl ${
+            !disableNavigation ? 'cursor-pointer' : ''
+          }`}
+          onClick={handleCardClick}
+        >
           {company.imageUrl ? (
             <Image
               src={company.imageUrl}
               alt={company.alt || `Logo for ${title}`}
-              width={112}   // match w-28
-              height={80}   // match h-20
-              className="h-full w-full object-contain p-2"
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
-            <div className="text-xl font-semibold text-neutral-600">
-              {title?.charAt(0)?.toUpperCase?.() || "C"}
+            <div className="flex items-center justify-center h-full">
+              <div className="text-6xl font-bold text-neutral-300">
+                {title?.charAt(0)?.toUpperCase?.() || "C"}
+              </div>
+            </div>
+          )}
+
+          {isNavigating && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-neutral-700" />
             </div>
           )}
         </div>
+      </CardContent>
 
-        <div className="min-w-0">
-          <h3 className="text-lg font-semibold leading-snug text-neutral-900 line-clamp-2 text-left group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-yellow-400 group-hover:via-pink-400 group-hover:to-blue-400 group-hover:bg-clip-text transition-colors duration-200">
-            {title}
-          </h3>
-          {company.caption && (
-            <p className="mt-0.5 text-sm leading-snug text-neutral-600 line-clamp-2 text-left">
-              {company.caption}
-            </p>
-          )}
-        </div>
-      </div>
-        {disableNavigation ? null :
-          (<div className="shrink-0 flex gap-2">
-            <RainbowBookmark company={company.company} />
-            <div onClick={(e) => e.stopPropagation()}>
-              <Share company={company.company} />
-            </div>
-            <div onClick={(e) => e.stopPropagation()}>
-              <Post company={company.company} companyData={company} />
-            </div>
-        </div>)
-      }
-
-      </div>
-
-      {/* Body */}
-      <div className="flex flex-col gap-2 px-4 pt-3 pb-2">          
-
-        {/* About — clamped when collapsed; full when expanded */}
-        {company.description && (
-          <div>
-            <p
-              id={aboutId}
-              className={[
-                "text-sm leading-relaxed text-neutral-700 text-left line-clamp-3",
-              ].join(" ")}
-            >
-              {company.description}
-            </p>
-            
-            {/* Hiring tags */}
-            {company.hiring_tags && company.hiring_tags.length > 0 && (
-              <div className="mt-8 mb-1 text-left">
-                <div className="flex flex-wrap gap-1.5">
-                  {company.hiring_tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700 border border-gray-200"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Pending partnership tag for potential companies */}
-            {potential && (
-              <div className="mt-2 mb-1 text-left">
-                <span className="inline-flex items-center rounded-full bg-yellow-50 px-2.5 py-1 text-xs font-medium text-yellow-700 border border-yellow-200">
-                  Partnership Coming Soon
-                </span>
-              </div>
-            )}
-            
-           {/* <div className ="mt-4 text-left">
-          {company.tags?.length && appliedToNiche && !disableProfile && (
-            <button
-            type="button"
-            onClick={() => router.push(`/${company.tags?.[0]}`)}
-            className="inline-flex items-center gap-1 text-sm font-medium text-blue-700 transition-colors duration-200 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100"
-            aria-controls={aboutId}
-          >
-            Our Company Profile <ArrowRight className="h-4 w-4 transition-transform hover:translate-x-0.5" />
-          </button>
-            
-          )}
-          </div> */}
-
-          {/* Website, Location and Employee Links Section */}
-          {(company.external_media || company.location || (company.people && company.people.length > 0)) && (
-            <div className="mt-2 mb-4 text-left relative">
-              <div className="flex justify-between items-end">
- 
-                {/* Location */}
-                {company.location && (
-                  <div className="inline-flex items-center gap-1 text-sm font-medium text-neutral-700">
-                    {/* <MapPin className="h-3 w-3" /> */}
-                    📍 {company.location}
-                  </div>
-                )}
-
-              </div>
-            </div>
-          )}
-          </div>
+      {/* Title and Caption */}
+      <CardHeader className="text-center">
+        <CardTitle
+          className={`text-lg font-semibold ${!disableNavigation ? 'cursor-pointer' : ''}`}
+          onClick={handleCardClick}
+        >
+          {title}
+        </CardTitle>
+        {company.caption && (
+          <CardDescription className="line-clamp-2">
+            {company.caption}
+          </CardDescription>
         )}
-      </div>
+      </CardHeader>
 
-      {isNavigating && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white/60">
-          <Loader2 className="h-6 w-6 animate-spin text-neutral-700" />
-        </div>
-      )}
-
-      {/* Footer — All buttons on the left */}
-     
-      {/* <div className="mt-auto border-t border-neutral-100 bg-neutral-50/80 p-5">
-        <div className="flex items-center gap-4 justify-start">
-          <div className="shrink-0">
-            <RainbowBookmark company={company.company} /> 
+      {/* Action Buttons */}
+      {!disableNavigation && (
+        <CardFooter className="gap-3 justify-between pt-0">
+          <Button
+            onClick={handleCardClick}
+            className="text-neutral-900 bg-neutral-100 hover:bg-neutral-200"
+            disabled={isNavigating}
+          >
+            Explore Profile
+          </Button>
+          <div className="flex items-center gap-1">
+            <RainbowBookmark company={company.company} />
+            <Share company={company.company} />
           </div>
-          {company.partner && !potential && (
-          <div className="shrink-0">
-            <PrimaryCTA companyId={company.company.toString()} />
-          </div>)}
-          {potential && (
-          <div className="shrink-0">
-            <EarlyInterestCTA companyId={company.company.toString()} />
-          </div>)}
-        </div>
-      </div> */}
-    </article>
+        </CardFooter>
+      )}
+    </Card>
   );
 }
 
-export default function CompanyCards({ priority, bookmarks, other, external = [], pendingPartner = [] }: CompanyCardsProps) {
-  const [activeTab, setActiveTab] = useState<'priority' | 'other' | 'external'>('priority');
+export default function CompanyCards({ priority, bookmarks, other = [] }: CompanyCardsProps) {
+  const [navigatingCompanyId, setNavigatingCompanyId] = useState<number | null>(null);
 
   return (
-    <div className="w-full">
-      {/* Tab Navigation */}
-      <div className="flex border-b border-neutral-200 mb-8">
-        <button
-          onClick={() => setActiveTab('priority')}
-          className={`px-6 py-3 text-base font-medium transition-colors duration-200 border-b-2 ${
-            activeTab === 'priority'
-              ? 'border-black text-black'
-              : 'border-transparent text-neutral-500 hover:text-neutral-700'
-          }`}
-        >
-          For You on The Niche
-        </button>
-        <button
-          onClick={() => setActiveTab('other')}
-          className={`px-6 py-3 text-base font-medium transition-colors duration-200 border-b-2 ${
-            activeTab === 'other'
-              ? 'border-black text-black'
-              : 'border-transparent text-neutral-500 hover:text-neutral-700'
-          }`}
-        >
-          Opportunites on The Niche with Our Partners
-        </button>
-        <button
-          onClick={() => setActiveTab('external')}
-          className={`px-6 py-3 text-base font-medium transition-colors duration-200 border-b-2 ${
-            activeTab === 'external'
-              ? 'border-black text-black'
-              : 'border-transparent text-neutral-500 hover:text-neutral-700'
-          }`}
-        >
-          Other Opportunities Beyond The Niche
-        </button>
-      </div>
-
+    <div className="w-full">      
       {/* Tab Content */}
-      <div className="min-h-[600px]">
-        {activeTab === 'priority' && (
-          <>
-            {priority.length === 0 || bookmarks.length === 0 ? (
+      {priority.length === 0 || bookmarks.length === 0 ? (
               <Alert className="max-w-2xl mx-auto">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
@@ -266,47 +143,39 @@ export default function CompanyCards({ priority, bookmarks, other, external = []
                 </AlertDescription>
               </Alert>
             ) : (
-              <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-2">
+              <div className="grid auto-rows-fr grid-cols-2 items-stretch gap-4 md:grid-cols-3 lg:grid-cols-4">
                 {priority.map((company) => (
-                  <CompanyCard key={company._id} company={company} showHighMutualInterest={true} external={false}/>
+                  <CompanyCard
+                    key={company._id}
+                    company={company}
+                    showHighMutualInterest={true}
+                    external={false}
+                    isNavigatingExternal={navigatingCompanyId === company.company}
+                    onNavigateStart={() => setNavigatingCompanyId(company.company)}
+                  />
                 ))}
                 {bookmarks.map((company) => (
-                  <CompanyCard key={company._id} company={company} showHighMutualInterest={false} external={false}/>
+                  <CompanyCard
+                    key={company._id}
+                    company={company}
+                    showHighMutualInterest={false}
+                    external={false}
+                    isNavigatingExternal={navigatingCompanyId === company.company}
+                    onNavigateStart={() => setNavigatingCompanyId(company.company)}
+                  />
                 ))}
               </div>
             )}
-          </>
-        )}
 
-        {activeTab === 'other' && (
-          <>
-            <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-2">
-              {other.map((company) => (
-                <CompanyCard key={company._id} company={company} external={false}/>
+        {other.map((company) => (
+                <CompanyCard
+                  key={company._id}
+                  company={company}
+                  external={false}
+                  isNavigatingExternal={navigatingCompanyId === company.company}
+                  onNavigateStart={() => setNavigatingCompanyId(company.company)}
+                />
               ))}
-            </div>
-            
-            <div className="mt-8">
-              <div className="text-center mb-6">
-                <p className="text-lg font-medium text-neutral-600"><strong>Pending partnerships coming soon... </strong></p>
-              </div>
-              <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-2">
-                {pendingPartner.map((company) => (
-                  <CompanyCard key={company._id} company={company} potential={true} external={false}/>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {activeTab === 'external' && (
-          <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-2">
-            {external.map((company) => (
-              <CompanyCard key={company._id} company={company} external={true}/>
-            ))}
-          </div>
-        )}
       </div>
-    </div>
   );
 }

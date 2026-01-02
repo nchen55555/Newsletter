@@ -1,16 +1,10 @@
 'use client'
-import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
 import ProfileInfoChatbot from './profile_info_chatbot'
 import { useRouter} from 'next/navigation'
 import { ProfileFormState, ProfileData} from '@/app/types'
 import { useSubscriptionContext } from './subscription_context'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-} from "@/components/ui/dialog"
+import { Container } from './container'
 
 interface MultiStepProfileFormProps extends ProfileData {
   access_token: string,
@@ -52,11 +46,9 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
     needs_visa_sponsorship: props.needs_visa_sponsorship || false,
     interests: props.interests || "",
     network_recommendations: props.network_recommendations || [],
-    verified: props.verified || false,
   });
 
   const [formError, setFormError] = useState<string | null>(null)
-  const [profileFormComplete, setProfileFormComplete] = useState(false)
 
   // Load companies for step 2 (same query as companies page, limited to 20
 
@@ -117,10 +109,10 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         setFormError("Bio is required.");
         return;
       }
-      if (!form.school) {
-        setFormError("School is required.");
-        return;
-      }
+      // if (!form.school) {
+      //   setFormError("School is required.");
+      //   return;
+      // }
 
       // Build form data (same as original form)
       const formData = new FormData();
@@ -155,12 +147,12 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       }
 
       // Handle transcript: use file if provided, otherwise keep existing URL
-      if (form.transcript_file) {
-        formData.append('transcript_file', form.transcript_file);
-      } else if (!form.transcript_url) {
-        setFormError('Transcript is required.');
-        return;
-      }
+      // if (form.transcript_file) {
+      //   formData.append('transcript_file', form.transcript_file);
+      // } else if (!form.transcript_url) {
+      //   setFormError('Transcript is required.');
+      //   return;
+      // }
 
       // Add new ProfileInfoChatbot fields
       if (form.interests) {
@@ -196,67 +188,32 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
 
 
   return (
-    <div>
-    <div className="max-w-6xl mx-auto px-8 py-16">
-    <ProfileInfoChatbot 
-      form={form} 
-      setForm={setForm} 
-      onComplete={(isComplete) => {
-        setProfileFormComplete(isComplete);
-        if (isComplete) {
-          // Automatically submit when chatbot flow completes
-          handleStep1Submit({ preventDefault: () => {} } as React.FormEvent);
-        }
-      }}
-      initialStep={props.onboarding_step}
-    />
+    <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white dark:from-neutral-900 dark:via-neutral-950 dark:to-neutral-900">
+        {/* <Navigation /> */}
+        <div className="px-6 relative">
+          <div className="absolute inset-0 pointer-events-none"></div>
+          <Container className="max-w-4xl mx-auto">
+            <div className="max-w-6xl mx-auto px-8 py-16">
+            <ProfileInfoChatbot 
+              form={form} 
+              setForm={setForm} 
+              onComplete={(isComplete) => {
+                if (isComplete) {
+                  // Automatically submit when chatbot flow completes
+                  handleStep1Submit({ preventDefault: () => {} } as React.FormEvent);
+                }
+              }}
+              initialStep={props.onboarding_step}
+            />
 
-    {formError && (
-      <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-red-800 text-sm font-medium">{formError}</p>
+            {formError && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800 text-sm font-medium">{formError}</p>
+              </div>
+            )}
+          </div>
+          </Container>
+        </div>
       </div>
-    )}
-  </div>
-
-      {/* Application Confirmation Dialog */}
-      <Dialog open={profileFormComplete && !form.applied} onOpenChange={setProfileFormComplete}>
-        <DialogContent className="sm:max-w-5xl w-full p-8 max-h-[80vh] overflow-y-auto">
-          <DialogHeader className="text-center">
-            {/* <DialogTitle className="text-xl font-semibold">
-              Profile Created
-            </DialogTitle> */}
-            <DialogDescription className="text-lg mt-2">
-              Hi {form.first_name}! 
-              <br></br><br></br>
-             
-                <>
-                  Congratulations on requesting access to The Niche! We are excited to review your profile for our private beta launch. <strong>If we believe there is mutual fit between our network of beta opportunities or if a founder reaches out to specifically connect with you, we will reach back out with an invitation to be officially a part of this network!</strong>
-                  <br></br>
-                  <br></br>
-                  In the meantime, start curating your professional network by connecting on your verified professional community, sharing your thoughts on our company articles with your network, and more! <strong>Interacting more with The Niche allows us to better understand your interests and how our network of beta opportunities might be a good fit for you.</strong>
-                  <br></br>
-                  <br></br>
-                  <div className="flex flex-col gap-4 pt-4">
-                    <Button 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('Your Profile button clicked');
-                        setProfileFormComplete(false);
-                        // Force a full page refresh to get updated data
-                        window.location.reload();
-                      }}
-                      className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-2 text-sm w-fit"
-                    >
-                      Your Profile
-                    </Button>
-                  </div>
-                </>
-                             
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-    </div>
   )
 }

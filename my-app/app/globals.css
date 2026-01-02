@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
+
 @font-face {
   font-family: 'Zodiak';
   src: url('/fonts/Zodiak-Variable.woff2') format('woff2-variations'),
@@ -26,7 +28,7 @@
 }
 
 html, body {
-  font-family: 'Zodiak', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Manrope', 'Zodiak', ui-sans-serif, system-ui, sans-serif;
 }
 
 @import "tailwindcss";
@@ -34,7 +36,6 @@ html, body {
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
-
 
 @theme inline {
   --color-background: var(--background);
@@ -181,5 +182,14 @@ html, body {
   }
   body {
     @apply font-sans bg-background text-foreground;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }

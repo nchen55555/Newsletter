@@ -43,11 +43,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Not connected to Google Calendar' }, { status: 400 })
   }
 
-  console.log('Found refresh token, creating calendar client...');
   let calendar;
   try {
     calendar = await getCalendarClient(data.google_refresh_token)
-    console.log('Calendar client created successfully');
   } catch (err) {
     console.error('Failed to create calendar client:', err);
     return NextResponse.json({ error: 'Failed to authenticate with Google' }, { status: 500 })

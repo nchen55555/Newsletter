@@ -281,18 +281,16 @@ async function handleProfileUpdate(req: NextRequest) {
     const updateData: Record<string, any> = {};
     
     // Only update fields that are present in formData
-    if (formData.get('first_name')) updateData.first_name = String(formData.get('first_name'));
-    if (formData.get('last_name')) updateData.last_name = String(formData.get('last_name'));
-    if (formData.get('school')) updateData.school = String(formData.get('school'));
-    if (formData.get('linkedin_url')) updateData.linkedin_url = String(formData.get('linkedin_url'));
-    if (formData.get('personal_website')) updateData.personal_website = String(formData.get('personal_website'));
-    if (formData.get('phone_number')) updateData.phone_number = String(formData.get('phone_number'));
-    if (formData.get('bio')) updateData.bio = String(formData.get('bio'));
+    if (formData.get('first_name') !== null) updateData.first_name = String(formData.get('first_name'));
+    if (formData.get('last_name') !== null) updateData.last_name = String(formData.get('last_name'));
+    if (formData.get('school') !== null) updateData.school = String(formData.get('school'));
+    if (formData.get('linkedin_url') !== null) updateData.linkedin_url = String(formData.get('linkedin_url'));
+    if (formData.get('personal_website') !== null) updateData.personal_website = String(formData.get('personal_website'));
+    if (formData.get('phone_number') !== null) updateData.phone_number = String(formData.get('phone_number'));
+    if (formData.get('bio') !== null) updateData.bio = String(formData.get('bio'));
     if (formData.get('is_public_profile') !== null) updateData.is_public_profile = String(formData.get('is_public_profile')) === 'true';
     if (formData.get('newsletter_opt_in') !== null) updateData.newsletter_opt_in = String(formData.get('newsletter_opt_in')) === 'true';
     if (formData.get('applied') !== null) updateData.applied = String(formData.get('applied')) === 'true';
-    if (formData.get('verified') !== null) updateData.verified = String(formData.get('verified')) === 'true';
-    if (formData.get('school')) updateData.school = String(formData.get('school'));
     if (formData.get('needs_visa_sponsorship') !== null) updateData.needs_visa_sponsorship = String(formData.get('needs_visa_sponsorship')) === 'true';
     if (formData.get('onboarding_step') != null) updateData.onboarding_step = String(formData.get('onboarding_step'));
     if (formData.get('github_url') != null) updateData.github_url = String(formData.get('github_url'));
@@ -301,9 +299,10 @@ async function handleProfileUpdate(req: NextRequest) {
       console.log("Professional agreement set to:", updateData.professional_agreement);
     }
 
+
     
     // Handle new ProfileInfoChatbot fields
-    if (formData.get('interests')) updateData.interests = String(formData.get('interests'));
+    if (formData.get('interests') !== null) updateData.interests = String(formData.get('interests'));
     if (formData.get('outreach_frequency')) updateData.outreach_frequency = parseInt(String(formData.get('outreach_frequency')), 10);
     if (formData.get('network_recommendations')) {
       try {
@@ -313,10 +312,28 @@ async function handleProfileUpdate(req: NextRequest) {
       }
     }
 
-    // Update file URLs if new files were uploaded
+    // Handle custom_links field - replace entire object
+    if (formData.get('custom_links')) {
+      try {
+        const newCustomLinksString = String(formData.get('custom_links'));
+        console.log('Received custom_links:', newCustomLinksString);
+        
+        // Simply replace the entire custom_links object
+        updateData.custom_links = newCustomLinksString;
+        console.log('Setting custom_links to:', updateData.custom_links);
+      } catch (error) {
+        console.error('Error handling custom_links:', error);
+      }
+    }
+
+    // Handle file URL updates and deletions
     if (resume_url) updateData.resume_url = resume_url;
     if (transcript_url) updateData.transcript_url = transcript_url;
     if (profile_image_url) updateData.profile_image_url = profile_image_url;
+    
+    // Handle explicit file URL deletions (when user clicks X)
+    if (formData.get('resume_url') !== null && !resume_url) updateData.resume_url = String(formData.get('resume_url'));
+    if (formData.get('transcript_url') !== null && !transcript_url) updateData.transcript_url = String(formData.get('transcript_url'));
     
     // Reset parsed_resume_json if new resume was uploaded
     if (resume_url) updateData.parsed_resume_json = "";
@@ -333,31 +350,16 @@ async function handleProfileUpdate(req: NextRequest) {
     // Update database asynchronously (don't await this)
     if (Object.keys(updateData).length > 0) {
       (async () => {
-        try {
-          const profileId = formData.get('id');
-          
-          // Verify the user has permission to update this profile
-          // Check if the profile belongs to the authenticated user
-          const { data: profileCheck, error: checkError } = await supabase
-            .from('subscribers')
-            .select('email')
-            .eq('id', profileId)
-            .single();
-            
-          if (checkError || !profileCheck || profileCheck.email !== user.email) {
-            console.error('Permission denied: User cannot update this profile');
-            return;
-          }
-          
+        try {          
           const { error: dbError } = await supabase
             .from('subscribers')
             .update(updateData)
-            .eq('id', profileId);
+            .eq('email', user.email);
           
           if (dbError) {
             console.error('Async profile update error:', dbError);
           } else {
-            console.log('Profile updated successfully for user ID:', profileId);
+            console.log('Profile updated successfully for user ID:');
           }
         } catch (error) {
           console.error('Unexpected async update error:', error);

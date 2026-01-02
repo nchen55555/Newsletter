@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Navigation } from "@/app/components/header"
+import { SidebarLayout } from "@/app/components/sidebar-layout"
 import { Container } from "@/app/components/container"
 import { ProtectedContent } from "../components/protected-content"
 
@@ -7,8 +7,7 @@ import { ProtectedContent } from "../components/protected-content"
 export default async function PortfolioPage() {
     return (
       <ProtectedContent>
-        <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white flex flex-col">
-          <Navigation />
+        <SidebarLayout title="Partner Companies">
           <Container>
             <div className="max-w-6xl mx-auto py-8 md:py-16 px-4 md:px-6">
               {/* Header Section */}
@@ -28,7 +27,7 @@ export default async function PortfolioPage() {
               {/* <CompanyCards companies={companies} /> */}
             </div>
           </Container>
-        </div>
+        </SidebarLayout>
       </ProtectedContent>
     );
 }

@@ -1,6 +1,6 @@
 import { CompanyWithImageUrl } from "@/app/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CompanyCard } from "../company-card";
+import { CompanyCard } from "@/app/companies/company-cards";
 import { Button } from "@/components/ui/button";
 import ApplyCompanies from "../apply-companies";
 import { Send } from "lucide-react";
