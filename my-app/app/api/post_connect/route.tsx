@@ -21,10 +21,6 @@ export async function POST(req: NextRequest) {
     // 3. Parse JSON body
     const body = await req.json();
     const { connect_id, rating, note } = body;
-
-    console.log('connect_id', connect_id);
-    console.log('rating', rating);
-    console.log('note', note);
     
     if (!connect_id) {
       return NextResponse.json({ error: 'connect_id is required' }, { status: 400 });
@@ -80,9 +76,6 @@ export async function POST(req: NextRequest) {
     if (currentProfile?.requested_connections_new && Array.isArray(currentProfile.requested_connections_new)) {
       requestedConnections = currentProfile.requested_connections_new;
     }
-
-    console.log('Current user profile connections:', currentProfile?.connections_new);
-    console.log('Initialized connections array:', connections);
 
     const connectIdNum = parseInt(connect_id);
     const currentUserId = currentProfile?.id;
@@ -150,20 +143,10 @@ export async function POST(req: NextRequest) {
       targetConnections = targetProfile.connections_new;
     }
 
-    console.log('Target user profile connections:', targetProfile?.connections_new);
-    console.log('Target user profile pending_connections:', targetProfile?.pending_connections_new);
-    console.log('Initialized target connections array:', targetConnections);
-    console.log('Initialized target pending array:', targetPendingConnections);
-
     // 8. Check if current user's ID is already in target's pending connections
     const currentUserInTargetPending = requestedConnections.some(conn => conn.connect_id === connectIdNum);
 
     if (currentUserInTargetPending) {
-      // This is a reciprocal connection - create mutual connection
-      console.log('Creating mutual connection...');
-      console.log('Before update - Current user connections:', connections);
-      console.log('Before update - Target user connections:', targetConnections);
-      console.log('Before update - Target pending:', targetPendingConnections);
       
       // Find the existing request to get the other user's rating
       const existingRequest = requestedConnections.find(conn => conn.connect_id === connectIdNum);
@@ -173,21 +156,10 @@ export async function POST(req: NextRequest) {
       connections.push({connect_id: connectIdNum, rating: rating, note: note});
       targetConnections.push({connect_id: currentUserId, rating: otherUserRating, note: note});
       
-      console.log('After push - Current user connections:', connections);
-      console.log('After push - Target user connections:', targetConnections);
       
       // Remove current user's ID from target's pending connections
       const updatedTargetPending = targetPendingConnections.filter(conn => conn.connect_id !== currentUserId);
       const updatedRequestedConnections = requestedConnections.filter(conn => conn.connect_id !== connectIdNum);
-      console.log('Updated target pending:', updatedTargetPending);
-      
-      // Update both users' profiles
-      console.log('About to update database with:');
-      console.log('Current user email:', user.email);
-      console.log('Current user new connections:', connections);
-      console.log('Target user ID:', connectIdNum);
-      console.log('Target user new connections:', targetConnections);
-      console.log('Target user new pending:', updatedTargetPending);
       
       const updateResults = await Promise.all([
         supabase
@@ -202,10 +174,6 @@ export async function POST(req: NextRequest) {
           })
           .eq('id', connect_id)
       ]);
-      
-      console.log('Database update results:', updateResults);
-      console.log('Current user update result:', JSON.stringify(updateResults[0], null, 2));
-      console.log('Target user update result:', JSON.stringify(updateResults[1], null, 2));
       
       // Check for errors and log them
       if (updateResults[0].error) {
@@ -223,16 +191,13 @@ export async function POST(req: NextRequest) {
         }, { status: 500 });
       }
 
-      // Check if updates actually affected any rows
-      console.log('Rows affected - Current user:', updateResults[0].count);
-      console.log('Rows affected - Target user:', updateResults[1].count);
 
       const senderName = currentProfile?.first_name && currentProfile?.last_name
       ? `${currentProfile.first_name} ${currentProfile.last_name}`
       : user.email;
       
     const emailContent = {
-      message: `${senderName} just accepted your request to join their verified professional network on The Niche.`
+      message: `${senderName} and you are now verified connections on The Niche Network. If at any point, you would like to modify the context behind your connection, feel free to update it on your profile. Your updates are never sent to the other person. `
     };
     // Check if API key exists
     if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {
@@ -244,15 +209,14 @@ export async function POST(req: NextRequest) {
 
     const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
 
-    const { data, error } = await resend.emails.send({
-      from: 'Nicole <nicole@theniche.tech>',
+    const { error } = await resend.emails.send({
+      from: 'The Niche <thenichenetwork@theniche.tech>',
       to: [targetProfile.email],
-      subject: `${senderName} accepted your request to join their network on The Niche`,
-      bcc: [`${user.email}`],
+      subject: `${senderName} and you are now verified connections on The Niche Network`,
       html: `
         <p>Hi ${targetProfile.first_name},</p>
         <p>${emailContent.message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
-        <p><a href="https://theniche.tech/people/${encodeSimple(currentUserId)}" style="color: #0066cc; text-decoration: none;">Visit your network on The Niche</a></p>
+        <p><a href="https://theniche.tech/people/${encodeSimple(connect_id)}" style="color: #0066cc; text-decoration: none;">Visit your connection with ${senderName} on the Niche Niche</a></p>
         <p>Best,<br><br>The Niche Team</p>
       `,
     });
@@ -264,8 +228,6 @@ export async function POST(req: NextRequest) {
         details: error.message 
       }, { status: 500 });
     }
-
-    console.log('Email sent successfully:', data);
 
 
       return NextResponse.json({ 
@@ -279,11 +241,6 @@ export async function POST(req: NextRequest) {
       // This is a new request - add current user's ID to target's pending connections
         pendingConnections.push({connect_id: parseInt(connect_id), rating: rating, note: note});
         targetRequestedConnections.push({connect_id: currentUserId, rating: rating, note: note});
-        console.log("pending connections for user now ", targetPendingConnections, "and connections ", targetConnections)
-
-        // 9. Update the target's profile with the new pending connections array
-        console.log('About to update pending connections for target user ID:', connectIdNum);
-        console.log('New pending connections array:', targetPendingConnections);
 
         await Promise.all([
         supabase
@@ -305,7 +262,7 @@ export async function POST(req: NextRequest) {
       : user.email;
       
     const emailContent = {
-      message: `${senderName} just sent you a request to join their verified professional network on The Niche.`
+      message: `${senderName} has requested to join your verified professional network on The Niche. Click their profile to add them to your network and contextualize the relationship. If at any point, you would like to modify the context behind your connection, your updates are never sent to the other person.`
     };
     // Check if API key exists
     if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {
@@ -317,15 +274,14 @@ export async function POST(req: NextRequest) {
 
     const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
 
-    const { data, error } = await resend.emails.send({
-      from: 'Nicole <nicole@theniche.tech>',
+    const { error } = await resend.emails.send({
+      from: 'The Niche <thenichenetwork@theniche.tech>',
       to: [targetProfile.email],
-      subject: `${senderName} wants to invite you to their network on The Niche`,
-      bcc: [`${user.email}`],
+      subject: `${senderName} has requested to be a part of your Niche Network`,
       html: `
         <p>Hi ${targetProfile.first_name},</p>
         <p>${emailContent.message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
-        <p><a href="https://theniche.tech/people/${encodeSimple(currentUserId)}" style="color: #0066cc; text-decoration: none;">Visit your network on The Niche</a></p>
+        <p><a href="https://theniche.tech/people/${encodeSimple(connect_id)}" style="color: #0066cc; text-decoration: none;">Add ${senderName} to your Niche Network</a></p>
         <p>Best,<br><br>The Niche Team</p>
       `,
     });
@@ -337,9 +293,6 @@ export async function POST(req: NextRequest) {
         details: error.message 
       }, { status: 500 });
     }
-
-    console.log('Email sent successfully:', data);
-
 
       return NextResponse.json({ 
         success: true,

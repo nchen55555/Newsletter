@@ -100,12 +100,12 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
       formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
       formData.append('needs_visa_sponsorship', form.needs_visa_sponsorship.toString());
 
-      if (form.resume_file) {
-        formData.append('resume_file', form.resume_file);
-      } else if (!form.resume_url) {
-        setFormError('Resume is required.');
-        return;
-      }
+      // if (form.resume_file) {
+      //   formData.append('resume_file', form.resume_file);
+      // } else if (!form.resume_url) {
+      //   setFormError('Resume is required.');
+      //   return;
+      // }
     
       // Make post_referral API call if referral_id exists
       if (effectiveReferralId && userEmail) {
@@ -132,6 +132,7 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
 
       if (res.ok) {
         setFormSuccess(true)
+        setShowSubscribeDialog(false) // Close dialog immediately
         refreshSubscription()
         router.push('/profile?flow=onboarding')
       } else {
@@ -151,7 +152,7 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
       <div className="flex flex-col w-full max-w-sm gap-4">
       { !isSubscribed && ( 
         <>
-            <GoogleLogin buttonText="request access" flowType="subscribe" referral_id={effectiveReferralId} />
+            <GoogleLogin buttonText="create profile" flowType="subscribe" referral_id={effectiveReferralId} />
             {formSuccess && (
             <Alert>
                 <CheckCircle2Icon />
@@ -224,7 +225,7 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
                 </div>
 
                 <div className="py-6 grid w-full max-w-sm items-center gap-3">
-                  <Label htmlFor="resume_file" className="text-base font-medium">Resume * <span className="text-sm text-gray-500 font-normal">(Max 5MB)</span></Label>
+                  <Label htmlFor="resume_file" className="text-base font-medium">Resume <span className="text-sm text-gray-500 font-normal">(Max 5MB)</span></Label>
                   <Input
                     id="resume_file"
                     name="resume_file"
@@ -376,7 +377,7 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
                       submitting...
                     </>
                   ) : (
-                    'request access'
+                    'create profile'
                   )}
                 </Button>
               </DialogFooter>

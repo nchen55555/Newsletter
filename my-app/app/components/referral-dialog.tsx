@@ -30,7 +30,7 @@ export function ReferralDialog({
   forceFormMode = false,
   allowClose = false
 }: ReferralDialogProps) {
-  const [referralType, setReferralType] = useState<"link" | "form">(forceFormMode ? "form" : "link");
+  const [referralType, setReferralType] = useState<"form" | "link">("form");
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | undefined>(undefined);
   const [selectedCompany, setSelectedCompany] = useState<CompanyWithImageUrl | null>(null);
   const [allCompanies, setAllCompanies] = useState<CompanyWithImageUrl[]>([]);
@@ -217,20 +217,6 @@ export function ReferralDialog({
           {!forceFormMode && (
             <div className="flex gap-4 p-4 rounded-lg">
             <button
-              onClick={() => setReferralType("link")}
-              className={`flex-1 p-3 rounded-md border-2 transition-colors ${
-                referralType === "link"
-                  ? "border-neutral-100 hover:border-neutral-300"
-                  : "border-neutral-900 shadow-sm"
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Link className="w-4 h-4" />
-                <span className="font-medium">Share Link</span>
-              </div>
-              <p className="text-sm text-neutral-400">If there is a specific opportunity that you think would be a great fit for a friend, share this link to them for them to request access.</p>
-            </button>
-            <button
               onClick={() => setReferralType("form")}
               className={`flex-1 p-3 rounded-md border-2 transition-colors ${
                 referralType === "form"
@@ -243,6 +229,20 @@ export function ReferralDialog({
                 <span className="font-medium">Submit Form</span>
               </div>
               <p className="text-sm text-neutral-400">Fill out a quick form with your friends&apos; details and we will reach out to them!</p>
+            </button>
+            <button
+              onClick={() => setReferralType("link")}
+              className={`flex-1 p-3 rounded-md border-2 transition-colors ${
+                referralType === "link"
+                  ? "border-neutral-100 hover:border-neutral-300"
+                  : "border-neutral-900 shadow-sm"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Link className="w-4 h-4" />
+                <span className="font-medium">Share Link</span>
+              </div>
+              <p className="text-sm text-neutral-400">If there is a specific opportunity that you think would be a great fit for a friend, share this link to them for them to request access.</p>
             </button>
           </div>
           )}
@@ -374,7 +374,7 @@ export function ReferralDialog({
                     <Alert className="max-w-full break-words overflow-hidden">
                       <CheckCircle2Icon className="flex-shrink-0 mt-0.5" />
                       <AlertTitle className="break-words whitespace-normal leading-relaxed w-full overflow-wrap-anywhere">
-                        Referral submitted successfully! We&apos;ll reach out to them if they&apos;re a good fit.
+                        Referral submitted successfully! We&apos;ll reach out to them. 
                       </AlertTitle>
                     </Alert>
                   </div>

@@ -8,8 +8,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email, first_name, last_name } = body;
 
-    console.log('Welcome email request received for:', { email, first_name, last_name });
-
     // Validate required fields from request body
     if (!email || !first_name || !last_name) {
       console.error('Missing required fields:', { email: !!email, first_name: !!first_name, last_name: !!last_name });
@@ -31,7 +29,9 @@ export async function POST(req: NextRequest) {
     const emailContent = {
       message: `Congratulations on creating your profile on The Niche!   
       <br></br>
-      Start curating your profile and building your verifiable professional network through connects and referrals! Interacting more with The Niche allows us to better understand your interests so that we can surface our network of beta opportunities that might be a good fit for you.`
+      Let's start building your professional presence on the platform. Discover opportunities that your most trusted circles are already looking at or have vetted directly on the Niche through our network-driven warm introductions. The best hires happen through trusted introductions, not job boards. That's why we've partnered with companies that value network-driven hiring. 
+      <br></br>
+      If your network signals a strong fit to one of our partner startups, we facilitate a warm introduction to the founders for you on your behalf. Browse their stories and profiles in your opportunity database, curate your personalized professional network contextualized by your words on your actual relationship to index and unlock opportunities personalized and tailored to your interests.`
     };
     // Check if API key exists
     if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {
@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
       html: `
         <p>Hi ${first_name},</p>
         <p>${emailContent.message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
-        <p>Best,<br>The Niche Team</p>
+         <p><a href="https://theniche.tech/people/opportunities" style="color: #0066cc; text-decoration: none;">Your Opportunity Database on The Niche</a></p>
+        <p>Best,<br><br>The Niche Team</p>
       `,
     });
 

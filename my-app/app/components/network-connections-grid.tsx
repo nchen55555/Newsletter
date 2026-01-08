@@ -2,13 +2,14 @@
 
 import { Users } from "lucide-react";
 import ProfileCard from "./profile_card";
-import { ProfileData } from "@/app/types";
+import { ProfileData, ConnectionData } from "@/app/types";
 import { useRouter } from "next/navigation";
 import { encodeSimple } from "@/app/utils/simple-hash";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface NetworkConnectionsGridProps {
   connections: ProfileData[];
+  currentUserData?: ProfileData | null;
   className?: string;
   onSeeAllConnections?: () => void;
   showSeeAll?: boolean;
@@ -20,6 +21,7 @@ interface NetworkConnectionsGridProps {
 
 export function NetworkConnectionsGrid({
   connections,
+  currentUserData,
   className = "",
   onSeeAllConnections,
   showSeeAll = false,
@@ -32,6 +34,36 @@ export function NetworkConnectionsGrid({
 
   const handleProfileClick = (connection: ProfileData) => {
     router.push(`/people/${encodeSimple(connection.id)}`);
+  };
+
+  // Get existing rating for a connection (only from requested_connections_new and connections_new)
+  const getExistingRating = (profile: ProfileData): number | undefined => {
+    if (!currentUserData || !profile || !profile.id) return undefined;
+
+    const userConnections = Array.isArray(currentUserData.connections_new) ? currentUserData.connections_new : [];
+    const userPendingConnections = Array.isArray(currentUserData.pending_connections_new) ? currentUserData.pending_connections_new : [];
+    const pid = String(profile.id);
+
+    // Check only connections_new and requested_connections_new
+    const connection = userConnections.find((conn: ConnectionData) => String(conn.connect_id) === pid)
+      || userPendingConnections.find((conn: ConnectionData) => String(conn.connect_id) === pid);
+
+    return connection?.rating;
+  };
+
+  // Get existing note for a connection (only from requested_connections_new and connections_new)
+  const getExistingNote = (profile: ProfileData): string | undefined => {
+    if (!currentUserData || !profile || !profile.id) return undefined;
+
+    const userConnections = Array.isArray(currentUserData.connections_new) ? currentUserData.connections_new : [];
+    const userPendingConnections = Array.isArray(currentUserData.pending_connections_new) ? currentUserData.pending_connections_new : [];
+    const pid = String(profile.id);
+
+    // Check only connections_new and requested_connections_new
+    const connection = userConnections.find((conn: ConnectionData) => String(conn.connect_id) === pid)
+      || userPendingConnections.find((conn: ConnectionData) => String(conn.connect_id) === pid);
+
+    return connection?.note;
   };
 
   // If loading, show skeleton
@@ -59,15 +91,9 @@ export function NetworkConnectionsGrid({
 
   // Limit displayed connections
   const displayedConnections = connections.slice(0, maxDisplay);
-  
 
   return (
-    <div className="space-y-6 rounded-lg p-4">
-      {!isExternalView && (<div className="text-sm text-neutral-400">
-      Curate your personalized, verified professional network by adding context to each connection, digitizing the real relationships behind your career.
-
-      </div>)
-      }
+    <>
     <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${className}`}>
       {/* Existing connections */}
       {displayedConnections.map((connection) => (
@@ -76,7 +102,10 @@ export function NetworkConnectionsGrid({
           profile={connection}
           onClick={() => handleProfileClick(connection)}
           connectionStatus="connected"
+          connectionRating={getExistingRating(connection)}
+          initialNote={getExistingNote(connection)}
           size="compact"
+          isExternalView={isExternalView}
         />
       ))}
       {/* See All Connections card */}
@@ -127,7 +156,7 @@ export function NetworkConnectionsGrid({
         );
       })()}
     </div>
-    </div>
+    </>
 
   );
 }

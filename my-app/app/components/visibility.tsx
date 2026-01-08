@@ -65,15 +65,21 @@ interface VisibilitySelectorProps {
   currentVisibility: VisibilityLevel;
   onVisibilityChange: (visibility: VisibilityLevel) => void;
   disabled?: boolean;
+  allowedLevels?: VisibilityLevel[];
 }
 
-export function VisibilitySelector({ 
-  currentVisibility, 
+export function VisibilitySelector({
+  currentVisibility,
   onVisibilityChange,
-  disabled = false 
+  disabled = false,
+  allowedLevels
 }: VisibilitySelectorProps) {
+  const filteredOptions = allowedLevels
+    ? visibilityOptions.filter(option => allowedLevels.includes(option.value))
+    : visibilityOptions;
+
   return (
-    <Select 
+    <Select
       value={currentVisibility}
       onValueChange={onVisibilityChange}
       disabled={disabled}
@@ -82,7 +88,7 @@ export function VisibilitySelector({
         <SelectValue placeholder="Select visibility" />
       </SelectTrigger>
       <SelectContent align="start" className="w-64">
-        {visibilityOptions.map((option) => (
+        {filteredOptions.map((option) => (
           <SelectItem
             key={option.value}
             value={option.value}

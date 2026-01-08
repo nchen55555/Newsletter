@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { Resend } from 'resend';
 
 export async function POST(req: NextRequest) {
   // Await cookies() before using
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
     // 3. Parse JSON body
     const body = await req.json();
     const { 
-      // name,
+      name,
       referralName, 
       referralEmail, 
       referralBackground,
@@ -27,9 +28,9 @@ export async function POST(req: NextRequest) {
     } = body;
     
     // Capitalize first letters of names
-    // const capitalizeFirstLetter = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-    // const capitalizedName = name ? name.split(' ').map((word: string) => capitalizeFirstLetter(word)).join(' ') : '';
-    // const capitalizedReferralName = referralName ? referralName.split(' ').map((word: string) => capitalizeFirstLetter(word)).join(' ') : '';
+    const capitalizeFirstLetter = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    const capitalizedName = name ? name.split(' ').map((word: string) => capitalizeFirstLetter(word)).join(' ') : '';
+    const capitalizedReferralName = referralName ? referralName.split(' ').map((word: string) => capitalizeFirstLetter(word)).join(' ') : '';
     
     if (!referralEmail || !id){
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -48,53 +49,47 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    // if (!email_send) {
-    //   return NextResponse.json({ success: true});
-    // }
 
-    // const emailContent = {
-    //     message: `Hope you are well! My name is Nicole. A mutual friend of ours, ${capitalizedName}, has requested that you join their <a href="https://theniche.tech/access" style="color: #0066cc; text-decoration: none;">verified, professional network</a> on The Niche, so I wanted to personally reach out to you to extend an invite. 
-                
-    //     The Niche is an exclusive network that partners with some of the highest-growth startups and connects them to exceptional early talent, indexing on their interests, matched to their skills, and most importantly, "verified" by their networks. Interfacing directly with the founders of our partners, our company profiles include Listen Labs, Exa, Basis, Phia (founded by Phoebe Gates), and most recently, Anysphere (Cursor) which, for the first time, is building  their early talent pipelines on our platform.
-
-    //     The network is accessible only by referral so congratulations on receiving this email! In particular, your background piqued my interest, and I would love to extend an <a href="https://theniche.tech/access" style="color: #0066cc; text-decoration: none;">initial invite</a> for you to access and build your professional network on the platform.
-
-    //     You will need to curate your profile (resumes, transcripts, github urls, personal networks, interests, etc), which we use to recommend professional opportunities to you. You build out your professional network on the platform too, connecting with people in your know that you have worked on group projects with or professionally. We use your verified professional network to index and better recommend you opportunities, and as a way for you to also be in the know of what opportunities your smartest friends are currently interested in. You can request to connect and intro with our partner startups, and your profile will be sent directly to the founders. Pending mutual interest, your next communication with that company will be direct with the founders!
-
-    //     If you have any questions or if you're interested in chatting more as well, feel free to let us know as well. We are excited to welcome you to the private beta of The Niche network! 
-    //     `
-    //   };
-    //   // Check if API key exists
-    //   if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {
-    //     console.error('NEXT_PUBLIC_RESEND_API_KEY is not set in environment variables');
-    //     return NextResponse.json({ 
-    //       error: 'Email service not configured - missing API key' 
-    //     }, { status: 500 });
-    //   }
+    const emailContent = {
+        message: `A mutual friend of ours, ${capitalizedName}, has referred and requested you join <a href="https://theniche.tech" style="color: #0066cc; text-decoration: none;">The Niche</a> as part of their verified, professional network. Accept their request by creating a profile through the link above. 
+        <br></br>  
+        The Niche is an exclusive network that digitalizes the real relationships behind your career, curating for you a highly-personalized feed of opportunities that your most trusted networks are currently looking at, have already vetted, or are interviewing at. We partner with some of the highest-growth startups in the tech industry to surface these opportunities as well as to facilitate warm introductions direct unlocked through your Niche network. 
+        <br></br>  
+        The best opportunities have always been through word-of-mouth or referral - we're just digitalizing it. 
+        <br></br>  
+        The network is accessible only by referral so congratulations on receiving this email! If you have any questions or if you're interested in chatting more as well, feel free to let us know. We are excited to welcome you to the private beta of The Niche network.
+        `
+      };
+      // Check if API key exists
+      if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {
+        console.error('NEXT_PUBLIC_RESEND_API_KEY is not set in environment variables');
+        return NextResponse.json({ 
+          error: 'Email service not configured - missing API key' 
+        }, { status: 500 });
+      }
   
-    //   const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
+      const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
   
-    //   const { data, error } = await resend.emails.send({
-    //     from: 'Nicole Chen <nicole@theniche.tech>',
-    //     to: [referralEmail],
-    //     cc: ["" + user.email],
-    //     subject: `${capitalizedName} Wants to Refer You to Their Professional Network on The Niche`,
-    //     html: `
-    //       <p>Hi ${capitalizedReferralName}!</p>
-    //       <p>${emailContent.message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
-    //       <p>Best,<br><br>The Niche Team</p>
-    //     `,
-    //   });
+      const { data, error } = await resend.emails.send({
+        from: 'Nicole Chen <nicole@theniche.tech>',
+        to: [referralEmail],
+        subject: `${capitalizedName} Referred You to Their Niche Network`,
+        html: `
+          <p>Hi ${capitalizedReferralName},</p>
+          <p>${emailContent.message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
+          <p>Best,<br><br>The Niche Team</p>
+        `,
+      });
   
-    //   if (error) {
-    //     console.error('Resend email error:', error);
-    //     return NextResponse.json({ 
-    //       error: 'Failed to send welcome email', 
-    //       details: error.message 
-    //     }, { status: 500 });
-    //   }
+      if (error) {
+        console.error('Resend email error:', error);
+        return NextResponse.json({ 
+          error: 'Failed to send welcome email', 
+          details: error.message 
+        }, { status: 500 });
+      }
   
-    //   console.log('Email sent successfully:', data);
+      console.log('Email sent successfully:', data);
 
     return NextResponse.json({ success: true});
 

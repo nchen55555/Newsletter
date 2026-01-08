@@ -89,7 +89,7 @@ export async function ArticleNewsfeed({ limit = 20 }: { limit?: number } = {}) {
     posts = [];
   }
   return (
-    <div className="py-8 px-8 pt-2">
+    <div className="py-8 px-20 pt-2">
     <div className="animate-in fade-in-50 duration-700">
       {/* Network Breakdown Section */}
       <div className="mb-12">

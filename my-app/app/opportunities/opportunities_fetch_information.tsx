@@ -2,7 +2,7 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 import { SanityDocument } from "next-sanity"
 import { SanityImageSource } from "@sanity/image-url/lib/types/types"
-import { Info } from "lucide-react";
+import { Info, Sparkles } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VerificationProtectedContent } from "../components/verification-protected-content";
 import { CompanyCard } from "../companies/company-cards";
@@ -31,6 +31,13 @@ type CompanyWithImageUrl = CompanyData & {
   imageUrl: string | null;
 };
 
+export type NetworkCompanies = {
+  connectionCount: number;
+  connections: Array<{ id: number; name: string }>;
+  weight: number;
+  quality_score: number;
+};
+
 interface OpportunitiesProp{
   featuredOpportunities: CompanyWithImageUrl[]
 }
@@ -38,12 +45,10 @@ interface OpportunitiesProp{
 export default function Opportunities({ featuredOpportunities }: OpportunitiesProp) {
     const [first_name, setFirstName] = useState("")
     const [profile_image_url, setProfileImage] = useState("")
-    const [generated_interest_profile, setGeneratedInterestProfile] = useState("")
     const [isLoading, setIsLoading] = useState(true)
-    const [companyRecommendations, setCompanyRecommendations] = useState<number[]>([])
-    const [bookmarkedCompanies, setBookmarkedCompanies] = useState<number[]>([])
     const [hasAcceptedCommitment, setHasAcceptedCommitment] = useState(false)
     const [appliedToNiche, setAppliedToNiche] = useState(false)
+    const [networkCompanies, setNetworkCompanies] = useState<Map<number, NetworkCompanies>>(new Map())
 
 
     useEffect(() => {
@@ -58,8 +63,6 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                     const profile = await res.json();
                     setFirstName(profile.first_name || "")
                     setProfileImage(profile.profile_image_url || "")
-                    setGeneratedInterestProfile(profile.generated_interest_profile || "")
-                    setCompanyRecommendations(profile.company_recommendations || [])
                     setHasAcceptedCommitment(profile.professional_agreement || false);
                     setAppliedToNiche(profile.applied || false);
                 }
@@ -68,48 +71,40 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
             }
         }
 
-        const fetchBookmarks = async () => {
+        const fetchNetworkCompanies = async () => {
             try {
-                const res = await fetch(`/api/get_bookmarks`, {
+                const res = await fetch(`/api/get_network_companies`, {
                     credentials: "include",
                     cache: "no-store",
                 });
-                
+
                 if (res.ok) {
                     const data = await res.json();
-                    setBookmarkedCompanies(data.bookmarks || [])
+                    const companiesMap = new Map(Object.entries(data.companies).map(([key, value]) => [Number(key), value as NetworkCompanies]))
+                    console.log("company map ", companiesMap)
+                    setNetworkCompanies(companiesMap)
                 }
             } catch (e) {
-                console.error("Failed to fetch bookmarks:", e);
+                console.error("Failed to fetch network companies:", e);
             }
         }
 
         const fetchData = async () => {
-            await Promise.all([fetchProfile(), fetchBookmarks()]);
-            
+            await Promise.all([fetchProfile(), fetchNetworkCompanies()]);
+
             setIsLoading(false);
         }
 
         fetchData()
-    }, [first_name, generated_interest_profile, profile_image_url])
+    }, [first_name, profile_image_url])
 
     const handleAcceptCommitment = () => {
       setHasAcceptedCommitment(true);
   };
 
-    // Bookmarked companies
-    const bookmarkedOpportunities = featuredOpportunities.filter(opportunity => 
-        bookmarkedCompanies.includes(opportunity.company)
-    );
-
-    // Recommended: companies in recommendations but NOT bookmarked
-    const recommendedOpportunities = featuredOpportunities.filter(opportunity => 
-        companyRecommendations.includes(opportunity.company) && !bookmarkedCompanies.includes(opportunity.company)
-    );
-
-    // Other opportunities: companies not in recommendations and not bookmarked
-    const otherOpportunities = featuredOpportunities.filter(opportunity => 
-        !companyRecommendations.includes(opportunity.company) && !bookmarkedCompanies.includes(opportunity.company)
+    // Other opportunities: companies not in network companies and not bookmarked
+    const otherOpportunities = featuredOpportunities.filter(opportunity =>
+        !networkCompanies.has(opportunity.company)
     );
 
 
@@ -130,17 +125,10 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
               {!isLoading && (
                 <div className="flex flex-col gap-4 w-full">
                     {/* Welcome Header */}
-                    <div className="text-center pt-16 pb-2">
+                    <div className="pt-16 pb-2">
                         <h1 className="text-4xl md:text-5xl font-semibold mb-4">
                             Welcome, {first_name}
                         </h1>
-                        <div className="mb-6">
-                            <p className="text-lg text-neutral-600 leading-relaxed font-light text-center mb-6">
-                                We have partnered with some of the highest-talent startups so that every connect is fast-tracked to the founder&apos;s inbox.
-                            </p>
-
-
-                        </div>
                     </div>
                         <VerificationProtectedContent
                           sectionTitle=""
@@ -150,27 +138,56 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                         >
                         {hasAcceptedCommitment && (
                             <div className="w-full">
+                              {/* Where Your Network is Looking Section */}
+                              {networkCompanies.size > 0 && (
+                                <div className="mb-12">
+                                  <div className="flex items-center gap-3 mb-6">
+                                    <h2 className="text-xl font-semibold text-foreground">
+                                      Where Your Network is Looking
+                                    </h2>
+                                  </div>
+                                  <div className="mb-4 flex items-start gap-2">
+                                    <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                      <p className="text-sm font-semibold text-neutral-200">Why it matters</p>
+                                    </div>
+                                  </div>
+                                  <div className="text-sm text-neutral-400 mb-6">
+                                    See which opportunities your trusted network is focusing their attention on. Shared interest amongst your closest professional circles is a strong predictor of fit. Companies know their best hires come validated by contextualized networks, not cold applications. 
+                                  </div>
+                                    <div className="text-sm text-neutral-200 mb-6">
+                                    <b>The Niche has partnered with select opportunities where your network&apos;s convergence unlocks direct warm introductions to founders and heads of talent to expedite your interest directly to their inbox. </b>
+                                  </div>
+                                  <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                    {featuredOpportunities
+                                      .filter(company => networkCompanies.has(company.company))
+                                      .sort((a, b) => {
+                                        const weightA = networkCompanies.get(a.company)?.weight || 0
+                                        const weightB = networkCompanies.get(b.company)?.weight || 0
+                                        return weightB - weightA // Sort descending (highest weight first)
+                                      })
+                                      .map((company) => (
+                                        <CompanyCard
+                                          appliedToNiche={appliedToNiche}
+                                          key={company._id}
+                                          company={company}
+                                          showHighMutualInterest={false}
+                                          external={false}
+                                          network_connections={networkCompanies.get(company.company)}
+                                        />
+                                      ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Other Opportunities Section */}
+                              <div className="mb-12">
+                                <h2 className="text-xl font-semibold mb-6 text-foreground">
+                                  Other
+                                </h2>
                               {/* All Opportunities Grid */}
                                 {featuredOpportunities.length > 0 ? (
                                   <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                    {recommendedOpportunities.map((company) => (
-                                      <CompanyCard
-                                        appliedToNiche={appliedToNiche}
-                                        key={company._id}
-                                        company={company}
-                                        showHighMutualInterest={true}
-                                        external={false}
-                                      />
-                                    ))}
-                                    {bookmarkedOpportunities.map((company) => (
-                                      <CompanyCard
-                                        appliedToNiche={appliedToNiche}
-                                        key={company._id}
-                                        company={company}
-                                        showHighMutualInterest={false}
-                                        external={false}
-                                      />
-                                    ))}
                                     {otherOpportunities.map((company) => (
                                       <CompanyCard
                                         appliedToNiche={appliedToNiche}
@@ -189,6 +206,7 @@ export default function Opportunities({ featuredOpportunities }: OpportunitiesPr
                                     </AlertDescription>
                                   </Alert>
                                 )}
+                              </div>
                               </div>
                           )}
                         </VerificationProtectedContent>

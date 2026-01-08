@@ -36,7 +36,7 @@ const questions: Question[] = [
     index: 0, 
     field: 'profile_image',
     question: "Let's start with your profile picture",
-    description: "Upload a photo to help us get to know you better",
+    description: "",
     type: 'file',
     required: true
   },
@@ -113,7 +113,7 @@ const questions: Question[] = [
     question: "Share your github",
     description: "Share the link - it should be of the format of https://github.com/username",
     type: 'url',
-    required: true,
+    required: false,
     placeholder: 'https://github.com/username'
   },
   {
@@ -121,7 +121,7 @@ const questions: Question[] = [
     index: 4, 
     field: 'bookmarked_companies', 
     question: "Explore opportunities",
-    description: "The Niche partners with a select cohort of high talent-density startups. We want to get a better understanding of your interests. Please bookmark companies that interest you!",
+    description: "We want to get a better understanding of your interests. Please bookmark companies that interest you or represent your general interests!",
     type: 'companies',
     required: false
   },
@@ -168,7 +168,7 @@ const questions: Question[] = [
     question: "Recommend 2 or more of your smartest technical friends to The Niche.",
     description: "Build your verified professional network on The Niche. We index on your network to recommend you opportunities.",
     type: 'network_recommendations',
-    required: true
+    required: false
   },
 ]
 
@@ -350,7 +350,7 @@ export default function ProfileInfoChatbot({
       const data = await response.json()
       const filteredCompanies = data.filter((company: CompanyWithImageUrl) => company.partner || company.pending_partner)
       const shuffled = filteredCompanies.sort(() => Math.random() - 0.5)
-      setCompanies(shuffled.slice(0, 5))
+      setCompanies(shuffled.slice(0, 7))
     } catch (error) {
       console.error('Error loading companies:', error)
     } finally {
@@ -452,10 +452,10 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
   const currentCompany = companies[currentIndex]
 
   return (
-    <div className="relative">
+    <div className="relative max-w-md mx-auto">
       {/* Carousel Container */}
       <div className="overflow-hidden rounded-lg">
-        <CompanyCard key={currentCompany._id} company={currentCompany} external={!currentCompany.partner}/>
+        <CompanyCard appliedToNiche={false} key={currentCompany._id} company={currentCompany} external={!currentCompany.partner}/>
       </div>
 
       {/* Navigation Controls */}
@@ -785,8 +785,8 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center max-w-md mx-auto">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">All done!</h2>
-          <p className="text-lg text-gray-600">
+          <h2 className="text-3xl font-bold text-neutral-200 mb-4">All done!</h2>
+          <p className="text-lg text-neutral-400">
             We&apos;re creating your profile. You&apos;ll be able to see it soon...
           </p>
         </div>
@@ -803,7 +803,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
     <div className="min-h-[70vh] flex flex-col">
       {/* Progress Bar */}
       {showQuestion && (
-        <div className="w-full max-w-6xl mx-auto px-8 mb-8">
+        <div className="w-full px-8 mb-8">
           <div className="flex justify-between items-center mb-4">
             {/* Back button */}
             {currentQuestionIndex > 0 ? (
@@ -827,7 +827,11 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                 onClick={nextQuestion}
                 disabled={!canProceedToNext()}
                 variant="ghost"
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`flex items-center gap-2 p-0 transition-colors duration-200 ${
+                  canProceedToNext()
+                    ? 'text-neutral-200 hover:text-neutral-700'
+                    : 'text-gray-600 cursor-not-allowed'
+                }`}
               >
                 {currentQuestionIndex >= questions.length - 1 ? 'Activate Profile' : 'Next'}
                 <ArrowRight className="w-4 h-4" />
@@ -845,14 +849,18 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
 
       {/* Two-column layout for all questions */}
       {showQuestion ? (
-        <div className="flex-1 flex items-center max-w-6xl mx-auto w-full px-8">
-          <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-start text-center ">
-            {/* Left side - Question and Description */}
-            <div className="flex items-center min-h-full">
-              <div className="space-y-3">
+        <div className={`flex-1 flex items-center mx-auto w-full px-8`}>
+          <div className={`w-full ${
+            currentQuestion.type === 'networking'
+              ? 'flex flex-col gap-8'
+              : 'grid grid-cols-1 lg:grid-cols-2 gap-12 items-start'
+          } text-center`}>
+            {/* Left/Top side - Question and Description */}
+            <div className={`flex ${currentQuestion.type === 'networking' ? 'items-start justify-center' : 'items-center min-h-full'} w-full`}>
+              <div className="space-y-3 w-full max-w-2xl">
               {/* Animated question */}
-              <div>
-                <h1 className="text-4xl font-bold text-neutral-200">
+              <div className="relative w-full">
+                <h1 className="text-4xl font-bold text-neutral-200 text-center">
                   {typedQuestion}
                   {!questionComplete && <span className="animate-pulse">|</span>}
                 </h1>
@@ -860,9 +868,9 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
 
               {/* Animated description */}
               {currentQuestion.description && (
-                <div>
+                <div className="w-full">
                   {questionComplete && (
-                    <div className="text-lg text-neutral-400 space-y-2">
+                    <div className="text-lg text-neutral-400 space-y-2 text-center">
                       {typedDescription.split('\n').map((line, index, array) => (
                         <p key={index} className={line.trim() === '' ? 'h-4' : ''}>
                           {line}
@@ -876,8 +884,12 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
               </div>
             </div>
 
-            {/* Right side - Input area */}
-            <div className="flex items-center justify-center min-h-full">
+            {/* Right/Bottom side - Input area */}
+            <div className={`flex ${
+              currentQuestion.type === 'networking'
+                ? 'items-start justify-center w-full'
+                : 'items-center justify-center min-h-full'
+            }`}>
               {questionComplete && (descriptionComplete || !currentQuestion.description) && (
                 <div className="space-y-4 w-full">
                     {currentQuestion.type === 'toggle' && (
@@ -1027,7 +1039,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                   )}
 
                   {currentQuestion.type === 'networking' && (
-                    <div>
+                    <div className="w-full">
                       <PeopleSearch
                         allProfiles={allProfiles}
                         currentUserData={currentUserData}
@@ -1046,7 +1058,7 @@ function CompanyCarousel({ companies }: { companies: CompanyWithImageUrl[] }) {
                       <div className="flex justify-center">
                         <Button
                           onClick={() => setShowNetworkReferralDialog(true)}
-                          className="px-8 py-4 text-lg bg-neutral-900 hover:bg-neutral-800 text-white"
+                          className="px-8 py-4 text-lg bg-neutral-600 hover:bg-neutral-800 text-white"
                         >
                           Recommend a Friend
                         </Button>

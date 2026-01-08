@@ -22,7 +22,6 @@ function checkIfShouldShowStatusDialog(interviewStatusUpdatedAt: string | null):
 
 export function LayoutDialogs() {
   const { isOpen, setIsOpen } = useStatusCheckin()
-  const [currentUser, setCurrentUser] = useState<{ first_name?: string } | null>(null)
 
   // Load user profile and check if status dialog should be shown
   useEffect(() => {
@@ -31,7 +30,6 @@ export function LayoutDialogs() {
         const response = await fetch('/api/get_profile', { credentials: 'include' })
         if (response.ok) {
           const userData = await response.json()
-          setCurrentUser(userData)
           
           // Only show status dialog if user has applied AND meets timing conditions
           if (userData.applied) {

@@ -23,6 +23,7 @@ interface ConnectDialogProps {
   verificationStatus: ConnectVerificationStatus;
   statusMessage: string;
   existingRating?: number;
+  initialNote?: string;
   onSubmit: (scaleValue: number, note?: string) => void;
   trigger?: ReactNode;
   connectionStatus?: ConnectionStatus;
@@ -37,6 +38,7 @@ export function ConnectDialog({
   verificationStatus,
   statusMessage,
   existingRating,
+  initialNote, 
   onSubmit,
   trigger,
   connectionStatus = "none",
@@ -47,9 +49,9 @@ export function ConnectDialog({
       case "connected":
         return "Update Your Connection";
       case "requested":
-        return "Accept Connection Request";
-      case "pending":
         return "Connection Request Pending";
+      case "pending":
+        return "Accept Connection Request";
       case "none":
       default:
         return "Index Your Opportunities on People Who You Want to Define Your Career Trajectory";
@@ -83,18 +85,13 @@ export function ConnectDialog({
             isSubmitting={isSubmitting}
             personName={firstName}
             initialRating={existingRating || undefined}
+            initialNote={initialNote}
           />
 
           {/* Status Message Display */}
           {verificationStatus !== "idle" && (
             <div
-              className={`mt-6 p-4 rounded-lg text-sm ${
-                verificationStatus === "success"
-                  ? "bg-green-50 text-green-700 border border-green-200"
-                  : verificationStatus === "error"
-                  ? "bg-red-50 text-red-700 border border-red-200"
-                  : "bg-yellow-50 text-yellow-700 border border-yellow-200"
-              }`}
+              className={`mt-6 p-4 rounded-lg text-sm`}
             >
               {statusMessage}
             </div>

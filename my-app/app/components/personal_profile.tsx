@@ -23,6 +23,8 @@ import { NetworkConnectionsGrid } from "./network-connections-grid";
 import { BookmarkedCompaniesGrid } from "./bookmarked-companies-grid";
 import { DEFAULT_VISIBILITY_SETTINGS, VisibilitySelector, type VisibilityLevel } from "./visibility";
 import type { UserStatus } from "@/app/components/user_check_in_component";
+import { ConnectionBreakdownChart } from "./connection-breakdown-chart";
+import { ProfessionalReputationCard } from "./professional_reputation_card";
 
 interface PersonalProfileProps extends ProfileData {
   onRefresh?: () => void | Promise<void>;
@@ -225,25 +227,25 @@ export function PersonalProfile(props: PersonalProfileProps) {
 
     setLoadingConnections(true);
     try {
-      const connectionIds = props.connections_new.map(conn => conn.connect_id);
-
       const profiles = await Promise.all(
-        connectionIds.map(async (id) => {
+        props.connections_new.map(async (connection) => {
           try {
-            const res = await fetch(`/api/get_external_profile?id=${id}`, {
+            const res = await fetch(`/api/get_external_profile?id=${connection.connect_id}`, {
               credentials: 'include'
             });
             if (res.ok) {
               const profile = await res.json();
               return {
                 ...profile,
+                connectionRating: connection.rating,
+                connectionNote: connection.note,
                 networkSimilarity: 0.85,
                 networkSimilarityLevel: "high" as const
               };
             }
             return null;
           } catch (error) {
-            console.error(`Error fetching profile ${id}:`, error);
+            console.error(`Error fetching profile ${connection.connect_id}:`, error);
             return null;
           }
         })
@@ -313,13 +315,21 @@ export function PersonalProfile(props: PersonalProfileProps) {
 
   // Monitor profile completion and show toast when ready to activate
   useEffect(() => {
-    const isDisabled = props.bio == null || props.profile_image_url == null || props.linkedin_url == null || props.resume_url == null || props.check_in_status == null;
+    const isDisabled = props.bio == null || props.profile_image_url == null || props.linkedin_url == null || props.check_in_status == null;
 
     if (!isDisabled && !hasShownActivationToast && props.applied === false) {
       toast.success("You Can Activate Profile Now");
       setHasShownActivationToast(true);
     }
   }, [props.bio, props.profile_image_url, props.linkedin_url, props.resume_url, props.check_in_status, props.applied, hasShownActivationToast]);
+
+  const connectionData = connectionProfiles
+    .filter(conn => conn.connectionRating !== undefined)
+    .map(conn => ({
+      connect_id: conn.id,
+      rating: conn.connectionRating!,
+      note: conn.connectionNote
+    }));
 
   if (!props) return <Skeleton className="h-12 w-full" />;
 
@@ -328,10 +338,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
       <Toaster />
       <div className="pt-12 pb-8 px-6 relative">
         <div className="absolute inset-0 pointer-events-none"></div>
-        <Container className="max-w-4xl mx-auto">
-
-          <div className="max-w-6xl mx-auto px-4 py-8">
-
+        <Container>
             <div className="mb-4">
               <div className="flex justify-between items-start">
                 <div>
@@ -394,7 +401,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                         setShowReferralDialog(true);
                       }}
                       className="text-white bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:text-white"
-                      disabled={props.bio == null || props.profile_image_url == null || props.linkedin_url == null || props.resume_url == null || props.check_in_status == null}
+                      disabled={props.bio == null || props.profile_image_url == null || props.linkedin_url == null || props.check_in_status == null}
                     >
                       Activate Profile
                     </Button>
@@ -405,9 +412,9 @@ export function PersonalProfile(props: PersonalProfileProps) {
 
             <section className="space-y-3">
               {/* Header with large profile picture */}
-              <div className="flex flex-col lg:flex-row gap-8 lg:items-center">
+              <div className="flex flex-col lg:flex-row gap-8 lg:items-start">
                 {/* Large Profile Picture - Left Side */}
-                <div className="flex-shrink-0 lg:self-center">
+                <div className="flex-shrink-0 flex flex-col">
                   <ProfileAvatar
                     name={`${props.first_name || ''} ${props.last_name || ''}`.trim() || 'User'}
                     imageUrl={props.profile_image_url || undefined}
@@ -435,7 +442,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                 </div>
 
                 {/* User Info, Bio, and Interests - Right Side */}
-                <div className="flex-1 space-y-6 lg:self-center">
+                <div className="flex-1 space-y-6">
                   {/* Bio Section */}
                   <div className="space-y-3 mb-8">
                     <div className="flex items-center justify-between">
@@ -619,7 +626,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                           </Button>
                           <button
                             onClick={() => handleSave('linkedin_url', '')}
-                            className="absolute -top-1 -right-1 w-3 h-3 bg-white border border-gray rounded-full flex items-center justify-center text-xs"
+                            className="absolute -top-1 -right-1 w-3 h-3 text-black bg-white border border-gray rounded-full flex items-center justify-center text-xs"
                           >
                             ×
                           </button>
@@ -632,7 +639,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                             fieldTitle: 'LinkedIn URL',
                             allowFile: false
                           })}
-                          className="border-2 border-dashed border-gray-300 rounded px-3 py-1 text-sm text-gray-400 cursor-pointer hover:border-gray-400 hover:bg-gray-50"
+                            className="absolute -top-1 -right-1 w-3 h-3 text-black bg-white border border-gray rounded-full flex items-center justify-center text-xs"
                         >
                           LinkedIn URL <span className="text-red-400">*</span>
                         </div>
@@ -651,7 +658,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                           </Button>
                           <button
                             onClick={() => handleSave('personal_website', '')}
-                            className="absolute -top-1 -right-1 w-3 h-3 bg-white border border-gray rounded-full flex items-center justify-center text-xs"
+                            className="absolute -top-1 -right-1 w-3 h-3 text-black bg-white border border-gray rounded-full flex items-center justify-center text-xs"
                           >
                             ×
                           </button>
@@ -683,7 +690,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                           </Button>
                           <button
                             onClick={() => handleSave('github_url', '')}
-                            className="absolute -top-1 -right-1 w-3 h-3 bg-white border border-gray rounded-full flex items-center justify-center text-xs"
+                            className="absolute -top-1 -right-1 w-3 h-3 text-black bg-white border border-gray rounded-full flex items-center justify-center text-xs"
                           >
                             ×
                           </button>
@@ -729,7 +736,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                                 delete updatedLinks[key];
                                 handleSave('custom_links', JSON.stringify(updatedLinks));
                               }}
-                              className="absolute -top-1 -right-1 w-3 h-3 bg-white border border-gray rounded-full flex items-center justify-center text-xs"
+                              className="absolute -top-1 -right-1 w-3 h-3 text-black bg-white border border-gray rounded-full flex items-center justify-center text-xs"
                               title={`Remove ${label}`}
                             >
                               ×
@@ -787,7 +794,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                           </Button>
                           <button
                             onClick={() => handleSave('resume_url', '')}
-                            className="absolute -top-1 -right-1 w-3 h-3 bg-white border border-gray rounded-full flex items-center justify-center text-xs"
+                            className="absolute -top-1 -right-1 w-3 h-3 text-black bg-white border border-gray rounded-full flex items-center justify-center text-xs"
                           >
                             ×
                           </button>
@@ -802,7 +809,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                           })}
                           className="border-2 border-dashed border-gray-300 rounded px-3 py-1 text-sm text-gray-400 cursor-pointer hover:border-gray-400 hover:bg-gray-50"
                         >
-                          Resume <span className="text-red-400">*</span>
+                          Resume 
                         </div>
                       )}
                     </div>
@@ -819,7 +826,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                           </Button>
                           <button
                             onClick={() => handleSave('transcript_url', '')}
-                            className="absolute -top-1 -right-1 w-3 h-3 bg-white border border-gray rounded-full flex items-center justify-center text-xs"
+                            className="absolute -top-1 -right-1 w-3 h-3 text-black bg-white border border-gray rounded-full flex items-center justify-center text-xs"
                           > 
                             ×
                           </button>
@@ -927,8 +934,25 @@ export function PersonalProfile(props: PersonalProfileProps) {
                   </div>
 
                   <div className="space-y-4">
+                  <div className="space-y-6 rounded-lg p-4">
+                  <div className="text-sm text-neutral-400">
+                    Curate your personalized, verified professional network by adding context to each connection, digitizing the real relationships behind your career.
+
+                  </div>
+                  <div className="mb-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                      <div className="lg:col-span-1">
+                        <ConnectionBreakdownChart connections={connectionData} />
+                      </div>
+                      <div className="lg:col-span-3">
+                        <ProfessionalReputationCard connections={connectionData} />
+                      </div>
+                    </div>
+                  </div>
+                    
                     <NetworkConnectionsGrid
                       connections={connectionProfiles}
+                      currentUserData={props}
                       onSeeAllConnections={() => router.push('/people')}
                       showSeeAll={true}
                       maxDisplay={7}
@@ -936,6 +960,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                       isExternalView={false}
                       loading={loadingConnections}
                     />
+                    </div>
                   </div>
                 </>
               )}
@@ -955,6 +980,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                           setVisibilitySettings(newSettings);
                           saveVisibilitySettings(newSettings);
                         }}
+                        allowedLevels={['public', 'connections']}
                       />
                     </div>
                   </div>
@@ -973,14 +999,12 @@ export function PersonalProfile(props: PersonalProfileProps) {
                 </>
               )}
             </section>
-          </div>
-
           {/* Referral Dialog */}
           <ReferralDialog
             open={showReferralDialog}
             onOpenChange={setShowReferralDialog}
             title="Congrats on Activating Your Profile"
-            description="We are personal referral only and would love to receive your referral now that you are part of The Niche network"
+            description="Now that you are part of the network, we would love for you to refer one a professional contact or friend onto The Niche to expand the network!"
             forceFormMode={true}
           />
 

@@ -74,7 +74,7 @@ export default async function CompanyPage({
     };
 
     return (
-     <>
+      <>
         <CompanyPageClient
           company={companyWithImage}
           companyPost={postData}

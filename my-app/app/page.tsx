@@ -1,24 +1,7 @@
-import { client } from "@/lib/sanity/client";
 import { ArticleNewsfeed } from "@/app/components/article_mosaic";
 import LandingClient from "./components/landing_client";
 
 export default async function Home() {
-  // Fetch posts from Sanity but use static mediaLibrary for companies 6 & 7
-  const POSTS_QUERY = `*[_type == "post"
-  && defined(slug.current)
-
-  && !(slug.current match "*-beta*")
-  ]|order(publishedAt desc){_id, title, slug, publishedAt, image}`;
-
-  const options = { next: { revalidate: 300 } };
-
-  let posts = [];
-
-  try {
-    posts = await client.fetch(POSTS_QUERY, {}, options);
-  } catch {
-    posts = [];
-  }
 
   return (
     <LandingClient>

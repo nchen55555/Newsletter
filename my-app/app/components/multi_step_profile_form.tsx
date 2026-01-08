@@ -192,8 +192,8 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         {/* <Navigation /> */}
         <div className="px-6 relative">
           <div className="absolute inset-0 pointer-events-none"></div>
-          <Container className="max-w-4xl mx-auto">
-            <div className="max-w-6xl mx-auto px-8 py-16">
+          <Container >
+            <div className="px-8 py-16">
             <ProfileInfoChatbot 
               form={form} 
               setForm={setForm} 

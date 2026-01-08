@@ -7,25 +7,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileData } from "@/app/types";
 import { useEffect } from "react";
-import ProfileInfo from "./profile_info";
 import { ProfileFormState } from "@/app/types";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2Icon, Terminal, Send } from "lucide-react";
+import { CheckCircle2Icon, Terminal, Sparkle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 
 
-export default function ApplyButton({ 
-  company, 
-  person, 
-  isDemo = false, 
-  onIntroRequested 
-}: { 
-  company: string; 
-  person?: string; 
-  isDemo?: boolean; 
-  onIntroRequested?: () => void; 
+export default function ApplyButton({
+  company_title,
+  company,
+  person,
+  isDemo = false,
+  hiringTags = []
+}: {
+  company_title: string;
+  company: string;
+  person?: string;
+  isDemo?: boolean;
+  onIntroRequested?: () => void;
+  hiringTags?: string[];
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { isSubscribed } = useSubscriptionContext();
@@ -36,8 +39,8 @@ export default function ApplyButton({
   const [appSuccess, setAppSuccess] = useState(false)
   const [loadingApplied, setLoadingApplied] = useState(false)
   const [isCalendarAuthFlow, setIsCalendarAuthFlow] = useState(false)
-  const [profileSectionExpanded, setProfileSectionExpanded] = useState(false)
   const [appliedToNiche, setAppliedToNiche] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [form, setForm] = useState<ProfileFormState>({
     id: 0,
     email: "",
@@ -166,100 +169,14 @@ export default function ApplyButton({
     setAppError(null);
     setAppSuccess(false);
 
-    // Handle demo mode
-    if (isDemo) {
-      setAppSuccess(true);
-      setLoadingApplied(false);
-      onIntroRequested?.();
-      setTimeout(() => {
-        setDialogOpen(false);
-      }, 1500);
-      return;
+    if(!form.resume_url) {
+      setAppError("Please submit your resume")
     }
-
-    if (!form) {
-      setAppError("Profile data not loaded. Please try again.");
-      setLoadingApplied(false);
-      return;
+    if(!additionalInfo) {
+      setAppError("Please submit your intro")
     }
-
-    if (!form.first_name) {
-      setAppError("First name is required.");
-      setLoadingApplied(false);
-      return;
-    }
-    if (!form.last_name) {
-      setAppError("Last name is required.");
-      setLoadingApplied(false);
-      return;
-    }
-    if (!form.phone_number) {
-      setAppError("Phone number is required.");
-      setLoadingApplied(false);
-      return;
-    }
-    if (!form.linkedin_url) {
-      setAppError("LinkedIn URL is required.");
-      setLoadingApplied(false);
-      return;
-    }
-
-    if (!form.bio) {
-      setAppError("Bio is required.");
-      setLoadingApplied(false);
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('id', form.id.toString());
-    formData.append('first_name', form.first_name);
-    formData.append('last_name', form.last_name);
-    formData.append('linkedin_url', form.linkedin_url);
-    formData.append('personal_website', form.personal_website);
-    formData.append('phone_number', form.phone_number);
-    formData.append('email', form.email)
-    formData.append('bio', form.bio);
-    
-    // Add boolean toggle values (convert to string for FormData)
-    formData.append('is_public_profile', form.is_public_profile.toString());
-    formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
-    formData.append('needs_visa_sponsorship', form.needs_visa_sponsorship.toString());
-    
-    // Handle resume: use file if provided, otherwise keep existing URL
-    if (form.resume_file) {
-      formData.append('resume_file', form.resume_file);
-    } else if (!form.resume_url) {
-      setAppError('Resume is required.');
-      return;
-    }
-
-    // Handle profile image: use file if provided, otherwise keep existing URL
-    if (form.profile_image) {
-      formData.append('profile_image', form.profile_image);
-    } else if (!form.profile_image_url) {
-      setAppError('Profile image is required.');
-      return;
-    }
-
-    // Handle transcript: use file if provided, otherwise keep existing URL
-    if (form.transcript_file) {
-      formData.append('transcript_file', form.transcript_file);
-    } else if (!form.transcript_url) {
-      setAppError('Transcript is required.');
-      return;
-    }
-
-
-    // First, update the profile
-    const res = await fetch('/api/post_profile', { 
-      method: 'PATCH',
-      body: formData 
-    })
-    
-    if (!res.ok) {
-        setAppError("Profile update failed")
-        setLoadingApplied(false)
-        return; // Stop here if profile update fails
+    if(!selectedRole){
+      setAppError("Please select a role")
     }
 
     // Only proceed with application if profile update succeeded
@@ -269,12 +186,13 @@ export default function ApplyButton({
         Authorization: `Bearer ${access_token}`,
       },
       body: JSON.stringify({
+        company_title: company_title,
         first_name: form.first_name, 
         email: form.email,
         candidate_id: form.id,
         company_id: company,
         additional_info: additionalInfo,
-        person: person
+        role: selectedRole
       })
     })
     
@@ -295,23 +213,22 @@ export default function ApplyButton({
 
 
   return (
-    <div className="flex justify-center lg:justify-start mb-2">
+    <div className="flex justify-center lg:justify-start">
   <TooltipProvider>
   <Tooltip>
     <TooltipTrigger asChild>
       <span>
-        <Button
-          onClick={() => setDialogOpen(true)}
-          variant="default"
-          className="inline-flex items-center justify-center bg-neutral-900 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-neutral-800 transition-colors text-sm w-full"
-          type="button"
-          aria-label="request an intro"
-          disabled={applied || !appliedToNiche}
-          style={applied ? { cursor: "not-allowed" } : {}}
-        >
-          <Send className="w-4 h-4 mr-2" />
-          request an intro
-        </Button>
+      <Button
+        variant="outline"
+        size="lg"
+        onClick={() => setDialogOpen(true)}
+        disabled={applied || !appliedToNiche}
+        className="gap-2"
+        style={applied ? { cursor: "not-allowed" } : {}}
+      >
+        <Sparkle></Sparkle>
+        <span className="hidden sm:inline">Request a Warm Intro </span>
+      </Button>
       </span>
     </TooltipTrigger>
     {applied && (
@@ -325,17 +242,77 @@ export default function ApplyButton({
           <DialogTrigger asChild>
             <span style={{ display: 'none' }} />
           </DialogTrigger>
-          <DialogContent className="sm:max-w-5xl w-full p-8 max-h-[80vh] overflow-y-auto" showCloseButton={false}>
+          <DialogContent className="w-full p-8 overflow-y-auto" showCloseButton={false}>
             <DialogHeader className="mb-8">
-              <DialogTitle className="text-2xl font-semibold">Connecting you to {person}</DialogTitle>
-              <DialogDescription className="text-lg mt-2">
-                In the intro blurb below, provide a brief background of why you want to meet {person} and what excites you about connecting to the company!
+              <DialogTitle className="text-2xl font-semibold">Warm Intro Request</DialogTitle>
+              <DialogDescription className="text-sm mt-2 text-neutral-200">
+                In the intro blurb, provide a brief reason for your request and tag the specific opportunity you would like to discuss if any. We try to get back on your request as soon as possible! 
               </DialogDescription>
+              {hiringTags && hiringTags.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-neutral-400 mb-2">Select a role</p>
+                  <div className="flex flex-wrap gap-2">
+                    {hiringTags.map((role) => (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => setSelectedRole(selectedRole === role ? null : role)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          selectedRole === role
+                            ? 'bg-neutral-900 text-white'
+                            : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                        }`}
+                      >
+                        {role}
+                      </button>
+                    ))}
+                    <button
+                      key="no-specific-role"
+                      type="button"
+                      onClick={() => setSelectedRole(selectedRole === 'No Specific Role' ? null : 'No Specific Role')}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        selectedRole === 'No Specific Role'
+                          ? 'bg-neutral-900 text-white'
+                          : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                      }`}
+                    >
+                      No Specific Role
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div className="py-6 grid w-full max-w-sm items-center gap-3">
+                  <Label htmlFor="resume_file" className="text-base font-medium">Resume <span className="text-sm text-gray-500 font-normal">(Max 5MB)</span></Label>
+                  <Input
+                    id="resume_file"
+                    name="resume_file"
+                    type="file"
+                    accept="application/pdf,.pdf,.doc,.docx"
+                    onChange={e => {
+                      const file = e.target.files && e.target.files[0];
+                      if (file && file.size > 5 * 1024 * 1024) { // 5MB limit
+                        alert('Resume file size must be less than 5MB');
+                        e.target.value = '';
+                        return;
+                      }
+                      setForm(prev => ({ ...prev, resume_file: file || null }));
+                    }}
+                    className="block w-full text-lg mt-2"
+                  />
+                  {form.resume_file && (
+                    <div className="mt-2 text-sm text-gray-700">Selected: {form.resume_file.name}</div>
+                  )}
+                  {!form.resume_file && form.resume_url && (
+                    <div className="mt-2 text-sm text-gray-700">
+                      Current resume: <a href={form.resume_url} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">View uploaded resume</a>
+                    </div>
+                  )}
+                </div>
             </DialogHeader>
             <form onSubmit={handleApply}>
-            <div className="mb-10">
-              <div className="border border-neutral-200 rounded-lg">
-                <button
+            {/* <div className="mb-10"> */}
+              {/* <div className="border border-neutral-200 rounded-lg"> */}
+                {/* <button
                   type="button"
                   onClick={() => setProfileSectionExpanded(!profileSectionExpanded)}
                   className="flex items-center justify-between w-full p-4 text-left hover:bg-neutral-50 transition-colors"
@@ -358,9 +335,9 @@ export default function ApplyButton({
                   <div className="px-4 pb-4 border-t border-neutral-200">
                     <ProfileInfo form={form} setForm={setForm} />
                   </div>
-                )}
-              </div>
-            </div>
+                )} */}
+              {/* </div> */}
+            {/* </div> */}
             
             {/* <CalendarAuthGate 
               onAuthRequired={() => {
@@ -385,7 +362,7 @@ export default function ApplyButton({
                     onChange={(e) => !isDemo && setAdditionalInfo(e.target.value)} 
                     required 
                     placeholder={isDemo ? "Demo mode - text is pre-filled" : "Tell us why you're interested in connecting and what draws you to this opportunity."} 
-                    className={`w-full min-h-[120px] text-lg px-4 py-3 mt-2 border rounded-lg resize-none ${
+                    className={`w-full min-h-[120px] text-sm px-4 py-3 mt-2 border rounded-lg resize-none ${
                       isDemo 
                         ? 'border-gray-300 bg-gray-50 text-gray-700 cursor-not-allowed' 
                         : 'border-neutral-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent'

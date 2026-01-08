@@ -14,13 +14,17 @@ function ProfileCard({
   onClick,
   connectionStatus = 'none',
   connectionRating,
+  initialNote,
   size = 'default',
+  isExternalView = false,
 }: {
   profile: ProfileData;
   onClick: () => void;
   connectionStatus?: ConnectionStatusType;
+  initialNote?: string;
   connectionRating?: number;
   size?: 'default' | 'compact';
+  isExternalView?: boolean;
 }) {
   const [showConnectDialog, setShowConnectDialog] = useState(false);
   const [isSubmittingConnect, setIsSubmittingConnect] = useState(false);
@@ -106,10 +110,7 @@ function ProfileCard({
             </h3>
           </div>
 
-          {/* Bio text */}
-          {/* <p className="text-neutral-600 text-sm leading-relaxed mb-3 line-clamp-2">
-            {profile.bio || getConnectionRatingText() || 'No bio available'}
-          </p> */}
+         {!isExternalView && (
           <ConnectDialog
               open={showConnectDialog}
               onOpenChange={setShowConnectDialog}
@@ -120,8 +121,10 @@ function ProfileCard({
               onSubmit={handleConnectSubmit}
               connectionStatus={getConnectionStatus()}
               existingRating={getExistingConnectionRating()}
+              initialNote={initialNote}
               compact={true}
             />
+         )}
         </div>
       </div>
     </div>

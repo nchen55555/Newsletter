@@ -117,6 +117,7 @@ export default function ApplyCompanies({
                 </div>
                 <ApplyButton 
                   company={selectedCompanyId.toString()} 
+                  company_title={selectedCompany.alt || selectedCompany.caption || `Company ${selectedCompany.company}`}
                   onIntroRequested={handleApply}
                 />
               </div>

@@ -40,7 +40,8 @@ export type ProfileData = {
     network_recommendations?: NetworkRecommendation[];
     outreach_frequency?: number;
     onboarding_step?: number;
-    connectionRating?: number;    
+    connectionRating?: number;
+    connectionNote?: string;
     parsed_transcript_json?: string;
     github_url_data?: string; 
     github_vector_embeddings?: number[];

@@ -203,7 +203,7 @@ export function UserStatusCheckin({
           <DialogTitle>Update Your Status</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6 bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4">
+        <div className="space-y-6 rounded-lg p-4">
           <div className="text-sm text-neutral-500 dark:text-neutral-400">
               Where are you in your opportunity search?
           </div>
@@ -238,7 +238,7 @@ export function UserStatusCheckin({
         </div>
 
         {/* Timeline Selection - Show below status buttons */}
-      <div className="space-y-6 bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4">
+      <div className="space-y-6 rounded-lg p-4">
         {selectedStatus && needsTimeline(selectedStatus) && (
           <div className="space-y-4 border-t border-neutral-200 dark:border-neutral-700 pt-6">
               <div className="text-sm text-neutral-500 dark:text-neutral-400">

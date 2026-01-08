@@ -10,6 +10,8 @@ import { LandingPageSearch } from './landing-page-search';
 import { SidebarLayout } from "./sidebar-layout";
 import { Navigation } from "./header";
 import { useMemo } from 'react';
+import { StatusCheckinProvider } from "@/app/components/status-checkin-context";
+import { LayoutDialogs } from "./layout-dialogs";
 
 export default function LandingClient({ children }: { children?: React.ReactNode }) {
   const { isSubscribed } = useSubscriptionContext();
@@ -105,6 +107,7 @@ export default function LandingClient({ children }: { children?: React.ReactNode
   const landingPage = (
     <div>
       {/* Top Hero: text + CTAs */}
+      <StatusCheckinProvider>
       <section className="px-4 pt-16 pb-8">
         <div className="mx-auto text-center">
           <motion.div
@@ -207,7 +210,7 @@ export default function LandingClient({ children }: { children?: React.ReactNode
             How the Niche Works
             </h1>
           <p className="text-base md:text-lg text-neutral-200 leading-relaxed">
-            The best opportunities have always been through word-of-mouth from your network - we&apos;re just digitalizing it. By mapping the true network of the people backing your career, contextualized through your own words, The Niche surfaces opportunities that your most trusted networks are already looking at or vetted. If your network signals a strong fit to one of our partner startups, we can facilitate a warm introduction to the founders for you on your behalf.
+            The best opportunities have always been through word-of-mouth from your network - we&apos;re just digitalizing it. By mapping the people backing your career, contextualized through your own words, The Niche surfaces opportunities that your most trusted networks are already looking at or vetted. If your network signals a strong fit to one of our partner startups, we can facilitate a warm introduction to the founders for you on your behalf.
           </p>
 
           {/* Mode toggle: For building your network / For hiring */}
@@ -322,7 +325,8 @@ export default function LandingClient({ children }: { children?: React.ReactNode
           )}
         </div>
       </section>
-      
+      <LayoutDialogs />
+      </StatusCheckinProvider>
     </div>
   )
 

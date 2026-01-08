@@ -67,6 +67,36 @@ export function PeopleSearch({
     return 'none';
   };
 
+  // Get existing rating for a connection (only from requested_connections_new and connections_new)
+  const getExistingRating = (profile?: ProfileData | null): number | undefined => {
+    if (!currentUserData || !profile || !profile.id) return undefined;
+
+    const userConnections = Array.isArray(currentUserData.connections_new) ? currentUserData.connections_new : [];
+    const userPendingConnections = Array.isArray(currentUserData.pending_connections_new) ? currentUserData.pending_connections_new : [];
+    const pid = String(profile.id);
+
+    // Check only connections_new and requested_connections_new
+    const connection = userConnections.find((conn: ConnectionData) => String(conn.connect_id) === pid)
+      || userPendingConnections.find((conn: ConnectionData) => String(conn.connect_id) === pid);
+
+    return connection?.rating;
+  };
+
+  // Get existing note for a connection (only from requested_connections_new and connections_new)
+  const getExistingNote = (profile?: ProfileData | null): string | undefined => {
+    if (!currentUserData || !profile || !profile.id) return undefined;
+
+    const userConnections = Array.isArray(currentUserData.connections_new) ? currentUserData.connections_new : [];
+    const userPendingConnections = Array.isArray(currentUserData.pending_connections_new) ? currentUserData.pending_connections_new : [];
+    const pid = String(profile.id);
+
+    // Check only connections_new and requested_connections_new
+    const connection = userConnections.find((conn: ConnectionData) => String(conn.connect_id) === pid)
+      || userPendingConnections.find((conn: ConnectionData) => String(conn.connect_id) === pid);
+
+    return connection?.note;
+  };
+
   const handleDialogChange = (open: boolean) => {
     setDialogOpen(open)
     if (!open) {
@@ -86,10 +116,10 @@ export function PeopleSearch({
 
     setIsSubmitting(true)
     setVerificationStatus('idle')
-    
+
     try {
       const response = await fetch('/api/post_connect', {
-        method: 'POST', 
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           connect_id: selectedProfile.id,
@@ -97,7 +127,7 @@ export function PeopleSearch({
           note: note
         })
       })
-      
+
       if (response.ok) {
         const result = await response.json()
         if (result.type === 'mutual') {
@@ -107,9 +137,12 @@ export function PeopleSearch({
           setVerificationStatus('success')
           setStatusMessage(`Connection request sent to ${selectedProfile.first_name}! They've received a notification.`)
         }
-        
-        setDialogOpen(false)
-        onConnectionUpdate?.() // Notify parent of connection update
+
+        // Auto-close dialog after showing success message
+        setTimeout(() => {
+          setDialogOpen(false)
+          onConnectionUpdate?.() // Notify parent of connection update
+        }, 2000)
       } else {
         setVerificationStatus('error')
         setStatusMessage('Failed to send connection request. Please try again.')
@@ -148,24 +181,27 @@ export function PeopleSearch({
 
       {/* Recommended Profiles - show 4 random people when no search query */}
       {!searchQuery.trim() && (
-        <div className="max-w-4xl mx-auto mb-8">
-          <h4 className="text-lg font-semibold text-neutral-900 mb-4 text-center">
+        <div className="mb-8">
+          <h4 className="text-lg font-semibold mb-4 text-center">
             Recommended To You
           </h4>
-          <div className="grid gap-4 md:grid-cols-1">
+          <div className="grid grid-cols-3 gap-4">
             {allProfiles
               .filter(profile => profile.id !== currentUserId)
               .sort(() => Math.random() - 0.5)
-              .slice(0, 3)
+              .slice(0, 6)
               .map((profile) => (
                 <div key={profile.id}>
                   <ProfileCard
                     profile={profile}
-                    onClick={() => {
-                      handleConnectClick(profile);
-                      handleDialogChange(true);
-                    }}
+                    onClick={() => {}}
+                    // onClick={() => {
+                    //   handleConnectClick(profile);
+                    //   handleDialogChange(true);
+                    // }}
                     connectionStatus={getConnectionStatus(profile)}
+                    connectionRating={getExistingRating(profile)}
+                    initialNote={getExistingNote(profile)}
                   />
                 </div>
               ))}
@@ -175,10 +211,10 @@ export function PeopleSearch({
 
       {/* Search Results - Profile Rows */}
       {searchQuery.trim() && (
-        <div className="max-w-4xl mx-auto space-y-4 mb-8">
+        <div className="space-y-4 mb-8">
           {searchResults.length > 0 ? (
             searchResults.slice(0, 6).map((profile) => (
-              <div key={profile.id} className="bg-white border border-neutral-200 rounded-2xl p-6 flex items-start justify-between gap-4">
+              <div key={profile.id} className="border border-neutral-200 rounded-2xl p-6 flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <ProfileAvatar
                     name={`${profile.first_name} ${profile.last_name}`}
@@ -188,11 +224,11 @@ export function PeopleSearch({
                     className="w-16 h-16 rounded-full flex-shrink-0"
                   />
                   <div className="flex-1 text-left min-w-0">
-                    <h3 className="text-lg font-semibold text-neutral-900">
+                    <h3 className="text-lg font-semibold text-neutral-200">
                       {profile.first_name} {profile.last_name}
                     </h3>
                     {profile.bio && (
-                      <p className="text-sm text-neutral-600 line-clamp-2 mt-1 pr-2">
+                      <p className="text-sm text-neutral-400 line-clamp-2 mt-1 pr-2">
                         {profile.bio}
                       </p>
                     )}
@@ -213,7 +249,7 @@ export function PeopleSearch({
                       return (
                         <Button disabled className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
                           <UserPlus className="w-4 h-4" />
-                          Request Sent
+                          Accept Connection
                         </Button>
                       );
                     } else {
@@ -227,7 +263,7 @@ export function PeopleSearch({
                             }}
                           >
                             <UserPlus className="w-4 h-4" />
-                            Accept Request
+                            Request Pending
                           </Button>
                         ) : (
                           <Button
@@ -238,7 +274,7 @@ export function PeopleSearch({
                             }}
                           >
                             <UserPlus className="w-4 h-4" />
-                            Add to Network
+                            Connect
                           </Button>
                         )
                       );
@@ -264,7 +300,11 @@ export function PeopleSearch({
         isSubmitting={isSubmitting}
         verificationStatus={verificationStatus}
         statusMessage={statusMessage}
+        existingRating={getExistingRating(selectedProfile)}
+        initialNote={getExistingNote(selectedProfile)}
         onSubmit={handleConnectionScale}
+        connectionStatus={getConnectionStatus(selectedProfile)}
+        compact={true}
       />
     </div>
   )

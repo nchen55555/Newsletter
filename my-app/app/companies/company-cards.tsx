@@ -3,13 +3,15 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Info, Loader2 } from "lucide-react";
+import { Info, Loader2, Sparkles } from "lucide-react";
 import { CompanyData } from "@/app/types";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardTitle, CardHeader, CardFooter } from "@/components/ui/card";
 import Share from "../components/share";
+import {type NetworkCompanies} from "@/app/opportunities/opportunities_fetch_information";
+import { toast } from "sonner"; 
 
 type CompanyWithImageUrl = CompanyData & {
   imageUrl: string | null;
@@ -31,6 +33,7 @@ export function CompanyCard({
   disableNavigation = false,
   isNavigatingExternal,
   onNavigateStart,
+  network_connections = undefined,
 }: {
   appliedToNiche?: boolean;
   company: CompanyWithImageUrl;
@@ -40,6 +43,7 @@ export function CompanyCard({
   disableNavigation?: boolean;
   isNavigatingExternal?: boolean;
   onNavigateStart?: () => void;
+  network_connections?: NetworkCompanies,
 }) {
   const router = useRouter();
 
@@ -48,11 +52,18 @@ export function CompanyCard({
   const title = company.alt || `Company ${company.company?.toString?.() ?? ""}`;
 
   const handleCardClick = () => {
-    console.log("handleCardClick", disableNavigation, appliedToNiche, isNavigating);
-    if (disableNavigation || !appliedToNiche || isNavigating) return;
+    if (disableNavigation || !appliedToNiche || isNavigating) {
+      if (!appliedToNiche) {
+        toast("Create Your Niche Profile to explore opportunities");
+      }
+      return;
+    }
     onNavigateStart?.();
     router.push(`/companies/${company.company}`);
   };
+
+  const warm_intro_available = network_connections?.quality_score && network_connections.quality_score >= 3.0
+
 
   return (
     <Card className="group relative overflow-hidden pt-0 transition-all duration-200 hover:shadow-lg">
@@ -81,7 +92,7 @@ export function CompanyCard({
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-6xl font-bold text-neutral-300">
-                {title?.charAt(0)?.toUpperCase?.() || "C"}
+                {title?.charAt(0)?.toUpperCase?.() || "C"} 
               </div>
             </div>
           )}
@@ -96,12 +107,20 @@ export function CompanyCard({
 
       {/* Title and Caption */}
       <CardHeader className="text-center">
-        <CardTitle
-          className={`text-lg font-semibold ${!disableNavigation ? 'cursor-pointer' : ''}`}
-          onClick={handleCardClick}
-        >
-          {title}
-        </CardTitle>
+        <div className="flex flex-col items-center gap-1">
+          <CardTitle
+            className={`text-lg font-semibold ${!disableNavigation ? 'cursor-pointer' : ''}`}
+            onClick={handleCardClick}
+          >
+            {title}
+          </CardTitle>
+          {warm_intro_available && (
+            <div className="flex items-center gap-1 text-xs text-neutral-400 border border-neutral-400 rounded px-2 py-1">
+              <Sparkles className="h-3 w-3" />
+              <span>Warm Intro</span>
+            </div>
+          )}
+        </div>
         {company.caption && (
           <CardDescription className="line-clamp-2">
             {company.caption}
@@ -111,18 +130,31 @@ export function CompanyCard({
 
       {/* Action Buttons */}
       {!disableNavigation && (
-        <CardFooter className="gap-3 justify-between pt-0">
-          <Button
-            onClick={handleCardClick}
-            className="text-neutral-900 bg-neutral-100 hover:bg-neutral-200"
-            disabled={isNavigating}
-          >
-            Explore Profile
-          </Button>
-          <div className="flex items-center gap-1">
-            <RainbowBookmark company={company.company} />
-            <Share company={company.company} />
+        <CardFooter className="flex-col gap-3 pt-0 pb-0">
+          <div className="flex w-full justify-between gap-3">
+            <Button
+                variant="outline"
+                size="lg"
+                onClick={handleCardClick}
+                className="gap-2"
+              >
+                <span className="hidden sm:inline">Explore Profile</span>
+              </Button>
+            <div className="flex items-center gap-3">
+              <RainbowBookmark company={company.company} />
+              <Share company={company.company} />
+            </div>
           </div>
+          {network_connections?.connectionCount && network_connections.connectionCount > 0 && (
+            <div className="mt-2 flex items-center justify-center gap-1 text-xs text-neutral-400 w-full">
+              <span>
+                {network_connections.connectionCount} {network_connections.connectionCount === 1 ? 'connection' : 'connections'} engaged with this profile recently including {(() => {
+                  const names = network_connections.connections.map(c => c.name).join(', ')
+                  return names.length > 30 ? names.substring(0, 30) + '...' : names
+                })()}
+              </span>
+            </div>
+          )}
         </CardFooter>
       )}
     </Card>

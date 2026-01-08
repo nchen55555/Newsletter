@@ -68,7 +68,7 @@ export function AppSidebar() {
       disabled: false,
     },
     {
-      title: "Opportunities",
+      title: "Opportunity Database",
       href: "/opportunities",
       icon: Building2,
       isActive: pathname === "/opportunities",

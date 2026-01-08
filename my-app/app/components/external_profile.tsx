@@ -1,7 +1,5 @@
-import { ProfileData, CompanyWithImageUrl,  ReferralWithProfile } from "@/app/types";
-import { GitHubProfileAnalysis } from "@/app/types/github-analysis";
+import { ProfileData, CompanyWithImageUrl } from "@/app/types";
 import { 
-  CompanyData, 
   ExternalProfileProps,
 } from "@/app/types/match-types";
 import { Button } from "@/components/ui/button";
@@ -14,7 +12,6 @@ import ProfileAvatar from "./profile_avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { encodeSimple } from "../utils/simple-hash";
-import type { RepositoryEmbedding } from "./external_profile/repository_card";
 import { UserCheckInComponent, UserStatus } from "./user_check_in_component";
 import { NetworkConnectionsGrid } from "./network-connections-grid";
 import { BookmarkedCompaniesGrid } from "./bookmarked-companies-grid";
@@ -53,10 +50,6 @@ export interface SimilarDeveloper {
   };
 }
 
-type NetworkProfile = ProfileData & {
-  networkSimilarity: number;
-  networkSimilarityLevel: "very_high" | "high" | "medium" | "low";
-};
 
 
 export function ExternalProfile(props: ExternalProfileProps) {
@@ -161,6 +154,8 @@ export function ExternalProfile(props: ExternalProfileProps) {
 
   // ---------- Fetch current user ID ----------
 
+  const [currentUserData, setCurrentUserData] = useState<ProfileData | null>(null);
+
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -168,6 +163,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
         if (response.ok) {
           const userData = await response.json();
           setCurrentUserId(userData.id);
+          setCurrentUserData(userData);
         }
       } catch (error) {
         console.error('Error fetching current user:', error);
@@ -200,12 +196,24 @@ export function ExternalProfile(props: ExternalProfileProps) {
   };
 
   const getExistingConnectionRating = (): number | undefined => {
-    if (!currentUserId) return undefined;
+    if (!currentUserData) return undefined;
 
     // Find the connection object for the current user
-    const connection = props.connections_new?.find(conn => conn.connect_id === currentUserId);
+    const connection = currentUserData.connections_new?.find(conn => conn.connect_id === props.id)
+    || currentUserData.pending_connections_new?.find(conn => conn.connect_id === props.id);
     return connection?.rating;
   };
+
+  const getExistingNote = (): string | undefined => {
+    if (!currentUserData) return undefined;
+
+    // Find the connection object for the current user
+    const connection = currentUserData.connections_new?.find(conn => conn.connect_id === props.id)
+    || currentUserData.pending_connections_new?.find(conn => conn.connect_id === props.id);
+    console.log("getting note ", connection, currentUserData.pending_connections_new)
+    return connection?.note;
+  };
+
 
   // ---------- Derived helpers ----------
 
@@ -358,7 +366,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
           );
           if (response.ok) {
             const profile = await response.json();
-            return { ...profile, connectionRating: connection.rating };
+            return { ...profile, connectionRating: connection.rating, connectionNote: connection.note };
           }
           return null;
         } catch (error) {
@@ -444,10 +452,8 @@ export function ExternalProfile(props: ExternalProfileProps) {
         <Toaster />
         <div className="pt-12 pb-8 px-6 relative">
           <div className="absolute inset-0 pointer-events-none"></div>
-          <Container className="max-w-4xl mx-auto">
-    
-      <div className="max-w-6xl mx-auto px-4 py-8">
-       
+          <Container>
+           
       <div className="mb-4">
         <div className="flex justify-between items-start">
           <div>
@@ -482,6 +488,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
               onSubmit={handleConnectSubmit}
               connectionStatus={getConnectionStatus()}
               existingRating={getExistingConnectionRating()}
+              initialNote={getExistingNote()}
             />
             
           </div>
@@ -490,9 +497,9 @@ export function ExternalProfile(props: ExternalProfileProps) {
 
       <section className="space-y-3">
           {/* Header with large profile picture */}
-          <div className="flex flex-col lg:flex-row gap-8 lg:items-center">
+          <div className="flex flex-col lg:flex-row gap-8 lg:items-start">
             {/* Large Profile Picture - Left Side */}
-            <div className="flex-shrink-0 lg:self-center">
+            <div className="flex-shrink-0 flex flex-col">
               <ProfileAvatar
                 name={`${props.first_name || ''} ${props.last_name || ''}`.trim() || 'User'}
                 imageUrl={props.profile_image_url || undefined}
@@ -503,7 +510,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
             </div>
 
             {/* User Info, Bio, and Interests - Right Side */}
-            <div className="flex-1 space-y-6 lg:self-center">
+            <div className="flex-1 space-y-6">
               {/* Connect Button - Only show when viewing someone else's profile
               {props.isExternalView && (
                 <Button
@@ -710,6 +717,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
                 <div className="space-y-4">
                   <NetworkConnectionsGrid
                     connections={connectionProfiles}
+                    currentUserData={currentUserData}
                     onSeeAllConnections={() => router.push('/people')}
                     showSeeAll={true}
                     maxDisplay={7}
@@ -751,7 +759,6 @@ export function ExternalProfile(props: ExternalProfileProps) {
 
 
       </section>
-      </div>
       </Container>
       </div>
     </SidebarLayout>

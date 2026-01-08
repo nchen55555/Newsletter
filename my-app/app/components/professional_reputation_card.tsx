@@ -66,7 +66,7 @@ export function ProfessionalReputationCard({ connections }: ProfessionalReputati
           <CardAction>
             <Badge variant="outline" className="gap-1">
               <Sparkles className="h-3 w-3" />
-              AI
+              Visible Only To You
             </Badge>
           </CardAction>
         </CardHeader>
@@ -90,7 +90,7 @@ export function ProfessionalReputationCard({ connections }: ProfessionalReputati
         <CardAction>
           <Badge variant="outline" className="gap-1">
             <Sparkles className="h-3 w-3" />
-            AI
+            Visible Only To You
           </Badge>
         </CardAction>
       </CardHeader>

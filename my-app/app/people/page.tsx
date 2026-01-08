@@ -82,6 +82,21 @@ export default function PeoplePage() {
     router.push(`/people/${encodeSimple(profile.id)}`);
   };
 
+  // Get existing rating for a connection (only from requested and verified connections)
+  const getExistingRating = (profile: ProfileData): number | undefined => {
+    const connection = verifiedConnections.find((conn: ConnectionData) => conn.connect_id === profile.id)
+      || pendingConnections.find((conn: ConnectionData) => conn.connect_id === profile.id);
+    return connection?.rating;
+  };
+
+  // Get existing note for a connection (only from requested and verified connections)
+  const getExistingNote = (profile: ProfileData): string | undefined => {
+    const connection = verifiedConnections.find((conn: ConnectionData) => conn.connect_id === profile.id)
+      || pendingConnections.find((conn: ConnectionData) => conn.connect_id === profile.id);
+    console.log("getting note ", connection)
+    return connection?.note;
+  };
+
   // Get connection status between current user and another profileu
   // Filter verified connections (must be mutual) - returns array of tuples [profile, rating]
   const verifiedConnectionProfiles = allProfiles?.filter(profile => {
@@ -145,9 +160,9 @@ export default function PeoplePage() {
               <>
               {/* Network Breakdown Section */}
               <div className="mb-12">
-                <h2 className="text-xl font-semibold mb-6 text-foreground">
-                  Network Insights
-                </h2>
+              <h1 className="text-4xl md:text-5xl font-semibold mb-4">
+                  Your Niche Network
+              </h1>
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                   <div className="lg:col-span-1">
                     <ConnectionBreakdownChart connections={verifiedConnections} />
@@ -198,6 +213,7 @@ export default function PeoplePage() {
                             onClick={() => handleProfileClick(profile)}
                             connectionStatus="connected"
                             connectionRating={rating || undefined}
+                            initialNote={getExistingNote(profile)}
                           />
                         ))}
                       </div>
@@ -235,6 +251,8 @@ export default function PeoplePage() {
                           profile={profile}
                           onClick={() => handleProfileClick(profile)}
                           connectionStatus="pending_sent"
+                          connectionRating={getExistingRating(profile)}
+                          initialNote={getExistingNote(profile)}
                         />
                       ))}
                     </div>
@@ -257,7 +275,7 @@ export default function PeoplePage() {
         >
           <div className="space-y-4">
             <p className="text-foreground">
-            Build out a highly-personalized professional network by contextualizing each relationship. The Niche shows you which opportunities your most trusted networks are already looking at or have vetted, personalized to your interests. 
+            Build out a highly-personalized professional network by contextualizing each relationship. 
             </p>
             <ol className="list-decimal list-inside space-y-3 text-foreground">
               <li>
@@ -267,12 +285,12 @@ export default function PeoplePage() {
                 <span className="font-medium">See the Professional Reputation You&apos;ve Built</span> - with 5+ connections, we explain to you the network and perception you have built 
               </li>
               <li>
-                <span className="font-medium">Discover Personalized Opportunities</span> vetted and verified by your network
+                <span className="font-medium">Discover Personalized Opportunities</span> vetted and verified by your network and receive warm intros to those opportunities direct on the platform accordingly
               </li>
             </ol>
-            <p className="text-sm text-muted-foreground">
+            {/* <p className="text-sm text-muted-foreground">
               Your profile is your curated professional presence, digitializing the connections that pave your career and surfacing the opportunities that will take you to the next level.
-            </p>
+            </p> */}
           </div>
         </InformationDialog>
       </Container>

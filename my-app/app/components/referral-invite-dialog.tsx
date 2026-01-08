@@ -174,11 +174,11 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
             {referrerName ? (
               <>
                 Welcome to The Niche! <strong>{referrerName}</strong> thinks you would be a great fit for{" "}
-                <strong>{companyName || `this company`}</strong> and wants to extend you an invite for you to use The Niche Network for a warm intro to the company. <Link href="/" className="text-blue-600 hover:text-blue-800 underline">Learn more</Link>
+                <strong>{companyName || `this company`}</strong> and wants to extend you an invite for you to use The Niche Network to build your personalized, verifiable professional network. Discover opportunities that your most trusted circles are already looking at or have vetted directly and unlock network-driven warm introductions to these opportunities. <Link href="/" className="text-blue-600 hover:text-blue-800 underline">Learn more</Link>
               </>
             ) : (
               <>
-                Welcome to The Niche! Request access to start building your personalized professional network, surfacing warm intros to startups like this one. <Link href="/" className="text-blue-600 hover:text-blue-800 underline">Learn more</Link>
+                Welcome to The Niche! Create your Niche network to build your personalized, verifiable professional network. Discover opportunities that your most trusted circles are already looking at or have vetted directly and unlock network-driven warm introductions to these opportunities. <Link href="/" className="text-blue-600 hover:text-blue-800 underline">Learn more</Link>
               </>
             )}
           </DialogDescription>

@@ -6,9 +6,7 @@ import { client } from "@/lib/sanity/client";
 import { Navigation } from "@/app/components/header";
 import Image from "next/image";
 import { type SanityDocument } from "next-sanity";
-import ApplyButton from "@/app/components/apply";
 import { TableOfContents } from "@/app/components/table-of-contents";
-import { PaywallContent } from "@/app/components/paywall-content";
 import { ReferralInviteDialog } from '@/app/components/referral-invite-dialog';
 import { SidebarLayout } from "@/app/components/sidebar-layout";
 import { useSubscriptionContext } from '@/app/components/subscription_context';
@@ -118,8 +116,6 @@ function getRoleLabels(rawTags: unknown): string[] {
 
   const components = createComponents(post.body || []);
 
-  const roles = getRoleLabels(post.tags);
-
   const postContent = (
     <div className={`max-w-4xl mx-auto px-8 pt-8 pb-8`}>
         <main>
@@ -147,27 +143,7 @@ function getRoleLabels(rawTags: unknown): string[] {
                 <PortableText value={post.body} components={components} />
               )}
             </section>
-          
-        <PaywallContent wordLimit={0}>
-          {/* Open roles — minimalist rows at bottom */}
-          {roles.length > 0 && (
-            <section className="mt-10">
-              <h2 className="text-lg font-semibold text-neutral-200 mb-3">
-                Open roles
-              </h2>
-              <ul className="divide-y divide-neutral-200">
-                {roles.map((role) => (
-                  <li key={role} className="flex items-center justify-between py-3">
-                    <span className="text-[15px] text-neutral-400">
-                      {role}
-                    </span>
-                    <ApplyButton company={post.company} />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-          </PaywallContent>
+        
         </main>
       </div>
       );

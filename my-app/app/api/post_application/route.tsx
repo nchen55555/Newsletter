@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     try{
         const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
-        const { first_name, email, candidate_id, company_id, additional_info } = await req.json();
+        const { company_title, first_name, email, candidate_id, company_id, additional_info, role} = await req.json();
         
 
         const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
         .insert({
             candidate_id: candidate_id,
             company_id: company_id,
-            additional_info: additional_info
+            additional_info: additional_info, 
+            role: role
         })
         .single();
 
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
 
         // Create email content using decoupled data
     const emailContent = {
-        message: `Congratulations! We have sent your application in. Replies back from our partner companies typically take less than a week so we will circle back to you then.`
+        message: `Thank you for taking your time to connect with ${company_title}! Your warm intro request has been sent direct to their inbox. Please look forward to a response back within the next week or so. `
       };
       // Check if API key exists
       if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {
@@ -49,13 +50,13 @@ export async function POST(req: NextRequest) {
       const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
   
       const { data, error } = await resend.emails.send({
-        from: 'Nicole <nicole@theniche.tech>',
+        from: 'The Niche <warm_intros@theniche.tech>',
         to: [email],
-        subject: '[THE NICHE] Application Received',
+        subject: '[THE NICHE] Warm Intro Request Received',
         html: `
           <p>Hi ${first_name}!</p>
           <p>${emailContent.message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
-          <p><a href="https://theniche.tech/ats" style="color: #0066cc; text-decoration: none;">Visit your applications and their statuses on The Niche</a></p>
+          <p><a href="https://theniche.tech/ats" style="color: #0066cc; text-decoration: none;">Track your warm intros and processes directly on The Niche</a></p>
           <p>Best,<br>The Niche Team</p>
         `,
       });

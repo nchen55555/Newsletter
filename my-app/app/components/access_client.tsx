@@ -43,7 +43,7 @@ export default function AccessClient() {
             </DialogTitle>
             <DialogDescription className="text-center mt-2 text-neutral-200">
               You don&apos;t have an active Niche profile yet.
-              Request access below to create your profile and join The Niche network.
+              Create your profile and join The Niche network.
             </DialogDescription>
           </DialogHeader>
           <div className="w-full mt-4 flex justify-center">

@@ -132,7 +132,7 @@ export async function POST(request: Request) {
       
       if (parseResult.success) {
         // Update the profile with parsed data
-        const { data: updateData, error: updateError } = await supabase
+        const { error: updateError } = await supabase
           .from('subscribers')
           .update({ parsed_resume_json: JSON.stringify(parseResult.data) })
           .eq('id', profile.id)
