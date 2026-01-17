@@ -1,5 +1,6 @@
 import { createClient } from '@sanity/client';
-import puppeteer from 'puppeteer';
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 
 const sanityClient = createClient({
   projectId: process.env.SANITY_PROJECT_ID,
@@ -12,8 +13,10 @@ const sanityClient = createClient({
 async function scrapeStartups() {
   console.log('Launching browser...');
   const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
   });
   
   const page = await browser.newPage();

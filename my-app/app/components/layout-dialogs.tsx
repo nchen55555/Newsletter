@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { UserStatusCheckin } from './user-status-checkin'
 import { useStatusCheckin } from './status-checkin-context'
 import { useRouter, usePathname } from 'next/navigation'
+import { useSubscriptionContext } from './subscription_context'
 // Helper function to check if status dialog should be shown
 function checkIfShouldShowStatusDialog(interviewStatusUpdatedAt: string | null): boolean {
   // If never updated, show the dialog
@@ -24,6 +25,7 @@ export function LayoutDialogs() {
   const { isOpen, setIsOpen } = useStatusCheckin()
   const router = useRouter()
   const pathname = usePathname()
+  const { isSubscribed } = useSubscriptionContext()
 
   // Load user profile and check if status dialog should be shown
   useEffect(() => {
@@ -45,7 +47,7 @@ export function LayoutDialogs() {
               setIsOpen(true)
             }
           }
-          else if (!skipOnboarding) {
+          else if (!skipOnboarding && isSubscribed) {
             router.push('/profile?flow=onboarding')
           }
         }
