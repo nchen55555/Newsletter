@@ -16,7 +16,6 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
   const [referrerName, setReferrerName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 
   const searchParams = useSearchParams();
 
@@ -110,39 +109,15 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
     }
   }, [searchParams]);
 
-  // Set up scroll listener for bottom of page
-  useEffect(() => {
-    // Wait for login status to be determined before setting up scroll listener
-    if (isLoggedIn === null) return;
-
-    console.log('Setting up scroll listener, isLoggedIn:', isLoggedIn);
-
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      
-      // Check if user has scrolled to within 100px of the bottom
-      if (scrollTop + windowHeight >= documentHeight - 100 && !hasScrolledToBottom) {
-        setHasScrolledToBottom(true);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isLoggedIn, hasScrolledToBottom]);
-
   useEffect(() => {
     // Wait for both loading states to complete
     if (loading || isLoggedIn === null) return;
 
-    // Show dialog if:
-    // 1. There's a referrer (from URL param) - show immediately
-    // 2. OR user is not logged in and has scrolled to bottom
-    if (referrerName || (isLoggedIn === false && hasScrolledToBottom)) {
+    // Show dialog if there's a referrer (from URL param)
+    if (referrerName) {
       setOpen(true);
     }
-  }, [loading, referrerName, isLoggedIn, hasScrolledToBottom]);
+  }, [loading, referrerName, isLoggedIn]);
 
 
   // Don't render if still loading login status

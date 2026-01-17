@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AppSidebar } from "./app-sidebar"
 import {
   SidebarInset,
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { UserPlus, Info } from "lucide-react"
 import { ReferralDialog } from "./referral-dialog"
 import { FeedbackDialog } from "./feedback-dialog"
+import { CompanyData } from "@/app/types"
 
 interface SidebarLayoutProps {
   children: React.ReactNode
@@ -25,6 +26,24 @@ export function SidebarLayout({ children, title, defaultOpen}: SidebarLayoutProp
   const { isSubscribed } = useSubscriptionContext();
   const [referralDialogOpen, setReferralDialogOpen] = useState(false);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [opportunities, setOpportunities] = useState<CompanyData[]>([]);
+
+  // Fetch opportunities for search
+  useEffect(() => {
+    const fetchOpportunities = async () => {
+      try {
+        const res = await fetch('/api/companies', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        setOpportunities(data || []);
+      } catch (e) {
+        console.error('Failed to fetch opportunities for search:', e);
+      }
+    };
+
+    fetchOpportunities();
+  }, []);
+
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar/>
@@ -40,6 +59,7 @@ export function SidebarLayout({ children, title, defaultOpen}: SidebarLayoutProp
               isLandingPage={false}
               isSubscribed={isSubscribed}
               variant="compact"
+              opportunities={opportunities}
             />
           </div>
           <div className="flex-shrink-0 flex gap-2 hidden md:block">
