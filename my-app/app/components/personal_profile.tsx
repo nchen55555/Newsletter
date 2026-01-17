@@ -22,6 +22,7 @@ import { UserCheckInComponent } from "./user_check_in_component";
 import { NetworkConnectionsGrid } from "./network-connections-grid";
 import { BookmarkedCompaniesGrid } from "./bookmarked-companies-grid";
 import { DEFAULT_VISIBILITY_SETTINGS, VisibilitySelector, type VisibilityLevel } from "./visibility";
+import { Switch } from "@/components/ui/switch";
 import type { UserStatus } from "@/app/components/user_check_in_component";
 import { ConnectionBreakdownChart } from "./connection-breakdown-chart";
 import { ProfessionalReputationCard } from "./professional_reputation_card";
@@ -82,6 +83,11 @@ export function PersonalProfile(props: PersonalProfileProps) {
   const [firstNameValue, setFirstNameValue] = useState(props.first_name || "");
   const [lastNameValue, setLastNameValue] = useState(props.last_name || "");
   const [editFormLoading, setEditFormLoading] = useState(false);
+
+  // Local toggles for profile-level flags
+  const [isPublicProfile, setIsPublicProfile] = useState<boolean>(props.is_public_profile ?? true);
+  const [newsletterOptIn, setNewsletterOptIn] = useState<boolean>(props.newsletter_opt_in ?? true);
+  const [needsVisaSponsorship, setNeedsVisaSponsorship] = useState<boolean>(props.needs_visa_sponsorship ?? false);
 
   // Track if profile activation toast has been shown
   const [hasShownActivationToast, setHasShownActivationToast] = useState(false);
@@ -387,6 +393,44 @@ export function PersonalProfile(props: PersonalProfileProps) {
                       </Button>
                     </div>
                   )}
+                  <div className="py-4 space-y-2 text-sm text-neutral-400">
+                    <div className="flex flex-wrap items-center gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <Switch
+                          checked={isPublicProfile}
+                          onCheckedChange={async (value) => {
+                            setIsPublicProfile(value);
+                            await handleSave("is_public_profile", { is_public_profile: String(value) });
+                          }}
+                        />
+                        <span>Public Profile</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <Switch
+                          checked={newsletterOptIn}
+                          onCheckedChange={async (value) => {
+                            setNewsletterOptIn(value);
+                            await handleSave("newsletter_opt_in", { newsletter_opt_in: String(value) });
+                          }}
+                        />
+                        <span>Opt-in for Company Profile Updates</span>
+                      </label>
+                      {props.needs_visa_sponsorship !== undefined && (
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <Switch
+                            checked={needsVisaSponsorship}
+                            onCheckedChange={async (value) => {
+                              setNeedsVisaSponsorship(value);
+                              await handleSave("needs_visa_sponsorship", { needs_visa_sponsorship: String(value) });
+                            }}
+                          />
+                          <span>
+                            {needsVisaSponsorship ? "Needs Visa Sponsorship" : "No Visa Sponsorship Needed"}
+                          </span>
+                        </label>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 <div className="flex gap-3">
                   {props.applied === false && (

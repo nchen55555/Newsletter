@@ -72,22 +72,22 @@ export function ConnectionScale({
     <div className="space-y-6">
       <div>
         {mode === 'audience' ? (
-          <Label className="text-base font-medium">
+          <Label className="text-sm sm:text-base font-medium">
             Who can view your thread in your network?
           </Label>
         ) : (
-          <div className="flex items-center gap-8">
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
             {profileImageUrl && (
               <ProfileAvatar
                 name={personName || "Connection"}
                 imageUrl={profileImageUrl}
                 size={128}                 // was 40 → try 56, 64, or 72
                 editable={false}
-                className="w-48 h-48 rounded-full flex-shrink-0"  // keep these in sync: w-16/h-16 ≈ 64px
+                className="w-24 h-24 md:w-48 md:h-48 rounded-full flex-shrink-0"  // keep these in sync: w-16/h-16 ≈ 64px
               />
             )}
             <div>
-              <Label className="text-base font-medium text-center">
+              <Label className="text-sm sm:text-base font-medium text-center">
                 {`Where does ${personName} sit in your professional network?`}
               </Label>
               <i className="text-xs leading-snug">
@@ -117,7 +117,7 @@ export function ConnectionScale({
                   })}
                 </div>
               <div className="space-y-2">
-                <Label className="text-base font-medium">
+                <Label className="text-sm sm:text-base font-medium">
                   How much should we index the opportunities recommended to you on {personName || "this person"}&apos;s interests and activity?
                 </Label>
                 <i className="text-xs leading-snug mb-4">
@@ -149,7 +149,7 @@ export function ConnectionScale({
               </div>
               {mode === 'connection' && selectedValue !== 1 && showConnectButton && (
                 <div className="space-y-2">
-                  <Label className="text-base font-medium flex items-end gap-2">
+                  <Label className="text-sm sm:text-base font-medium flex items-end gap-2">
                     <span>Describe your professional relationship. Why do you want to index on {personName || "this person"}?</span>
                   </Label>
                   <i className="text-xs leading-snug">

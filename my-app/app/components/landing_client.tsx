@@ -11,8 +11,6 @@ import { LandingPageSearch } from './landing-page-search';
 import { SidebarLayout } from "./sidebar-layout";
 import { Navigation } from "./header";
 import { useMemo } from 'react';
-import { StatusCheckinProvider } from "@/app/components/status-checkin-context";
-import { LayoutDialogs } from "./layout-dialogs";
 import { ConnectionData, CompanyWithImageUrl, CompanyData } from "@/app/types";
 import { ProfessionalReputationCard } from "./professional_reputation_card";
 import { ConnectionBreakdownChart } from "./connection-breakdown-chart";
@@ -122,7 +120,6 @@ export default function LandingClient({ children, dummyConnections = [], dummyCo
   const landingPage = (
     <div>
       {/* Top Hero: text + CTAs */}
-      <StatusCheckinProvider>
       <section className="px-4 pt-16 pb-8">
         <div className="mx-auto text-center">
           <motion.div
@@ -329,8 +326,6 @@ export default function LandingClient({ children, dummyConnections = [], dummyCo
             </div>
         </div>
       </section>
-      <LayoutDialogs />
-      </StatusCheckinProvider>
     </div>
   )
 

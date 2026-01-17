@@ -118,7 +118,8 @@ function ProfileCard({
           </div>
 
          {!isExternalView && (
-          <ConnectDialog
+          <div onClick={(e) => e.stopPropagation()}>
+            <ConnectDialog
               open={showConnectDialog}
               onOpenChange={setShowConnectDialog}
               firstName={profile.first_name}
@@ -133,6 +134,7 @@ function ProfileCard({
               compact={true}
               profileImageUrl={profile.profile_image_url}
             />
+          </div>
          )}
         </div>
       </div>

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import { Search } from 'lucide-react'
 import { ProfileData, CompanyData } from '@/app/types'
 import ProfileAvatar from './profile_avatar'
@@ -38,9 +37,6 @@ export function LandingPageSearch({
   const [allProfiles, setAllProfiles] = useState<ProfileData[] | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
-  const [selectedProfile, setSelectedProfile] = useState<ProfileData | null>(null)
-  const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null)
-  const [loading, setLoading] = useState(false)
   const [searchFilter, setSearchFilter] = useState<SearchFilter>('people')
 
   // Fetch profiles for search
@@ -88,25 +84,22 @@ export function LandingPageSearch({
       }).slice(0, 6)
     : []
 
-  const handleSearchResultClick = () => {
-    setLoading(true)
-
+  const handleProfileClick = (profile: ProfileData) => {
     // If the user isn't authenticated/subscribed yet, route them through the login flow
     if (!isSubscribed) {
       router.push('/login')
       return
     }
+    router.push(`/people/${encodeSimple(profile.id)}`)
+  }
 
-    if (searchFilter === 'people' && selectedProfile) {
-      const fullName = `${selectedProfile.first_name} ${selectedProfile.last_name}`
-      setSearchQuery(fullName)
-      setShowDropdown(false)
-      router.push(`/people/${encodeSimple(selectedProfile.id)}`)
-    } else if (searchFilter === 'opportunities' && selectedCompany) {
-      setSearchQuery(selectedCompany.alt || '')
-      setShowDropdown(false)
-      router.push(`/companies/${selectedCompany.company}`)
+  const handleCompanyClick = (company: CompanyData) => {
+    // If the user isn't authenticated/subscribed yet, route them through the login flow
+    if (!isSubscribed) {
+      router.push('/login')
+      return
     }
+    router.push(`/companies/${company.company}`)
   }
 
   const isLarge = variant === 'large'
@@ -129,8 +122,6 @@ export function LandingPageSearch({
             onClick={() => {
               setSearchFilter('people')
               setSearchQuery('')
-              setSelectedProfile(null)
-              setSelectedCompany(null)
             }}
             className={`${isLarge ? 'h-8 px-3 text-sm' : 'h-6 px-2 text-xs'} rounded-md font-medium transition-all ${
               searchFilter === 'people'
@@ -145,8 +136,6 @@ export function LandingPageSearch({
             onClick={() => {
               setSearchFilter('opportunities')
               setSearchQuery('')
-              setSelectedProfile(null)
-              setSelectedCompany(null)
             }}
             className={`${isLarge ? 'h-8 px-3 text-sm' : 'h-6 px-2 text-xs'} rounded-md font-medium transition-all ${
               searchFilter === 'opportunities'
@@ -177,15 +166,6 @@ export function LandingPageSearch({
           }}
           className={`flex-1 border-none bg-transparent dark:bg-transparent shadow-none ${isLarge ? 'h-12 text-xl' : 'h-6 text-xs'} text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none`}
         />
-
-        <Button
-          type="button"
-          className={`${isLarge ? 'h-12 px-6 text-base rounded-xl' : 'h-8 px-4 text-sm rounded-lg'} bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200`}
-          onClick={handleSearchResultClick}
-          disabled={loading}
-        >
-          {loading ? 'searching...' : 'search'}
-        </Button>
       </div>
 
       {/* People Results Dropdown */}
@@ -195,11 +175,7 @@ export function LandingPageSearch({
             <button
               key={profile.id}
               type="button"
-              onClick={() => {
-                setSelectedProfile(profile)
-                setSearchQuery(`${profile.first_name} ${profile.last_name}`)
-                setShowDropdown(false)
-              }}
+              onClick={() => handleProfileClick(profile)}
               className={`w-full text-left flex items-center ${isLarge ? 'gap-3 p-3' : 'gap-1.5 p-1.5'} hover:bg-neutral-50 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 last:border-b-0`}
             >
               <ProfileAvatar
@@ -228,11 +204,7 @@ export function LandingPageSearch({
               <button
                 key={company._id}
                 type="button"
-                onClick={() => {
-                  setSelectedCompany(company)
-                  setSearchQuery(company.alt || '')
-                  setShowDropdown(false)
-                }}
+                onClick={() => handleCompanyClick(company)}
                 className={`w-full text-left flex items-center ${isLarge ? 'gap-3 p-3' : 'gap-1.5 p-1.5'} hover:bg-neutral-50 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 last:border-b-0`}
               >
                 {imageUrl && (

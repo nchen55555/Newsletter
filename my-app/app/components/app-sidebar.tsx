@@ -32,7 +32,6 @@ export function AppSidebar() {
   const { state } = useSidebar()
 
   const [requestedConnectionsCount, setRequestedConnectionsCount] = React.useState(0)
-  const [appliedToTheNiche, setAppliedToTheNiche] = React.useState(false)
 
   // Fetch profile data for connection count and applied status
   React.useEffect(() => {
@@ -49,7 +48,6 @@ export function AppSidebar() {
 
         const requestedConnections = profile.requested_connections_new || []
         setRequestedConnectionsCount(requestedConnections.length)
-        setAppliedToTheNiche(profile.applied)
       } catch (e) {
         console.error("Failed to fetch profile:", e)
       }
@@ -73,7 +71,7 @@ export function AppSidebar() {
       icon: Building2,
       isActive: pathname === "/opportunities",
       show: isSubscribed,
-      disabled: !appliedToTheNiche,
+      disabled: false,
     },
     {
       title: "People",

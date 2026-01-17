@@ -9,6 +9,8 @@ import CompanyPageClient from "../../components/company-page-client";
 import { SidebarLayout } from "@/app/components/sidebar-layout";
 import { ReferralInviteDialog } from "@/app/components/referral-invite-dialog";
 import { Navigation } from "@/app/components/header";
+import { StatusCheckinProvider } from "@/app/components/status-checkin-context";
+import { LayoutDialogs } from "@/app/components/layout-dialogs";
 
 const { projectId, dataset } = client.config();
 const urlFor = (source: SanityImageSource) =>
@@ -89,10 +91,13 @@ export default async function CompanyPage({
       <>
       <Navigation/>
         <Container>
+          <StatusCheckinProvider>
           <div className="pt-20 pb-16 text-center">
             <h1 className="text-2xl font-semibold text-neutral-900 mb-4">Error Loading Company</h1>
             <p className="text-neutral-600">Failed to load company information. Please try again later.</p>
           </div>
+          <LayoutDialogs />
+        </StatusCheckinProvider>
         </Container>
       </>
     );

@@ -109,19 +109,21 @@ export default function CompanyPageClient({
               onClick={() => window.open(`/articles/${company.company}`, '_blank')}
               className="gap-2"
             >
-              <span className="hidden sm:inline">Read Our Interview</span>
+              Read Our Interview
             </Button>
             )}
             <RainbowBookmark company={company.company} />
             <Share company={company.company} />
-            <Button
+            {company.external_media && (<Button
               variant="outline"
               size="lg"
               onClick={() => window.open(company.external_media, '_blank')}
               className="gap-2"
             >
               <Globe></Globe>
+              Website
             </Button>
+            )}
             {company.partner ? (
             <ApplyButton
               company_title={title}
@@ -138,7 +140,7 @@ export default function CompanyPageClient({
 
         {!isLoadingBookmarks && (
           <VerificationProtectedContent 
-            sectionTitle={`Who Else In Your Network is Looking at ${title}?`}
+            sectionTitle={`Network Engagement with ${title}?`}
             className="mt-12 mb-12"
           >
             {bookmarkedUsers.length === 0 ? (

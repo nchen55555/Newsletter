@@ -195,7 +195,7 @@ export function UserCheckInComponent({
       </div>
       
       <div className="">
-    <div className="grid grid-cols-5 gap-2">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
       {statusOptions.map((option) => {
         const IconComponent = option.icon
         return (
@@ -227,7 +227,7 @@ export function UserCheckInComponent({
           <div className="text-sm text-neutral-500 dark:text-neutral-400">
             What is your timeline?
           </div>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
             {timelineOptions.map((option) => (
               <button
                 key={option.value}
@@ -256,7 +256,7 @@ export function UserCheckInComponent({
           <div className="text-sm text-neutral-500 dark:text-neutral-400">
             How many outreaches per month are you comfortable actively responding to?
           </div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
             {outreachFrequencyOptions.map((option) => (
               <button
                 key={option.value}

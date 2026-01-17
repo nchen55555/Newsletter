@@ -74,7 +74,7 @@ export function ConnectionBreakdownChart({ connections }: ConnectionBreakdownCha
           <CardTitle>Network Breakdown</CardTitle>
           <CardDescription>Your Connections by Relationship Strength</CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 pb-0 flex items-center justify-center">
+        <CardContent className="flex-1 pb-0 flex">
           <p className="text-sm text-neutral-500 py-12">No Connections Yet</p>
         </CardContent>
       </Card>

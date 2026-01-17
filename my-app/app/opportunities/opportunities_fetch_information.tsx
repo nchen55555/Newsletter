@@ -171,7 +171,7 @@ export default function Opportunities({ featuredOpportunities, showIntro = false
                   <div className="w-full md:w-1/3 flex items-start justify-center">
                     <div>
                       <h1 className="text-2xl font-semibold text-foreground text-center mb-4">
-                        Opportunities Your Network is Already Looking At
+                       Trending in Your Network
                       </h1>
                       <p className="text-base text-neutral-400 max-w-xs text-center">
                         Shared interest among your professional circle is a strong predictor of fit.{" "}
@@ -244,16 +244,15 @@ export default function Opportunities({ featuredOpportunities, showIntro = false
                             Welcome, {first_name}
                         </h1>
                     </div>
-                        <VerificationProtectedContent
+                        {/* <VerificationProtectedContent
                           sectionTitle=""
                           fallbackTitle="Build Your Network to Access Opportunities"
                           fallbackDescription="Request to join The Niche network to view personalized opportunities and connect with startup founders"
                           className="mb-16 w-full"
-                        >
+                        > */}
                         {hasAcceptedCommitment && (
                             <div className="w-full">
                               {/* Where Your Network is Looking Section */}
-                              {networkCompanies.size > 0 && (
                                 <div className="mb-12">
                                   <div className="flex items-center gap-2 mb-6">
                                     <h2 className="text-xl font-semibold text-foreground">
@@ -296,7 +295,7 @@ export default function Opportunities({ featuredOpportunities, showIntro = false
                                     <div className="text-sm text-neutral-200 mb-6">
                                     <b>The Niche has partnered with select opportunities where your network&apos;s convergence unlocks direct warm introductions to founders and heads of talent to expedite your interest directly to their inbox. </b>
                                   </div> */}
-                                  <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                  {networkCompanies.size > 0 ? (<div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
                                     {featuredOpportunities
                                       .filter(company => networkCompanies.has(company.company))
                                       .sort((a, b) => {
@@ -315,8 +314,14 @@ export default function Opportunities({ featuredOpportunities, showIntro = false
                                         />
                                       ))}
                                   </div>
+                                  ) : 
+                                  (<Alert>
+                                    <Info className="h-4 w-4" />
+                                    <AlertDescription>
+                                    See which opportunities your trusted network is focusing their attention on. Shared interest amongst your closest professional circles is a strong predictor of fit. Expand your verified network and bookmark companies that interest you to get personalized recommendations and warm intros here. 
+                                    </AlertDescription>
+                                  </Alert>)}
                                 </div>
-                              )}
 
                               {/* Other Opportunities Section */}
                               <div className="mb-12">
@@ -347,7 +352,7 @@ export default function Opportunities({ featuredOpportunities, showIntro = false
                               </div>
                               </div>
                           )}
-                        </VerificationProtectedContent>
+                        {/* </VerificationProtectedContent> */}
                     </div> 
             )}
             {isLoading && (

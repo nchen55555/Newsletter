@@ -33,7 +33,7 @@ export function SidebarLayout({ children, title, defaultOpen}: SidebarLayoutProp
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           {title && (
-            <h1 className="text-lg font-semibold flex-shrink-0">{title}</h1>
+            <h1 className="text-lg font-semibold flex-shrink-0 hidden md:block">{title}</h1>
           )}
           <div className="flex-1 flex items-center gap-2 min-w-0">
             <LandingPageSearch
@@ -42,12 +42,13 @@ export function SidebarLayout({ children, title, defaultOpen}: SidebarLayoutProp
               variant="compact"
             />
           </div>
-          <div className="flex-shrink-0 flex gap-2">
+          <div className="flex-shrink-0 flex gap-2 hidden md:block">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setReferralDialogOpen(true)}
               className="gap-2"
+              disabled={!isSubscribed}
             >
               <UserPlus className="h-4 w-4" />
               <span className="hidden sm:inline">Refer</span>
@@ -57,6 +58,7 @@ export function SidebarLayout({ children, title, defaultOpen}: SidebarLayoutProp
               size="sm"
               onClick={() => setFeedbackDialogOpen(true)}
               className="gap-2"
+              disabled={!isSubscribed}
             >
               <Info className="h-4 w-4" />
               <span className="hidden sm:inline">Feedback/Help</span>

@@ -65,7 +65,7 @@ export function CompanyCard({
     router.push(`/companies/${company.company}`);
   };
 
-  const warm_intro_available = network_connections?.quality_score && network_connections.quality_score >= 1.0
+  const warm_intro_available = network_connections?.quality_score && network_connections.quality_score >= 3.0
 
 
   return (
@@ -183,7 +183,7 @@ export function CompanyCard({
                             : undefined
                         }
                       >
-                          <span className="hidden sm:inline">Explore Profile</span>
+                          Explore Profile
                         </Button>
                       </span>
                     </TooltipTrigger>

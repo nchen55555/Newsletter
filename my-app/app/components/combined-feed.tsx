@@ -117,7 +117,7 @@ export function CombinedFeed({ posts, cols = 2 }: CombinedFeedProps) {
   return (
     <>
       {/* Feed: two items per row on medium+ screens */}
-      <div className={`grid grid-cols-1 md:grid-cols-${cols} gap-6 sm:gap-7 w-full`}>
+      <div className={`grid grid-cols-1 md:grid-cols-${cols} gap-6 sm:gap-7`}>
         {combinedFeed.map((item, index) => {
           if (item.type === 'post') {
             const post = item.data as Post;

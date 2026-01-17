@@ -80,9 +80,9 @@ export function ConnectDialog({
           )}
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-3xl lg:max-w-4xl w-full px-12 py-10">
+      <DialogContent className="sm:max-w-3xl lg:max-w-4xl w-full px-4 py-6 sm:px-12 sm:py-10 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl leading-relaxed tracking-tight">
+          <DialogTitle className="text-lg sm:text-2xl leading-relaxed tracking-tight">
             {getDialogTitle()}
           </DialogTitle>
         </DialogHeader>

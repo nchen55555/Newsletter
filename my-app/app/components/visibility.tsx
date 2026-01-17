@@ -27,7 +27,7 @@ export const DEFAULT_VISIBILITY_SETTINGS = {
   links: 'public' as VisibilityLevel,
   documents: 'connections' as VisibilityLevel,
   network: 'connections' as VisibilityLevel,
-  companies: 'partners' as VisibilityLevel,
+  companies: 'public' as VisibilityLevel,
   priorities: 'partners' as VisibilityLevel,
 };
 

@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { UserStatusCheckin } from './user-status-checkin'
 import { useStatusCheckin } from './status-checkin-context'
-
+import { useRouter, usePathname } from 'next/navigation'
 // Helper function to check if status dialog should be shown
 function checkIfShouldShowStatusDialog(interviewStatusUpdatedAt: string | null): boolean {
   // If never updated, show the dialog
@@ -22,6 +22,8 @@ function checkIfShouldShowStatusDialog(interviewStatusUpdatedAt: string | null):
 
 export function LayoutDialogs() {
   const { isOpen, setIsOpen } = useStatusCheckin()
+  const router = useRouter()
+  const pathname = usePathname()
 
   // Load user profile and check if status dialog should be shown
   useEffect(() => {
@@ -31,12 +33,20 @@ export function LayoutDialogs() {
         if (response.ok) {
           const userData = await response.json()
           
-          // Only show status dialog if user has applied AND meets timing conditions
-          if (userData.applied) {
+          // Only show status dialog if user has applied, we're on a company page, AND meets timing conditions
+          const onCompanyPage = pathname?.startsWith('/companies/')
+          const skipOnboarding =
+            typeof window !== 'undefined' &&
+            window.sessionStorage.getItem('skipOnboarding') === 'true'
+
+          if (userData.applied && onCompanyPage) {
             const shouldShowDialog = checkIfShouldShowStatusDialog(userData.interview_status_updated_at)
             if (shouldShowDialog) {
               setIsOpen(true)
             }
+          }
+          else if (!skipOnboarding) {
+            router.push('/profile?flow=onboarding')
           }
         }
       } catch (error) {
@@ -45,10 +55,9 @@ export function LayoutDialogs() {
     }
 
     loadUserProfile()
-  }, [setIsOpen])
+  }, [setIsOpen, pathname, router])
 
   const handleStatusUpdate = (status: string, timeline?: string, outreachFrequency?: number) => {
-    console.log('User status updated:', { status, timeline, outreachFrequency })
     setIsOpen(false)
     
     // You could add additional logic here like showing a success message,

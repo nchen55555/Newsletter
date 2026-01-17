@@ -256,7 +256,12 @@ export default function ProfileOnboarding({
             <div className="text-sm text-neutral-400">3 steps</div>
             <button
               type="button"
-              onClick={() => router.push('/opportunities?flow=introduction')}
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  sessionStorage.setItem('skipOnboarding', 'true')
+                }
+                router.push('/opportunities?flow=introduction')
+              }}
               className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
             >
               [skip onboarding]

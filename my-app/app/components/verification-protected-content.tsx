@@ -21,7 +21,7 @@ export function VerificationProtectedContent({
   fallbackTitle = "You need a Niche profile to access this content",
   fallbackDescription = "You need a Niche profile to access this content",
   className = "",
-  redirectUrl = "/profile",
+  redirectUrl = "/people",
 }: VerificationProtectedContentProps) {
   const [hasApplied, setHasApplied] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
