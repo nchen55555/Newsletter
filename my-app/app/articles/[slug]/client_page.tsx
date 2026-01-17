@@ -11,12 +11,6 @@ import { ReferralInviteDialog } from '@/app/components/referral-invite-dialog';
 import { SidebarLayout } from "@/app/components/sidebar-layout";
 import { useSubscriptionContext } from '@/app/components/subscription_context';
 
-type SanityTag = string | {
-    title?: string;
-    name?: string;
-    tag?: string;
-  };
-  
 
 export default function ClientPostPage({
   post,
@@ -74,45 +68,6 @@ const createComponents = (content: PortableTextBlock[]): PortableTextComponents 
       normal: ({ children }) => <p className="text-[15px] leading-relaxed mb-3">{children}</p>,
     },
   });
-
-  // Normalize possible tag shapes → clean role labels
-function getRoleLabels(rawTags: unknown): string[] {
-    const arr = Array.isArray(rawTags) ? rawTags : [];
-    const names = arr
-      .map((t: SanityTag) => {
-        if (typeof t === "string") return t;
-        return t?.title ?? t?.name ?? t?.tag ?? "";
-      })
-      .filter(Boolean) as string[];
-  
-    // de-dup and properly title-case the string tags
-    const seen = new Set<string>();
-    return names
-      .filter((tag): tag is string => typeof tag === "string" && tag.trim().length > 0)
-      .map((tag) => {
-        // Clean up the tag but preserve original capitalization where appropriate
-        const cleaned = tag
-          .trim()
-          .replace(/[_-]/g, " ")
-          .replace(/\s+/g, " ");
-        
-        // Convert to proper title case, preserving abbreviations
-        return cleaned.replace(/\w\S*/g, (word) => {
-          // If word is already all uppercase (likely an abbreviation), keep it
-          if (word.length > 1 && word === word.toUpperCase()) {
-            return word;
-          }
-          // Otherwise, standard title case
-          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-        });
-      })
-      .filter((tag) => {
-        const normalized = tag.toLowerCase();
-        if (seen.has(normalized)) return false;
-        seen.add(normalized);
-        return true;
-      });
-  }
 
   const components = createComponents(post.body || []);
 

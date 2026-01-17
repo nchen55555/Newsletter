@@ -115,7 +115,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
 // } | null>(null);
 
 
-  const handleConnectSubmit = async (scaleValue: number, note?: string) => {
+  const handleConnectSubmit = async (scaleValue: number, alignmentValue?: number, note?: string) => {
     setIsSubmittingConnect(true);
     setConnectVerificationStatus('idle');
 
@@ -126,6 +126,7 @@ export function ExternalProfile(props: ExternalProfileProps) {
         body: JSON.stringify({
           connect_id: props.id,
           rating: scaleValue,
+          alignment_value: alignmentValue,
           note: note
         })
       });
@@ -202,6 +203,15 @@ export function ExternalProfile(props: ExternalProfileProps) {
     const connection = currentUserData.connections_new?.find(conn => conn.connect_id === props.id)
     || currentUserData.pending_connections_new?.find(conn => conn.connect_id === props.id);
     return connection?.rating;
+  };
+
+  const getExistingAlignmentValue = (): number | undefined => {
+    if (!currentUserData) return undefined;
+
+    // Find the connection object for the current user
+    const connection = currentUserData.connections_new?.find(conn => conn.connect_id === props.id)
+    || currentUserData.pending_connections_new?.find(conn => conn.connect_id === props.id);
+    return connection?.alignment_value;
   };
 
   const getExistingNote = (): string | undefined => {
@@ -488,7 +498,9 @@ export function ExternalProfile(props: ExternalProfileProps) {
               onSubmit={handleConnectSubmit}
               connectionStatus={getConnectionStatus()}
               existingRating={getExistingConnectionRating()}
+              existingAlignmentValue={getExistingAlignmentValue()}
               initialNote={getExistingNote()}
+              profileImageUrl={props.profile_image_url}
             />
             
           </div>

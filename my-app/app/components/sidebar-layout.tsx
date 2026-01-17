@@ -11,8 +11,9 @@ import { LandingPageSearch } from "./landing-page-search"
 import { Separator } from "@/components/ui/separator"
 import { useSubscriptionContext } from "./subscription_context"
 import { Button } from "@/components/ui/button"
-import { UserPlus } from "lucide-react"
+import { UserPlus, Info } from "lucide-react"
 import { ReferralDialog } from "./referral-dialog"
+import { FeedbackDialog } from "./feedback-dialog"
 
 interface SidebarLayoutProps {
   children: React.ReactNode
@@ -23,6 +24,7 @@ interface SidebarLayoutProps {
 export function SidebarLayout({ children, title, defaultOpen}: SidebarLayoutProps) {
   const { isSubscribed } = useSubscriptionContext();
   const [referralDialogOpen, setReferralDialogOpen] = useState(false);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar/>
@@ -40,7 +42,7 @@ export function SidebarLayout({ children, title, defaultOpen}: SidebarLayoutProp
               variant="compact"
             />
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 flex gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -49,6 +51,15 @@ export function SidebarLayout({ children, title, defaultOpen}: SidebarLayoutProp
             >
               <UserPlus className="h-4 w-4" />
               <span className="hidden sm:inline">Refer</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFeedbackDialogOpen(true)}
+              className="gap-2"
+            >
+              <Info className="h-4 w-4" />
+              <span className="hidden sm:inline">Feedback/Help</span>
             </Button>
           </div>
         </header>
@@ -60,6 +71,10 @@ export function SidebarLayout({ children, title, defaultOpen}: SidebarLayoutProp
         open={referralDialogOpen}
         onOpenChange={setReferralDialogOpen}
         allowClose={true}
+      />
+      <FeedbackDialog
+        open={feedbackDialogOpen}
+        onOpenChange={setFeedbackDialogOpen}
       />
     </SidebarProvider>
   )

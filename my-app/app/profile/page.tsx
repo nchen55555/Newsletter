@@ -37,6 +37,7 @@ function ProfileContent() {
       <ProtectedContent>
       {shouldShowForm ? (
         <MultiStepProfileForm {...data} />
+
       ) : (
         <PersonalProfile {...data} onRefresh={fetchProfileData} />
       )}

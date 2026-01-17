@@ -78,7 +78,7 @@ export function FeedRow({ post, index = 0 }: { post: Post; index?: number }) {
 
 
 // --- Newsfeed (one per row vibe) ----------------------------------------
-export async function ArticleNewsfeed({ limit = 20 }: { limit?: number } = {}) {
+export async function ArticleNewsfeed({ limit = 20, cols = 2 }: { limit?: number, cols?: number } = {}) {
   const query = buildPostsQuery(limit);
 
   let posts: Post[] = [];
@@ -92,11 +92,11 @@ export async function ArticleNewsfeed({ limit = 20 }: { limit?: number } = {}) {
     <div className="py-8 px-20 pt-2">
     <div className="animate-in fade-in-50 duration-700">
       {/* Network Breakdown Section */}
-      <div className="mb-12">
+      <div className="mb-12 max-w-6xl mx-auto">
         {/* <h2 className="text-xl font-semibold mb-6 text-foreground">
           Company Profiles Published Weekly
         </h2> */}
-        <CombinedFeed posts={posts} />
+        <CombinedFeed posts={posts} cols={cols}/>
         <div className="mt-10 text-center">
             <Link
               href="/articles"

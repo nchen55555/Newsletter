@@ -1,6 +1,7 @@
 export type ConnectionData = {
   connect_id: number;
   rating: number;
+  alignment_value: number;
   note?: string;
 };
 
@@ -42,6 +43,7 @@ export type ProfileData = {
     onboarding_step?: number;
     connectionRating?: number;
     connectionNote?: string;
+    alignmentValue?: number;
     parsed_transcript_json?: string;
     github_url_data?: string; 
     github_vector_embeddings?: number[];

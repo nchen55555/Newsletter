@@ -68,7 +68,7 @@ export function AppSidebar() {
       disabled: false,
     },
     {
-      title: "Opportunity Database",
+      title: "Opportunity Feed",
       href: "/opportunities",
       icon: Building2,
       isActive: pathname === "/opportunities",
@@ -81,7 +81,6 @@ export function AppSidebar() {
       icon: Users,
       isActive: pathname === "/people",
       show: isSubscribed,
-      disabled: !appliedToTheNiche,
       badge: requestedConnectionsCount > 0 ? requestedConnectionsCount : undefined,
     },
     {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { UserStatusCheckin } from './user-status-checkin'
 import { useStatusCheckin } from './status-checkin-context'
 

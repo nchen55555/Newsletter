@@ -18,13 +18,16 @@ export function ProfessionalReputationCard({ connections }: ProfessionalReputati
   const connectionsWithNotes = connections.filter(conn => conn.note && conn.note.trim() !== '')
   const hasEnoughNotes = connectionsWithNotes.length >= 5
 
-  // Calculate verified connections count
-  // const totalCount = connections.length
 
   // Fetch reputation summary when there are enough notes
   useEffect(() => {
     if (!hasEnoughNotes) {
       setReputationSummary(null)
+      return
+    }
+
+    // Don't fetch if we already have a summary
+    if (reputationSummary) {
       return
     }
 
@@ -52,16 +55,16 @@ export function ProfessionalReputationCard({ connections }: ProfessionalReputati
     }
 
     fetchReputationSummary()
-  }, [hasEnoughNotes, connectionsWithNotes.length, connectionsWithNotes])
+  }, [hasEnoughNotes, connectionsWithNotes.length])
 
   // Show reputation summary if available
-  if (hasEnoughNotes && reputationSummary) {
+  if (hasEnoughNotes) {
     return (
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>How Your Network Describes You</CardDescription>
-          <CardTitle className="text-lg font-normal leading-relaxed @[250px]/card:text-xl">
-            {isLoading ? 'Analyzing your network...' : reputationSummary}
+          <CardDescription>Professional Reputation</CardDescription>
+          <CardTitle className="text-xl font-normal leading-relaxed @[250px]/card:text-2xl">
+            What Your Network Says About You
           </CardTitle>
           <CardAction>
             <Badge variant="outline" className="gap-1">
@@ -70,11 +73,9 @@ export function ProfessionalReputationCard({ connections }: ProfessionalReputati
             </Badge>
           </CardAction>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="text-muted-foreground">
-            Based on {connectionsWithNotes.length} Connection Notes
+        <div className="text-sm text-muted-foreground px-8">
+            {isLoading ? 'Analyzing your network...' : reputationSummary}
           </div>
-        </CardFooter>
       </Card>
     )
   }

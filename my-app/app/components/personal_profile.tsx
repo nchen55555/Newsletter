@@ -30,11 +30,6 @@ interface PersonalProfileProps extends ProfileData {
   onRefresh?: () => void | Promise<void>;
 }
 
-type NetworkProfile = ProfileData & {
-  networkSimilarity: number;
-  networkSimilarityLevel: "very_high" | "high" | "medium" | "low";
-};
-
 export function PersonalProfile(props: PersonalProfileProps) {
   const router = useRouter();
 
@@ -53,7 +48,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
   // ---------- State ----------
   const [bookmarkedCompanies, setBookmarkedCompanies] = useState<(CompanyWithImageUrl)[]>([]);
   const [loadingBookmarks, setLoadingBookmarks] = useState(false);
-  const [connectionProfiles, setConnectionProfiles] = useState<NetworkProfile[]>([]);
+  const [connectionProfiles, setConnectionProfiles] = useState<ProfileData[]>([]);
   const [loadingConnections, setLoadingConnections] = useState(false);
 
   // Projects state
@@ -239,8 +234,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                 ...profile,
                 connectionRating: connection.rating,
                 connectionNote: connection.note,
-                networkSimilarity: 0.85,
-                networkSimilarityLevel: "high" as const
+                alignmentValue: connection.alignment_value,
               };
             }
             return null;
@@ -251,7 +245,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
         })
       );
 
-      setConnectionProfiles(profiles.filter((p): p is NetworkProfile => p !== null));
+      setConnectionProfiles(profiles.filter((p): p is ProfileData => p !== null));
     } catch (error) {
       console.error('Error fetching connection profiles:', error);
       setConnectionProfiles([]);
@@ -328,6 +322,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
     .map(conn => ({
       connect_id: conn.id,
       rating: conn.connectionRating!,
+      alignment_value: conn.alignmentValue!,
       note: conn.connectionNote
     }));
 
@@ -1046,7 +1041,7 @@ export function PersonalProfile(props: PersonalProfileProps) {
                     <span className="font-medium">Fill in your profile</span> and activate it.
                   </li>
                   <li>
-                    <span className="font-medium">Start exploring</span> - browse opportunities and curate your verified professional network.
+                    <span className="font-medium">Start exploring</span> - browse opportunities and curate your verified professional network to unlock warm introductions.
                   </li>
                 </ol>
                 <p className="text-sm text-neutral-400">

@@ -30,15 +30,10 @@ Here are the notes from ${notes.length} different connections:
 
 ${notes.map((note: string, idx: number) => `${idx + 1}. ${note}`).join('\n\n')}
 
-Based on these notes, write exactly 2 concise sentences that summarize how people describe this person. Focus on:
-- Common themes across multiple notes
-- Key strengths and characteristics
-- What they're known for professionally
-- Their reputation and how they're perceived
+Based on these notes, write a specific analysis on what other people have characterized their relationship and reputation with this individual. Focus 
+on the specific trends and patterns that have emerged in the notes. 
 
-The summary should be professional, positive, and capture the essence of their professional reputation.
-
-Return ONLY the 2 sentences. No additional text, no preamble, no markdown.
+No preamble or markedown. Limit to 2-5 sentences.
     `.trim();
 
     const result = await model.generateContent(prompt);

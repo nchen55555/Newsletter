@@ -96,17 +96,10 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
       formData.append('linkedin_url', form.linkedin_url);
       formData.append('phone_number', form.phone_number);
       formData.append('email', userEmail ?? form.email)
-      formData.append('is_public_profile', form.is_public_profile.toString());
-      formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
-      formData.append('needs_visa_sponsorship', form.needs_visa_sponsorship.toString());
+      // formData.append('is_public_profile', form.is_public_profile.toString());
+      // formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
+      // formData.append('needs_visa_sponsorship', form.needs_visa_sponsorship.toString());
 
-      // if (form.resume_file) {
-      //   formData.append('resume_file', form.resume_file);
-      // } else if (!form.resume_url) {
-      //   setFormError('Resume is required.');
-      //   return;
-      // }
-    
       // Make post_referral API call if referral_id exists
       if (effectiveReferralId && userEmail) {
         try {
@@ -224,7 +217,7 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
                   />
                 </div>
 
-                <div className="py-6 grid w-full max-w-sm items-center gap-3">
+                {/* <div className="py-6 grid w-full max-w-sm items-center gap-3">
                   <Label htmlFor="resume_file" className="text-base font-medium">Resume <span className="text-sm text-gray-500 font-normal">(Max 5MB)</span></Label>
                   <Input
                     id="resume_file"
@@ -250,11 +243,10 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
                       Current resume: <a href={form.resume_url} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">View uploaded resume</a>
                     </div>
                   )}
-                </div>
+                </div> */}
 
                 {/* Onboarding preference toggles (same questions as profile_info_chatbot) */}
-                <div className="grid gap-6">
-                  {/* Public profile */}
+                {/* <div className="grid gap-6">
                   <div className="space-y-2">
                     <p className="text-base font-medium">
                       Allow founders to view and reach out to your Niche profile?
@@ -288,7 +280,6 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
                     </div>
                   </div>
 
-                  {/* Newsletter opt-in */}
                   <div className="space-y-2">
                     <p className="text-base font-medium">
                       Stay updated with new company profiles?
@@ -322,7 +313,6 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
                     </div>
                   </div>
 
-                  {/* Visa sponsorship */}
                   <div className="space-y-2">
                     <p className="text-base font-medium">
                       Do you need visa sponsorship?
@@ -355,7 +345,8 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
                       </Button>
                     </div>
                   </div>
-                </div>
+                </div> 
+                */}
                 {isSubscribed && (
                   <Alert>
                   <CheckCircle2Icon />
@@ -377,7 +368,7 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
                       submitting...
                     </>
                   ) : (
-                    'create profile'
+                    'continue'
                   )}
                 </Button>
               </DialogFooter>

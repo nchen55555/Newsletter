@@ -5,7 +5,13 @@ import { useSubscriptionContext } from "./subscription_context";
 import { Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function RainbowBookmark({ company }: { company: number }) {
+export default function RainbowBookmark({
+  company,
+  onBookmarkChange
+}: {
+  company: number;
+  onBookmarkChange?: (companyId: number, isBookmarked: boolean) => void;
+}) {
   const { isSubscribed } = useSubscriptionContext();
   const [bookmarked, setBookmarked] = useState(false);
 
@@ -42,7 +48,9 @@ export default function RainbowBookmark({ company }: { company: number }) {
         body: JSON.stringify({ company, action: bookmarked ? 'remove' : 'add' }),
       });
       if (res.ok) {
-        setBookmarked((b) => !b);
+        const newBookmarkState = !bookmarked;
+        setBookmarked(newBookmarkState);
+        onBookmarkChange?.(company, newBookmarkState);
       } else {
         // handle error
         alert("Failed to bookmark");

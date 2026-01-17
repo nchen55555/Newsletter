@@ -4,8 +4,9 @@ import { SidebarLayout } from "@/app/components/sidebar-layout";
 import { ProfileData, ConnectionData } from "@/app/types";
 import React, { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation';
-import { Users, ChevronDown } from "lucide-react";
+import { Users, ChevronDown, Share2 } from "lucide-react";
 import ProfileCard from "@/app/components/profile_card";
+import ProfileAvatar from "@/app/components/profile_avatar";
 import { encodeSimple } from "@/app/utils/simple-hash";
 import { InformationDialog } from "../components/information-dialog";
 import { ConnectionBreakdownChart } from "../components/connection-breakdown-chart";
@@ -34,6 +35,7 @@ export default function PeoplePage() {
   const [pendingConnections, setPendingConnections] = useState<ConnectionData[]>([]);
   const [requestedConnections, setRequestedConnections] = useState<ConnectionData[]>([]);
   const [showMoreVerifiedConnections, setShowMoreVerifiedConnections] = useState(false);
+  const [currentUserData, setCurrentUserData] = useState<ProfileData | null>(null);
 
   const [profilesLoaded, setProfilesLoaded] = useState(false);
   const [connectionsLoaded, setConnectionsLoaded] = useState(false);
@@ -66,6 +68,8 @@ export default function PeoplePage() {
         setVerifiedConnections(data.connections_new || []);
         setPendingConnections(data.pending_connections_new || []);
         setRequestedConnections(data.requested_connections_new || []);
+        console.log("User Profile Data: ", data);
+        setCurrentUserData(data);
         setShowInformationDialog((data.connections_new || []).length < 5);
         setConnectionsLoaded(true);
       })
@@ -95,6 +99,12 @@ export default function PeoplePage() {
       || pendingConnections.find((conn: ConnectionData) => conn.connect_id === profile.id);
     console.log("getting note ", connection)
     return connection?.note;
+  };
+
+  const getExistingAlignmentValue = (profile: ProfileData): number | undefined => {
+    const connection = verifiedConnections.find((conn: ConnectionData) => conn.connect_id === profile.id)
+      || pendingConnections.find((conn: ConnectionData) => conn.connect_id === profile.id);
+    return connection?.alignment_value;
   };
 
   // Get connection status between current user and another profileu
@@ -214,6 +224,7 @@ export default function PeoplePage() {
                             connectionStatus="connected"
                             connectionRating={rating || undefined}
                             initialNote={getExistingNote(profile)}
+                            alignmentValue={getExistingAlignmentValue(profile)}
                           />
                         ))}
                       </div>
@@ -253,6 +264,7 @@ export default function PeoplePage() {
                           connectionStatus="pending_sent"
                           connectionRating={getExistingRating(profile)}
                           initialNote={getExistingNote(profile)}
+                          alignmentValue={getExistingAlignmentValue(profile)}
                         />
                       ))}
                     </div>
@@ -267,32 +279,45 @@ export default function PeoplePage() {
               </>
           </div>
         </div>
-        <InformationDialog
+        {currentUserData && <InformationDialog
           open={showInformationDialog}
           onOpenChange={setShowInformationDialog}
           title="Map Your Inner Circle"
           description="Digitalize the Connections That Have Shaped Your Career Trajectory"
         >
           <div className="space-y-4">
-            <p className="text-foreground">
-            Build out a highly-personalized professional network by contextualizing each relationship. 
-            </p>
+            <div className="flex items-center justify-center gap-4">
+              <ProfileAvatar
+                name={`${currentUserData.first_name} ${currentUserData.last_name}`}
+                size={56}
+                imageUrl={currentUserData.profile_image_url}
+                editable={false}
+              />
+              <Share2 className="w-8 h-8 text-neutral-400" aria-hidden="true" />
+              <ProfileAvatar
+                name="Connection"
+                size={56}
+                imageUrl="https://ubompjslcfgbkidmfuym.supabase.co/storage/v1/object/public/avatar_profiles/wellington-ferreira-72TE8cWKXRY-unsplash.jpg"
+                editable={false}
+              />
+            </div>
             <ol className="list-decimal list-inside space-y-3 text-foreground">
+              
               <li>
-                <span className="font-medium">Contextualize Your Relationships</span> by connecting with your most trusted professional contacts
+                <span className="font-medium">Contextualize Your Relationships</span> to unlock warm intros to opportunities they&apos;ve validated
               </li>
               <li>
                 <span className="font-medium">See the Professional Reputation You&apos;ve Built</span> - with 5+ connections, we explain to you the network and perception you have built 
               </li>
               <li>
-                <span className="font-medium">Discover Personalized Opportunities</span> vetted and verified by your network and receive warm intros to those opportunities direct on the platform accordingly
+                <span className="font-medium">Discover Personalized Opportunities</span> vetted and verified by your network 
               </li>
             </ol>
             {/* <p className="text-sm text-muted-foreground">
               Your profile is your curated professional presence, digitializing the connections that pave your career and surfacing the opportunities that will take you to the next level.
             </p> */}
           </div>
-        </InformationDialog>
+        </InformationDialog>}
       </Container>
     </SidebarLayout>
   );

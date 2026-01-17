@@ -1,114 +1,135 @@
 "use client"
 
+import { useState } from "react"
+import { CompanyCard } from "@/app/companies/company-cards"
+import { Button } from "@/components/ui/button"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import { CompanyData } from "../opportunities/opportunities_fetch_information"
+import { NetworkCompanies } from "../opportunities/opportunities_fetch_information"
 
-import { SanityImageSource } from "@sanity/image-url/lib/types/types";
-import Image from "next/image";
-import React, { useEffect, useRef, useState } from "react";
+type CompanyWithImageUrl = CompanyData & {
+  imageUrl: string | null;
+};
 
-interface Media {
-    _id: string
-    image: SanityImageSource
-    alt: string
-    description?: string
-    caption?: string
-    imageUrl: string
-}
+export default function CompanyCarousel({
+  companies,
+  network_connections,
+  onFinishPerusing,
+  onBookmarksChange,
+}: {
+  companies: CompanyWithImageUrl[]
+  network_connections?: Map<number, NetworkCompanies>
+  onFinishPerusing?: () => void
+  onBookmarksChange?: (bookmarkedCompanies: number[]) => void
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [bookmarkedCompanies, setBookmarkedCompanies] = useState<Set<number>>(new Set())
+  const totalPages = companies.length
 
-export default function CompanyCarousel({ medias }: { medias: Media[] }) {
-  const [current, setCurrent] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [cardHeight, setCardHeight] = useState(224); // default h-56
-  const [gap, setGap] = useState(16); // default gap-4
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Responsive card height and gap
-  React.useEffect(() => {
-    const updateSizes = () => {
-      const width = window.innerWidth;
-      if (width >= 1280) {
-        setCardHeight(224); // h-56
-        setGap(32); // gap-8
-      } else if (width >= 768) {
-        setCardHeight(224); // h-56
-        setGap(24); // gap-6
+  // Handle bookmark changes
+  const handleBookmarkChange = (companyId: number, isBookmarked: boolean) => {
+    setBookmarkedCompanies(prev => {
+      const newSet = new Set(prev);
+      if (isBookmarked) {
+        newSet.add(companyId);
       } else {
-        setCardHeight(224); // h-56
-        setGap(16); // gap-4
+        newSet.delete(companyId);
       }
-    };
-    updateSizes();
-    window.addEventListener('resize', updateSizes);
-    return () => window.removeEventListener('resize', updateSizes);
-  }, []);
 
-  const VISIBLE_CARDS = 3;
-  const totalCards = medias.length;
+      // Notify parent component of bookmark changes
+      const bookmarksArray = Array.from(newSet);
+      onBookmarksChange?.(bookmarksArray);
 
-  React.useEffect(() => {
-    if (paused || totalCards <= VISIBLE_CARDS) return;
-    timeoutRef.current = setTimeout(() => {
-      setCurrent((prev) => (prev + 1) % totalCards);
-    }, 1200);
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [current, paused, totalCards]);
+      return newSet;
+    });
+  }
 
-  // Only show each company once at a time
-  const displayMedias = medias;
+  const hasBookmarks = bookmarkedCompanies.size > 0
 
-  // When reaching the end, reset to the top seamlessly
-  const maxIndex = totalCards > VISIBLE_CARDS ? totalCards - VISIBLE_CARDS : 0;
-  useEffect(() => {
-    if (current > maxIndex) {
-      setCurrent(0);
-    }
-  }, [current, maxIndex]);
+  const nextSlide = () => {
+    setCurrentIndex((prev) => (prev + 1) % totalPages)
+  }
+
+  const prevSlide = () => {
+    setCurrentIndex((prev) => (prev - 1 + totalPages) % totalPages)
+  }
+
+  const currentCompany = companies[currentIndex]
+
+  const currentNetworkConnections = network_connections?.get(currentCompany.company)
+
+  console.log("currentNetworkConnections", currentIndex, currentNetworkConnections)
 
   return (
-    <div
-      className="relative h-full w-full max-w-[380px] overflow-hidden flex flex-col"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      style={{ minHeight: `${cardHeight * VISIBLE_CARDS + gap * (VISIBLE_CARDS - 1)}px` }}
-    >
-      <div
-        className={`flex flex-col transition-transform duration-700 gap-4 md:gap-6 xl:gap-8`}
-        style={{ transform: `translateY(-${current * (cardHeight + gap)}px)` }}
-      >
-        {displayMedias.map((media, idx) => (
-          <div
-            key={media._id + '-' + idx}
-            className="h-56 flex flex-col group cursor-pointer relative"
-            style={{ minHeight: `${cardHeight}px`, maxHeight: `${cardHeight}px` }}
-          >
-            <div className="aspect-[4/3] rounded-2xl overflow-hidden relative h-full w-full">
-              <Image
-                src={media.imageUrl}
-                alt={media.alt}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-60 group-hover:opacity-80 transition-all duration-500" />
-              <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                <h3 className="text-xl font-medium text-white mb-2 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">{media.alt}</h3>
-                {media.caption && (
-                  <p className="text-white/75 text-sm mb-1 transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                    {media.caption}
-                  </p>
-                )}
-                {media.description && (
-                  <p className="text-white/60 text-xs transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                    {media.description}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
+    <div className="relative max-w-md mx-auto">
+      {/* Carousel Container */}
+      <div className="overflow-hidden rounded-lg">
+        <CompanyCard
+          appliedToNiche={false}
+          key={currentCompany._id}
+          company={currentCompany}
+          external={!currentCompany.partner}
+          network_connections={currentNetworkConnections}
+          onBookmarkChange={handleBookmarkChange}
+        />
       </div>
-    </div>
-  );
-}
 
+      {/* Navigation Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={prevSlide}
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            {Array.from({ length: Math.min(totalPages, 10) }).map((_, index) => {
+              const pageIndex = totalPages > 10 ? 
+                Math.max(0, Math.min(currentIndex - 5, totalPages - 10)) + index :
+                index;
+              return (
+                <button
+                  key={pageIndex}
+                  onClick={() => setCurrentIndex(pageIndex)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    pageIndex === currentIndex ? 'bg-neutral-900' : 'bg-neutral-300'
+                  }`}
+                />
+              );
+            })}
+          </div>
+          
+          <Button
+            type="button"
+            variant="outline"
+            onClick={nextSlide}
+            className="flex items-center gap-2"
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Finish Perusing Button */}
+      {onFinishPerusing && (
+        <div className="mt-6 flex justify-center">
+          <Button
+            onClick={onFinishPerusing}
+            disabled={!hasBookmarks}
+            size="lg"
+            className="w-full max-w-xs"
+          >
+            Finish Perusing
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
     

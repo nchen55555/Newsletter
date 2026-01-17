@@ -42,15 +42,11 @@ export function CommitmentPledgeDialog({ open, onAccept }: CommitmentPledgeDialo
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 text-center">
           {/* Main pledge text */}
           <div className="prose prose-sm max-w-none text-neutral-400 leading-relaxed">
             <p>
-              By joining The Niche Network, you pledge to uphold a professional standard that respects the time of both our team and partner companies. This includes a commitment to providing timely responses (within 10 business days) to all messages and interview requests if you initiate them, and a strict no-ghosting policy. If your interest in an opportunity changes, you agree to communicate this proactively so we can efficiently reallocate resources.
-            </p>
-            <br></br>
-            <p>
-              Furthermore, you are responsible for setting clear and accurate expectations within your profile—including your skills and search interests—as this foundational honesty is critical for creating the high-quality matches our community is built on. This information is not sent to our partner companies but rather makes it so that our platform can match most efficiently.
+              By joining The Niche Network, you pledge to uphold a professional standard that respects the time of both our team and partner companies. This includes a commitment to providing timely responses (within 10 business days) to all messages and interview requests if you initiate them. If your interest in an opportunity changes, you agree to communicate this proactively so we can efficiently reallocate resources.
             </p>
           </div>
 

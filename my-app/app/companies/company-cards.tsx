@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Info, Loader2, Sparkles } from "lucide-react";
+import { Info, Loader2, CircleCheck, CircleMinus, Users } from "lucide-react";
 import { CompanyData } from "@/app/types";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardTitle, CardHeader, CardFooter }
 import Share from "../components/share";
 import {type NetworkCompanies} from "@/app/opportunities/opportunities_fetch_information";
 import { toast } from "sonner"; 
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 type CompanyWithImageUrl = CompanyData & {
   imageUrl: string | null;
@@ -34,6 +35,7 @@ export function CompanyCard({
   isNavigatingExternal,
   onNavigateStart,
   network_connections = undefined,
+  onBookmarkChange,
 }: {
   appliedToNiche?: boolean;
   company: CompanyWithImageUrl;
@@ -43,7 +45,8 @@ export function CompanyCard({
   disableNavigation?: boolean;
   isNavigatingExternal?: boolean;
   onNavigateStart?: () => void;
-  network_connections?: NetworkCompanies,
+  network_connections?: NetworkCompanies;
+  onBookmarkChange?: (companyId: number, isBookmarked: boolean) => void;
 }) {
   const router = useRouter();
 
@@ -62,7 +65,7 @@ export function CompanyCard({
     router.push(`/companies/${company.company}`);
   };
 
-  const warm_intro_available = network_connections?.quality_score && network_connections.quality_score >= 3.0
+  const warm_intro_available = network_connections?.quality_score && network_connections.quality_score >= 1.0
 
 
   return (
@@ -80,14 +83,13 @@ export function CompanyCard({
           className={`relative aspect-[5/3] bg-gradient-to-br from-neutral-50 to-neutral-100 overflow-hidden rounded-t-xl ${
             !disableNavigation ? 'cursor-pointer' : ''
           }`}
-          onClick={handleCardClick}
         >
           {company.imageUrl ? (
             <Image
               src={company.imageUrl}
               alt={company.alt || `Logo for ${title}`}
               fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              className="object-cover"
             />
           ) : (
             <div className="flex items-center justify-center h-full">
@@ -108,17 +110,50 @@ export function CompanyCard({
       {/* Title and Caption */}
       <CardHeader className="text-center">
         <div className="flex flex-col items-center gap-1">
-          <CardTitle
-            className={`text-lg font-semibold ${!disableNavigation ? 'cursor-pointer' : ''}`}
-            onClick={handleCardClick}
-          >
-            {title}
-          </CardTitle>
-          {warm_intro_available && (
+          <div className="flex items-center justify-center gap-2">
+            <CardTitle
+              className={`text-lg font-semibold ${!disableNavigation ? 'cursor-pointer' : ''}`}
+            >
+              {title}
+            </CardTitle>
+            {company.partner && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-full">
+                      <Users className="h-3 w-3 text-neutral-400" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="text-sm">
+                      Partnered with the Niche. Warm Introductions available with sufficient network recommendation.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+          {warm_intro_available ? (
             <div className="flex items-center gap-1 text-xs text-neutral-400 border border-neutral-400 rounded px-2 py-1">
-              <Sparkles className="h-3 w-3" />
-              <span>Warm Intro</span>
+              <CircleCheck className="h-3 w-3" />
+              <span>Warm Intro Available</span>
             </div>
+          ) : (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 text-xs text-neutral-400 border border-neutral-400 rounded px-2 py-1 cursor-help">
+                    <CircleMinus className="h-3 w-3" />
+                    <span>Insufficient Network Overlap for Warm Intro</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="text-sm">
+                    The Niche has partnered with select opportunities where the context and recommendation behind your network can unlock warm introductions. 
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
         {company.caption && (
@@ -131,30 +166,56 @@ export function CompanyCard({
       {/* Action Buttons */}
       {!disableNavigation && (
         <CardFooter className="flex-col gap-3 pt-0 pb-0">
-          <div className="flex w-full justify-between gap-3">
-            <Button
-                variant="outline"
-                size="lg"
-                onClick={handleCardClick}
-                className="gap-2"
-              >
-                <span className="hidden sm:inline">Explore Profile</span>
-              </Button>
+            <div className="flex w-full justify-between gap-3">
+            <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={handleCardClick}
+                        className="gap-2"
+                        disabled={!appliedToNiche}
+                        title={
+                          !appliedToNiche
+                            ? "Finish onboarding to explore profile"
+                            : undefined
+                        }
+                      >
+                          <span className="hidden sm:inline">Explore Profile</span>
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!appliedToNiche && (
+                      <TooltipContent>
+                        Finish onboarding to explore profile
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
             <div className="flex items-center gap-3">
-              <RainbowBookmark company={company.company} />
+              <RainbowBookmark
+                company={company.company}
+                onBookmarkChange={onBookmarkChange}
+              />
               <Share company={company.company} />
             </div>
           </div>
-          {network_connections?.connectionCount && network_connections.connectionCount > 0 && (
-            <div className="mt-2 flex items-center justify-center gap-1 text-xs text-neutral-400 w-full">
-              <span>
-                {network_connections.connectionCount} {network_connections.connectionCount === 1 ? 'connection' : 'connections'} engaged with this profile recently including {(() => {
-                  const names = network_connections.connections.map(c => c.name).join(', ')
-                  return names.length > 30 ? names.substring(0, 30) + '...' : names
-                })()}
-              </span>
-            </div>
-          )}
+        </CardFooter>
+      )}
+
+      {/* Network Connections - Show even when navigation is disabled */}
+      {network_connections?.connectionCount && network_connections.connectionCount > 0 && (
+        <CardFooter className="pt-0 pb-4">
+          <div className="flex items-center justify-center gap-1 text-xs text-neutral-400 w-full">
+            <span>
+              {network_connections.connectionCount} {network_connections.connectionCount === 1 ? 'connection' : 'connections'} engaged with this profile recently including {(() => {
+                const names = network_connections.connections.map(c => c.name).join(', ')
+                return names.length > 30 ? names.substring(0, 30) + '...' : names
+              })()}
+            </span>
+          </div>
         </CardFooter>
       )}
     </Card>

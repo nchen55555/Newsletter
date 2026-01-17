@@ -3,7 +3,7 @@ import React from "react";
 import { useState } from "react";
 import { useSubscriptionContext } from "./subscription_context";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileData } from "@/app/types";
 import { useEffect } from "react";
@@ -14,7 +14,7 @@ import { CheckCircle2Icon, Terminal, Sparkle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
-
+import ProfileAvatar from "./profile_avatar";
 
 export default function ApplyButton({
   company_title,
@@ -65,6 +65,8 @@ export default function ApplyButton({
   const [access_token, setAccessToken] = useState<string | null>(null);
 
   const [applied, setApplied] = useState(false);
+  const [warmIntroAvailable, setWarmIntroAvailable] = useState<boolean | null>(null);
+  const [isLoadingWarmIntro, setIsLoadingWarmIntro] = useState(true);
 
   // const [isCohortMember, setIsCohortMember] = useState(false)
 
@@ -132,8 +134,35 @@ export default function ApplyButton({
           ? app.existing.toLowerCase() === 'true'
           : !!app.existing;
         setApplied(exists);
-      });     
+      });
   }, [form.id, company]);
+
+  // Fetch warm intro availability
+  useEffect(() => {
+    if (!company) return;
+
+    const fetchWarmIntro = async () => {
+      try {
+        const response = await fetch(`/api/companies/${company}/warm_intro`, {
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setWarmIntroAvailable(data.warm_intro_available);
+        } else {
+          setWarmIntroAvailable(false);
+        }
+      } catch (error) {
+        console.error('Error fetching warm intro status:', error);
+        setWarmIntroAvailable(false);
+      } finally {
+        setIsLoadingWarmIntro(false);
+      }
+    };
+
+    fetchWarmIntro();
+  }, [company]);
 
   // Check if we should reopen dialog after calendar auth
   useEffect(() => {
@@ -169,17 +198,72 @@ export default function ApplyButton({
     setAppError(null);
     setAppSuccess(false);
 
-    if(!form.resume_url) {
+    if(!form.resume_url && !form.resume_file) {
       setAppError("Please submit your resume")
+      setLoadingApplied(false)
+      return
     }
     if(!additionalInfo) {
       setAppError("Please submit your intro")
+      setLoadingApplied(false)
+      return
     }
     if(!selectedRole){
       setAppError("Please select a role")
+      setLoadingApplied(false)
+      return
     }
 
-    // Only proceed with application if profile update succeeded
+    // Update profile if any changes were made
+    const profileFormData = new FormData()
+    let hasProfileChanges = false
+
+    // Add profile_image if changed
+    if (form.profile_image) {
+      profileFormData.append('profile_image', form.profile_image)
+      hasProfileChanges = true
+    }
+
+    // Add resume_file if changed
+    if (form.resume_file) {
+      profileFormData.append('resume_file', form.resume_file)
+      hasProfileChanges = true
+    }
+
+    // Add bio if it exists
+    if (form.bio) {
+      profileFormData.append('bio', form.bio)
+      hasProfileChanges = true
+    }
+
+    // Add id for folder path determination
+    profileFormData.append('id', String(form.id))
+
+    // Post profile updates if any changes were made
+    if (hasProfileChanges) {
+      const profileRes = await fetch('/api/post_profile', {
+        method: 'POST',
+        credentials: 'include',
+        body: profileFormData
+      })
+
+      if (!profileRes.ok) {
+        setAppError("Failed to update profile")
+        setLoadingApplied(false)
+        return
+      }
+
+      // Update form state with returned URLs
+      const profileData = await profileRes.json()
+      if (profileData.resumeUrl) {
+        setForm(prev => ({ ...prev, resume_url: profileData.resumeUrl }))
+      }
+      if (profileData.profileImageUrl) {
+        setForm(prev => ({ ...prev, profile_image_url: profileData.profileImageUrl }))
+      }
+    }
+
+    // Proceed with application submission
     const res2 = await fetch('/api/post_application', {
       method: 'POST',
       headers: {
@@ -187,7 +271,7 @@ export default function ApplyButton({
       },
       body: JSON.stringify({
         company_title: company_title,
-        first_name: form.first_name, 
+        first_name: form.first_name,
         email: form.email,
         candidate_id: form.id,
         company_id: company,
@@ -195,7 +279,7 @@ export default function ApplyButton({
         role: selectedRole
       })
     })
-    
+
     if (res2.ok) {
       // Close dialog immediately and redirect to success screen
       setDialogOpen(false)
@@ -222,35 +306,110 @@ export default function ApplyButton({
         variant="outline"
         size="lg"
         onClick={() => setDialogOpen(true)}
-        disabled={applied || !appliedToNiche}
+        disabled={applied || !appliedToNiche || isLoadingWarmIntro || warmIntroAvailable === false}
         className="gap-2"
-        style={applied ? { cursor: "not-allowed" } : {}}
+        style={(applied || warmIntroAvailable === false) ? { cursor: "not-allowed" } : {}}
       >
         <Sparkle></Sparkle>
         <span className="hidden sm:inline">Request a Warm Intro </span>
       </Button>
       </span>
     </TooltipTrigger>
-    {applied && (
+    {applied ? (
       <TooltipContent>
         You have already applied to this company.
       </TooltipContent>
-    )}
+    ) : !appliedToNiche ? (
+      <TooltipContent>
+        Complete your profile to request warm intros.
+      </TooltipContent>
+    ) : warmIntroAvailable === false ? (
+      <TooltipContent>
+        Your network isn&apos;t a strong enough signal to give you a warm intro here yet. Continue building your verified network to unlock warm introductions.
+      </TooltipContent>
+    ) : null}
   </Tooltip>
 </TooltipProvider>
   <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <span style={{ display: 'none' }} />
           </DialogTrigger>
-          <DialogContent className="w-full p-8 overflow-y-auto" showCloseButton={false}>
-            <DialogHeader className="mb-8">
+          <DialogContent className="!w-[95vw] !max-w-none sm:!max-w-[90vw] lg:!max-w-[85vw] xl:!max-w-[80vw] max-h-[90vh] p-4 sm:p-6 md:p-8 overflow-y-auto" showCloseButton={false}>
+            <DialogHeader className="mb-2">
               <DialogTitle className="text-2xl font-semibold">Warm Intro Request</DialogTitle>
-              <DialogDescription className="text-sm mt-2 text-neutral-200">
-                In the intro blurb, provide a brief reason for your request and tag the specific opportunity you would like to discuss if any. We try to get back on your request as soon as possible! 
-              </DialogDescription>
-              {hiringTags && hiringTags.length > 0 && (
+
+              {/* Profile Picture and Bio Side by Side */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 py-6">
+                {/* Left: Profile Picture (1/3rd) */}
+                <div className="flex flex-col items-start lg:col-span-1">
+                  <Label htmlFor="profile_picture" className="text-base font-medium mb-4">
+                    Profile Picture <span className="text-red-500 ml-1">*</span>
+                    <span className="text-sm text-gray-500 font-normal ml-2">(Max 2MB)</span>
+                  </Label>
+                  <ProfileAvatar
+                    name={`${form.first_name || ''} ${form.last_name || ''}`.trim() || form.email || 'User'}
+                    imageUrl={form.profile_image_url || undefined}
+                    size={250}
+                    shape="circle"
+                    editable
+                    onSelectFile={(file) => {
+                      if (file && file.size > 2 * 1024 * 1024) {
+                        alert('Profile image size must be less than 2MB');
+                        return;
+                      }
+                      setForm(f => ({ ...f, profile_image: file || null }));
+                    }}
+                    className="w-64 h-64 rounded-full"
+                  />
+                </div>
+
+                {/* Right: Bio and Resume (2/3rds) */}
+                <div className="flex flex-col gap-4 lg:col-span-2">
+                  <div>
+                    <Label htmlFor="bio" className="text-base font-medium">Bio <span className="text-red-500 ml-1">*</span></Label>
+                    <textarea
+                      id="bio"
+                      name="bio"
+                      value={form.bio}
+                      onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                      placeholder="I currently lead product at OpenMind, a Series A startup building out software to help robots learn from each other and operate in the real world. Prior to that, I launched Databrick's Agent Framework..."
+                      className={`w-full min-h-[120px] text-sm px-4 py-3 mt-2 border rounded-lg resize-none`}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="resume_file" className="text-base font-medium">
+                      Resume <span className="text-red-500 ml-1">*</span>
+                      <span className="text-sm text-gray-500 font-normal ml-2">(Max 5MB)</span>
+                    </Label>
+                    <Input
+                      id="resume_file"
+                      name="resume_file"
+                      type="file"
+                      accept="application/pdf,.pdf,.doc,.docx"
+                      onChange={e => {
+                        const file = e.target.files && e.target.files[0];
+                        if (file && file.size > 5 * 1024 * 1024) {
+                          alert('Resume file size must be less than 5MB');
+                          e.target.value = '';
+                          return;
+                        }
+                        setForm(prev => ({ ...prev, resume_file: file || null }));
+                      }}
+                      className="block w-full text-lg mt-2"
+                    />
+                    {form.resume_file && (
+                      <div className="mt-2 text-sm text-gray-700">Selected: {form.resume_file.name}</div>
+                    )}
+                    {!form.resume_file && form.resume_url && (
+                      <div className="mt-2 text-sm text-gray-700">
+                        Current resume: <a href={form.resume_url} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">View uploaded resume</a>
+                      </div>
+                    )}
+                  </div>
+                  {hiringTags && hiringTags.length > 0 && (
                 <div className="mt-4">
-                  <p className="text-sm font-medium text-neutral-400 mb-2">Select a role</p>
+                  <Label htmlFor="role" className="text-base font-medium mb-4">Role <span className="text-red-500 ml-1">*</span> </Label>
                   <div className="flex flex-wrap gap-2">
                     {hiringTags.map((role) => (
                       <button
@@ -281,34 +440,11 @@ export default function ApplyButton({
                   </div>
                 </div>
               )}
-              <div className="py-6 grid w-full max-w-sm items-center gap-3">
-                  <Label htmlFor="resume_file" className="text-base font-medium">Resume <span className="text-sm text-gray-500 font-normal">(Max 5MB)</span></Label>
-                  <Input
-                    id="resume_file"
-                    name="resume_file"
-                    type="file"
-                    accept="application/pdf,.pdf,.doc,.docx"
-                    onChange={e => {
-                      const file = e.target.files && e.target.files[0];
-                      if (file && file.size > 5 * 1024 * 1024) { // 5MB limit
-                        alert('Resume file size must be less than 5MB');
-                        e.target.value = '';
-                        return;
-                      }
-                      setForm(prev => ({ ...prev, resume_file: file || null }));
-                    }}
-                    className="block w-full text-lg mt-2"
-                  />
-                  {form.resume_file && (
-                    <div className="mt-2 text-sm text-gray-700">Selected: {form.resume_file.name}</div>
-                  )}
-                  {!form.resume_file && form.resume_url && (
-                    <div className="mt-2 text-sm text-gray-700">
-                      Current resume: <a href={form.resume_url} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">View uploaded resume</a>
-                    </div>
-                  )}
                 </div>
+              </div>
+              
             </DialogHeader>
+            
             <form onSubmit={handleApply}>
             {/* <div className="mb-10"> */}
               {/* <div className="border border-neutral-200 rounded-lg"> */}
@@ -350,9 +486,9 @@ export default function ApplyButton({
             >
               {(hasCalendarAccess, isCheckingCalendar) => ( */}
                 <>
-                <div className="mb-10">
+                <div className="mb-2">
                 <Label htmlFor="add_info" className="text-base font-medium">
-                  Intro Blurb
+                  Connect Blurb <span className="text-red-500 ml-1">*</span>
                   {isDemo && <span className="ml-2 text-sm text-gray-600">(Demo Mode)</span>}
                 </Label>
                   <textarea 
@@ -388,7 +524,7 @@ export default function ApplyButton({
                   )}
                 </div>
                 
-                <div className="flex justify-end mt-8 gap-4">
+                <div className="flex justify-end gap-4">
                   <Button 
                     type="submit" 
                     className="h-12 px-8 text-lg"

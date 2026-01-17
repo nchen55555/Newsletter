@@ -25,9 +25,10 @@ export interface CombinedFeedItem {
 
 interface CombinedFeedProps {
   posts: Post[];
+  cols?: number;
 }
 
-export function CombinedFeed({ posts }: CombinedFeedProps) {
+export function CombinedFeed({ posts, cols = 2 }: CombinedFeedProps) {
   const [combinedFeed, setCombinedFeed] = useState<CombinedFeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +80,7 @@ export function CombinedFeed({ posts }: CombinedFeedProps) {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-7 w-full">
+      <div className={`grid grid-cols-1 md:grid-cols-${cols} gap-6 sm:gap-7 w-full`}>
         {[...Array(4)].map((_, i) => (
           <div key={i} className="animate-pulse">
             <div className="rounded-3xl border border-neutral-200 bg-white p-6 sm:p-8">
@@ -116,7 +117,7 @@ export function CombinedFeed({ posts }: CombinedFeedProps) {
   return (
     <>
       {/* Feed: two items per row on medium+ screens */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-7 w-full">
+      <div className={`grid grid-cols-1 md:grid-cols-${cols} gap-6 sm:gap-7 w-full`}>
         {combinedFeed.map((item, index) => {
           if (item.type === 'post') {
             const post = item.data as Post;

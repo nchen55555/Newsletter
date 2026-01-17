@@ -20,10 +20,14 @@ export async function POST(req: NextRequest) {
 
     // 3. Parse JSON body
     const body = await req.json();
-    const { connect_id, rating, note } = body;
+    const { alignment_value, connect_id, rating, note } = body;
     
     if (!connect_id) {
       return NextResponse.json({ error: 'connect_id is required' }, { status: 400 });
+    }
+
+    if(!alignment_value) {
+      return NextResponse.json({ error: 'alignment_value is required' }, { status: 400 });
     }
     
     if (!rating || rating < 1 || rating > 5) {
@@ -61,9 +65,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 5. Get existing connections array or initialize empty array
-    let connections: {connect_id: number, rating: number, note: string}[] = [];
-    let pendingConnections: {connect_id: number, rating: number, note: string}[] = [];
-    let requestedConnections: {connect_id: number, rating: number, note: string}[] = [];
+    let connections: {connect_id: number, rating: number, note: string, alignment_value: number}[] = [];
+    let pendingConnections: {connect_id: number, rating: number, note: string, alignment_value: number}[] = [];
+    let requestedConnections: {connect_id: number, rating: number, note: string, alignment_value: number}[] = [];
     
     if (currentProfile?.connections_new && Array.isArray(currentProfile.connections_new)) {
       connections = currentProfile.connections_new;
@@ -127,9 +131,9 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    let targetPendingConnections: {connect_id: number, rating: number, note: string}[] = [];
-    let targetConnections: {connect_id: number, rating: number, note: string}[] = [];
-    let targetRequestedConnections: {connect_id: number, rating: number, note: string}[] = [];
+    let targetPendingConnections: {connect_id: number, rating: number, note: string, alignment_value: number}[] = [];
+    let targetConnections: {connect_id: number, rating: number, note: string, alignment_value: number}[] = [];
+    let targetRequestedConnections: {connect_id: number, rating: number, note: string, alignment_value: number}[] = [];
     
     if (targetProfile?.requested_connections_new && Array.isArray(targetProfile.requested_connections_new)) {
       targetRequestedConnections = targetProfile.requested_connections_new;
@@ -153,8 +157,8 @@ export async function POST(req: NextRequest) {
       const otherUserRating = existingRequest ? existingRequest.rating : 3; // Default rating if not found
       
       // Add each other to connections and remove from pending_connections
-      connections.push({connect_id: connectIdNum, rating: rating, note: note});
-      targetConnections.push({connect_id: currentUserId, rating: otherUserRating, note: note});
+      connections.push({connect_id: connectIdNum, rating: rating, note: note, alignment_value: alignment_value});
+      targetConnections.push({connect_id: currentUserId, rating: otherUserRating, note: note, alignment_value: alignment_value});
       
       
       // Remove current user's ID from target's pending connections
@@ -210,7 +214,7 @@ export async function POST(req: NextRequest) {
     const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
 
     const { error } = await resend.emails.send({
-      from: 'The Niche <thenichenetwork@theniche.tech>',
+      from: 'Your Connections at The Niche <connections@theniche.tech>',
       to: [targetProfile.email],
       subject: `${senderName} and you are now verified connections on The Niche Network`,
       html: `
@@ -239,8 +243,8 @@ export async function POST(req: NextRequest) {
       });
     } else {
       // This is a new request - add current user's ID to target's pending connections
-        pendingConnections.push({connect_id: parseInt(connect_id), rating: rating, note: note});
-        targetRequestedConnections.push({connect_id: currentUserId, rating: rating, note: note});
+        pendingConnections.push({connect_id: parseInt(connect_id), rating: rating, note: note, alignment_value: alignment_value});
+        targetRequestedConnections.push({connect_id: currentUserId, rating: rating, note: note, alignment_value: alignment_value});
 
         await Promise.all([
         supabase

@@ -7,16 +7,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileData } from "@/app/types";
 import { useEffect } from "react";
-import ProfileInfo from "./profile_info";
 import { ProfileFormState } from "@/app/types";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2Icon, Terminal, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import CalendarAuthGate from "./calendar_auth_gate";
+import ProfileAvatar from "./profile_avatar";
+import { Input } from "@/components/ui/input";
 
-
-export default function EarlyInterestButton({ company }: { company: string }) {
+export default function EarlyInterestButton({ company, company_title }: { company: string, company_title: string }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { isSubscribed } = useSubscriptionContext();
   const [data, setData] = useState<ProfileData | null>(null);
@@ -25,7 +24,6 @@ export default function EarlyInterestButton({ company }: { company: string }) {
   const [appSuccess, setAppSuccess] = useState(false)
   const [loadingApplied, setLoadingApplied] = useState(false)
   const [isCalendarAuthFlow, setIsCalendarAuthFlow] = useState(false)
-  const [profileSectionExpanded, setProfileSectionExpanded] = useState(false)
   const [appliedToNiche, setAppliedToNiche] = useState(false)
   const [form, setForm] = useState<ProfileFormState>({
     id: 0,
@@ -153,27 +151,6 @@ export default function EarlyInterestButton({ company }: { company: string }) {
       return;
     }
 
-    if (!form.first_name) {
-      setAppError("First name is required.");
-      setLoadingApplied(false);
-      return;
-    }
-    if (!form.last_name) {
-      setAppError("Last name is required.");
-      setLoadingApplied(false);
-      return;
-    }
-    if (!form.phone_number) {
-      setAppError("Phone number is required.");
-      setLoadingApplied(false);
-      return;
-    }
-    if (!form.linkedin_url) {
-      setAppError("LinkedIn URL is required.");
-      setLoadingApplied(false);
-      return;
-    }
-
     if (!form.bio) {
       setAppError("Bio is required.");
       setLoadingApplied(false);
@@ -181,20 +158,7 @@ export default function EarlyInterestButton({ company }: { company: string }) {
     }
 
     const formData = new FormData();
-    formData.append('id', form.id.toString());
-    formData.append('first_name', form.first_name);
-    formData.append('last_name', form.last_name);
-    formData.append('school', form.school);
-    formData.append('linkedin_url', form.linkedin_url);
-    formData.append('personal_website', form.personal_website);
-    formData.append('phone_number', form.phone_number);
-    formData.append('email', form.email)
     formData.append('bio', form.bio);
-    
-    // Add boolean toggle values (convert to string for FormData)
-    formData.append('is_public_profile', form.is_public_profile.toString());
-    formData.append('newsletter_opt_in', form.newsletter_opt_in.toString());
-    formData.append('needs_visa_sponsorship', form.needs_visa_sponsorship.toString());
     
     // Handle resume: use file if provided, otherwise keep existing URL
     if (form.resume_file) {
@@ -209,14 +173,6 @@ export default function EarlyInterestButton({ company }: { company: string }) {
       formData.append('profile_image', form.profile_image);
     } else if (!form.profile_image_url) {
       setAppError('Profile image is required.');
-      return;
-    }
-
-    // Handle transcript: use file if provided, otherwise keep existing URL
-    if (form.transcript_file) {
-      formData.append('transcript_file', form.transcript_file);
-    } else if (!form.transcript_url) {
-      setAppError('Transcript is required.');
       return;
     }
 
@@ -240,9 +196,11 @@ export default function EarlyInterestButton({ company }: { company: string }) {
       },
       body: JSON.stringify({
         first_name: form.first_name, 
+        company_title: company_title, 
         email: form.email,
         candidate_id: form.id,
         company_id: company,
+        early_interest: true,
         additional_info: additionalInfo
       })
     })
@@ -266,66 +224,42 @@ export default function EarlyInterestButton({ company }: { company: string }) {
     <TooltipTrigger asChild>
       <span>
         <Button
+          variant="outline"
+          size="lg"
           onClick={() => setDialogOpen(true)}
-          variant="default"
-          className="inline-flex items-center justify-center bg-neutral-900 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-neutral-800 transition-colors text-sm w-full"
-          type="button"
-          aria-label="early interest"
           disabled={applied || !appliedToNiche}
+          className="gap-2"
           style={applied ? { cursor: "not-allowed" } : {}}
         >
-          <AlertTriangle className="w-4 h-4 mr-2" />
-          early interest
+          <AlertTriangle className="w-4 h-4" />
+          <span className="hidden sm:inline">Express Early Interest</span>
         </Button>
       </span>
     </TooltipTrigger>
-    {applied && (
+    {applied ? (
       <TooltipContent>
         You have already expressed early interest in this company.
       </TooltipContent>
-    )}
+    ) : !appliedToNiche ? (
+      <TooltipContent>
+        Complete your profile to express early interest.
+      </TooltipContent>
+    ) : null}
   </Tooltip>
 </TooltipProvider>
   <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <span style={{ display: 'none' }} />
           </DialogTrigger>
-          <DialogContent className="sm:max-w-5xl w-full p-8 max-h-[80vh] overflow-y-auto" showCloseButton={false}>
+          <DialogContent className="!w-[95vw] !max-w-none sm:!max-w-[90vw] lg:!max-w-[85vw] xl:!max-w-[80vw] max-h-[90vh] p-4 sm:p-6 md:p-8 overflow-y-auto" showCloseButton={false}>
             <DialogHeader className="mb-8">
               <DialogTitle className="text-2xl font-semibold">Express Early Interest</DialogTitle>
               <DialogDescription className="text-lg mt-2">
-                We are currently processing our partnership with these companies! Pending partnership, we will directly connect you to the founder or head of talent for an initial discussion! <br></br><br></br><strong>If you are especially interested in this company, please explain why and let us know in your application. Regardless of whether the partnership goes through, we will still try to make a connect for you.</strong> 
+                We are currently processing our partnership with these companies! Pending partnership, we will directly connect you to the founder or head of talent for an initial discussion! <br></br><br></br><strong>Regardless of whether the partnership goes through, we will still try to make a connect for you.</strong> 
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleEarlyInterest}>
-            <div className="mb-10">
-              <div className="border border-neutral-200 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setProfileSectionExpanded(!profileSectionExpanded)}
-                  className="flex items-center justify-between w-full p-4 text-left hover:bg-neutral-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <p className="text-sm text-neutral-600">Review and update your profile details</p>
-                    </div>
-                  </div>
-                  <svg 
-                    className={`w-5 h-5 text-neutral-600 transition-transform ${profileSectionExpanded ? 'rotate-180' : ''}`}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {profileSectionExpanded && (
-                  <div className="px-4 pb-4 border-t border-neutral-200">
-                    <ProfileInfo form={form} setForm={setForm} />
-                  </div>
-                )}
-              </div>
-            </div>
+  
             
             {/* <CalendarAuthGate 
               onAuthRequired={() => {
@@ -338,17 +272,106 @@ export default function EarlyInterestButton({ company }: { company: string }) {
               {(hasCalendarAccess, isCheckingCalendar) => ( */}
                 <>
                 <div className="mb-10">
-                <Label htmlFor="add_info" className="text-base font-medium">Why are you interested?</Label>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 py-6">
+                {/* Left: Profile Picture (1/3rd) */}
+                <div className="flex flex-col items-start lg:col-span-1">
+                  <Label htmlFor="profile_picture" className="text-base font-medium mb-4">
+                    Profile Picture <span className="text-red-500 ml-1">*</span>
+                    <span className="text-sm text-gray-500 font-normal ml-2">(Max 2MB)</span>
+                  </Label>
+                  <ProfileAvatar
+                    name={`${form.first_name || ''} ${form.last_name || ''}`.trim() || form.email || 'User'}
+                    imageUrl={form.profile_image_url || undefined}
+                    size={250}
+                    shape="circle"
+                    editable
+                    onSelectFile={(file) => {
+                      if (file && file.size > 2 * 1024 * 1024) {
+                        alert('Profile image size must be less than 2MB');
+                        return;
+                      }
+                      setForm(f => ({ ...f, profile_image: file || null }));
+                    }}
+                    className="w-64 h-64 rounded-full"
+                  />
+                </div>
+
+                {/* Right: Bio and Resume (2/3rds) */}
+                <div className="flex flex-col gap-4 lg:col-span-2">
+                  <div>
+                    <Label htmlFor="bio" className="text-base font-medium">Bio <span className="text-red-500 ml-1">*</span></Label>
+                    <textarea
+                      id="bio"
+                      name="bio"
+                      value={form.bio}
+                      onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                      placeholder="I currently lead product at OpenMind, a Series A startup building out software to help robots learn from each other and operate in the real world. Prior to that, I launched Databrick's Agent Framework..."
+                      className={`w-full min-h-[120px] text-sm px-4 py-3 mt-2 border rounded-lg resize-none`}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="resume_file" className="text-base font-medium">
+                      Resume <span className="text-red-500 ml-1">*</span>
+                      <span className="text-sm text-gray-500 font-normal ml-2">(Max 5MB)</span>
+                    </Label>
+                    <Input
+                      id="resume_file"
+                      name="resume_file"
+                      type="file"
+                      accept="application/pdf,.pdf,.doc,.docx"
+                      onChange={e => {
+                        const file = e.target.files && e.target.files[0];
+                        if (file && file.size > 5 * 1024 * 1024) {
+                          alert('Resume file size must be less than 5MB');
+                          e.target.value = '';
+                          return;
+                        }
+                        setForm(prev => ({ ...prev, resume_file: file || null }));
+                      }}
+                      className="block w-full text-lg mt-2"
+                    />
+                    {form.resume_file && (
+                      <div className="mt-2 text-sm text-gray-700">Selected: {form.resume_file.name}</div>
+                    )}
+                    {!form.resume_file && form.resume_url && (
+                      <div className="mt-2 text-sm text-gray-700">
+                        Current resume: <a href={form.resume_url} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">View uploaded resume</a>
+                      </div>
+                    )}
+                  </div>
+                 
+                </div>
+              </div>
+                </div>
+                <>
+                <div className="mb-2">
+                <Label htmlFor="add_info" className="text-base font-medium">
+                  Connect Blurb <span className="text-neutral-500 ml-1">(Optional)</span>
+                </Label>
                   <textarea 
                     id="add_info" 
                     name="add_info" 
                     value={additionalInfo} 
                     onChange={(e) => setAdditionalInfo(e.target.value)} 
                     required 
-                    placeholder="Tell us why you're interested and what draws you to the company. If you are extremely interested in this company, say that! Each message should be customized to the opportunity." 
-                    className="w-full min-h-[120px] text-lg px-4 py-3 mt-2 border border-neutral-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder={"Tell us why you're interested in connecting and what draws you to this opportunity."} 
+                    className={`w-full min-h-[120px] text-sm px-4 py-3 mt-2 border rounded-lg resize-none 'border-neutral-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent'`}
                   />
-                  {appSuccess && (
+                </div>
+                
+                </>
+                <div className="flex justify-end mt-8 gap-4">
+                  <Button 
+                    type="submit" 
+                    className="h-12 px-8 text-lg"
+                    disabled={applied || loadingApplied } // || !hasCalendarAccess || isCheckingCalendar}
+                  >
+                    {applied ? "Already Submitted" : loadingApplied ? "Submitting..." : /*isCheckingCalendar ? "Checking..." : !hasCalendarAccess ? "Calendar Integration Required" :*/ "Submit Early Interest"}
+                  </Button>
+                </div>
+                </>
+                {appSuccess && (
                     <Alert className="mt-6">
                       <CheckCircle2Icon />
                       <AlertTitle>Early interest submitted successfully! We&apos;ll notify you when this company becomes a partner and if there is mutual interest.</AlertTitle>
@@ -360,20 +383,6 @@ export default function EarlyInterestButton({ company }: { company: string }) {
                       <AlertTitle>{appError}</AlertTitle>
                     </Alert>
                   )}
-                </div>
-                
-                <div className="flex justify-end mt-8 gap-4">
-                  <Button 
-                    type="submit" 
-                    className="h-12 px-8 text-lg text-white"
-                    disabled={applied || loadingApplied } // || !hasCalendarAccess || isCheckingCalendar}
-                  >
-                    {applied ? "Already Submitted" : loadingApplied ? "Submitting..." : /*isCheckingCalendar ? "Checking..." : !hasCalendarAccess ? "Calendar Integration Required" :*/ "Submit Early Interest"}
-                  </Button>
-                </div>
-                </>
-             {/* )}
-            </CalendarAuthGate> */}
             </form>
           </DialogContent>
         </Dialog>

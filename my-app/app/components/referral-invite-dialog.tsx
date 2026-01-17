@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useSearchParams } from "next/navigation";
 import { decodeSimple } from "@/app/utils/simple-hash";
 import { Subscribe } from "./subscribe";
-import Link from "next/link";
 import Image from "next/image";
 
 interface ReferralInviteDialogProps {
@@ -166,7 +165,7 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
           </div>
           <DialogTitle className="text-xl font-semibold text-center">
             {referrerName 
-              ? `${referrerName} has referred you to The Niche`
+              ? `${referrerName} has shared with you an opportunity`
               : 'Join The Niche Network'
             }
           </DialogTitle>
@@ -174,11 +173,11 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
             {referrerName ? (
               <>
                 Welcome to The Niche! <strong>{referrerName}</strong> thinks you would be a great fit for{" "}
-                <strong>{companyName || `this company`}</strong> and wants to extend you an invite for you to use The Niche Network to build your personalized, verifiable professional network. Discover opportunities that your most trusted circles are already looking at or have vetted directly and unlock network-driven warm introductions to these opportunities. <Link href="/" className="text-blue-600 hover:text-blue-800 underline">Learn more</Link>
+                <strong>{companyName || `this company`}</strong> and wants to extend you an invite for you to use The Niche Network to for a warm intro there. 
               </>
             ) : (
               <>
-                Welcome to The Niche! Create your Niche network to build your personalized, verifiable professional network. Discover opportunities that your most trusted circles are already looking at or have vetted directly and unlock network-driven warm introductions to these opportunities. <Link href="/" className="text-blue-600 hover:text-blue-800 underline">Learn more</Link>
+                Welcome to The Niche! Discover opportunities that your most trusted circles are already looking at or have vetted directly and unlock network-driven warm introductions to these opportunities. 
               </>
             )}
           </DialogDescription>
@@ -188,9 +187,6 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
           <Subscribe referral_id={referrerIdFromUrl} />
         </div>
         
-        <p className="text-xs text-neutral-200 text-center mt-4">
-        Your Niche Profile is your curated professional presence, digitializing the connections that pave your career and surfacing the opportunities that will take you to the next level.
-        </p>
       </DialogContent>
     </Dialog>
   );

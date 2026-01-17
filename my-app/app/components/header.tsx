@@ -4,6 +4,7 @@ import { NavActions } from "./navActions"
 import React, { useEffect, useState } from "react";
 import { useSubscriptionContext } from "./subscription_context";
 import { LandingPageSearch } from "./landing-page-search";
+
 export function Navigation({isLandingPage = false} : {isLandingPage?: boolean}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isSubscribed, loading: subLoading } = useSubscriptionContext();

@@ -14,6 +14,7 @@ interface InformationDialogProps {
   title: string
   description: string
   children: React.ReactNode
+  allowClose?: boolean
 }
 
 export function InformationDialog({
@@ -22,10 +23,11 @@ export function InformationDialog({
   title,
   description,
   children,
+  allowClose = true,
 }: InformationDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="w-full sm:max-w-[900px] mx-auto" showCloseButton={allowClose}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>

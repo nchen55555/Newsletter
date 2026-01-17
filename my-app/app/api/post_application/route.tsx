@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     try{
         const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
-        const { company_title, first_name, email, candidate_id, company_id, additional_info, role} = await req.json();
+        const { early_interest, company_title, first_name, email, candidate_id, company_id, additional_info, role} = await req.json();
         
 
         const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -23,7 +23,8 @@ export async function POST(req: NextRequest) {
             candidate_id: candidate_id,
             company_id: company_id,
             additional_info: additional_info, 
-            role: role
+            role: role, 
+            early_interest: early_interest
         })
         .single();
 
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
 
         // Create email content using decoupled data
     const emailContent = {
-        message: `Thank you for taking your time to connect with ${company_title}! Your warm intro request has been sent direct to their inbox. Please look forward to a response back within the next week or so. `
+        message: `Thank you for taking your time to request an intro with ${company_title}! Your request has been sent direct to their inbox. Please look forward to a response back within the next week or so. `
       };
       // Check if API key exists
       if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
       const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
   
       const { data, error } = await resend.emails.send({
-        from: 'The Niche <warm_intros@theniche.tech>',
+        from: 'Warm Intros at The Niche <warm_intros@theniche.tech>',
         to: [email],
         subject: '[THE NICHE] Warm Intro Request Received',
         html: `

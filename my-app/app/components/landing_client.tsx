@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { Subscribe } from "@/app/components/subscribe";
 import { useSubscriptionContext } from './subscription_context';
 import FrontProfile from './frontprofile';
@@ -12,12 +13,25 @@ import { Navigation } from "./header";
 import { useMemo } from 'react';
 import { StatusCheckinProvider } from "@/app/components/status-checkin-context";
 import { LayoutDialogs } from "./layout-dialogs";
+import { ConnectionData, CompanyWithImageUrl, CompanyData } from "@/app/types";
+import { ProfessionalReputationCard } from "./professional_reputation_card";
+import { ConnectionBreakdownChart } from "./connection-breakdown-chart";
+import { CompanyCard } from "../companies/company-cards";
+import { type NetworkCompanies } from "@/app/opportunities/opportunities_fetch_information";
 
-export default function LandingClient({ children }: { children?: React.ReactNode }) {
+interface LandingClientProps {
+  children?: React.ReactNode;
+  dummyConnections?: ConnectionData[];
+  dummyCompanies?: CompanyWithImageUrl[];
+  dummyNetworkCompanies?: Map<number, NetworkCompanies>;
+  opportunities?: CompanyData[];
+}
+
+export default function LandingClient({ children, dummyConnections = [], dummyCompanies = [], dummyNetworkCompanies, opportunities = [] }: LandingClientProps) {
   const { isSubscribed } = useSubscriptionContext();
 
   // Typewriter for the third line of the hero headline
-  const heroWords = useMemo(() => ["of Opportunities", "Network", "of Engineers", "of Colleagues", "of Founders"], []);
+  const heroWords = useMemo(() => ["Inner Circle", "Network", "of Engineers", "of Colleagues", "of Co-Founders"], []);
   const [wordIndex, setWordIndex] = useState(0);
   const [subIndex, setSubIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -69,7 +83,7 @@ export default function LandingClient({ children }: { children?: React.ReactNode
 
     const timeout = setTimeout(() => {
       setSubIndex((prev) => prev + (isDeleting ? -1 : 1));
-    }, isDeleting ? 40 : 70);
+    }, isDeleting ? 50 : 90);
 
     return () => clearTimeout(timeout);
   }, [subIndex, isDeleting, wordIndex, heroWords]);
@@ -103,6 +117,7 @@ export default function LandingClient({ children }: { children?: React.ReactNode
   }, [activeStep, isHowSectionInView, howSteps.length]);
 
   const typedHeroWord = heroWords[wordIndex]?.substring(0, subIndex) ?? "";
+  const displayedHeroWord = typedHeroWord || "\u00A0";
 
   const landingPage = (
     <div>
@@ -117,19 +132,24 @@ export default function LandingClient({ children }: { children?: React.ReactNode
             className="space-y-8"
           >
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
-              Discover Your Niche
-              <br />
-              <span className="inline-block w-[18ch] whitespace-nowrap bg-gradient-to-r from-purple-200 via-blue-100 to-purple-300 bg-clip-text text-transparent">
-                {typedHeroWord}
-              </span>
+              Opportunities <br></br>from Your Niche
+              <br></br>
+              <span className="whitespace-nowrap bg-gradient-to-r from-purple-200 via-blue-100 to-purple-300 bg-clip-text text-transparent">
+                {" "}
+                {displayedHeroWord}
+              </span>{" "}
             </h1>
+
+            <p className="text-lg leading-relaxed max-w-7xl mx-auto bg-gradient-to-r from-purple-300 via-blue-100 to-purple-300 bg-clip-text text-transparent">
+              <b>Warm introductions to opportunities your network has already validated.</b>
+            </p>
             
-            <p className="text-lg leading-relaxed max-w-7xl mx-auto">
-              Curate your personalized, verified professional network by adding context to each connection, digitizing the real relationships behind your career. Discover opportunities that your most trusted circles are already looking at or have vetted directly on the Niche through our network-driven warm introductions.
+            <p className="text-lg leading-relaxed max-w-4xl mx-auto">
+              Curate the real relationships behind your career on The Niche to discover opportunities your most trusted circles are looking at or have already validated. Unlock warm introductions through our network-driven partnerships directly to the founders of those opportunities.
             </p>
 
             {/* Global search bar for people on The Niche */}
-            <LandingPageSearch isSubscribed={isSubscribed} />
+            <LandingPageSearch isSubscribed={isSubscribed} opportunities={opportunities} />
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
               {/* Primary CTA */}
@@ -178,7 +198,7 @@ export default function LandingClient({ children }: { children?: React.ReactNode
               <FrontProfile 
                 profileImage="https://ubompjslcfgbkidmfuym.supabase.co/storage/v1/object/public/avatar_profiles/nicolas-horn-MTZTGvDsHFY-unsplash.jpg"
                 name="Dylan"
-                message="Tommy Verified His Connection with Michael"
+                message="Tommy Contextualized His Connection with Michael"
                 icon={<Send className="h-4 w-4" />}
                 messageSide="left"
               />
@@ -205,124 +225,108 @@ export default function LandingClient({ children }: { children?: React.ReactNode
         id="how-the-niche-works"
         className="py-20 px-4 sm:px-6 lg:px-8"
       >
-        <div className="text-center">
-          <h1 className="text-4xl md:text-5xl font-semibold mb-4">
+        <div>
+          <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-center">
             How the Niche Works
-            </h1>
-          <p className="text-base md:text-lg text-neutral-200 leading-relaxed">
-            The best opportunities have always been through word-of-mouth from your network - we&apos;re just digitalizing it. By mapping the people backing your career, contextualized through your own words, The Niche surfaces opportunities that your most trusted networks are already looking at or vetted. If your network signals a strong fit to one of our partner startups, we can facilitate a warm introduction to the founders for you on your behalf.
-          </p>
+          </h1>
 
-          {/* Mode toggle: For building your network / For hiring */}
-          <div className="mt-10 flex justify-center">
-            <div className="inline-flex rounded-full border border-border p-1">
+          {/* Tab Structure */}
+          <div className="mt-8 flex justify-center">
+            <div className="inline-flex rounded-full border border-border p-1 bg-muted/50">
               <button
                 type="button"
                 onClick={() => setHowMode("network")}
-                className={`h-12 px-8 text-base md:text-lg rounded-full font-medium transition-all ${
+                className={`h-12 px-6 md:px-8 text-sm md:text-base rounded-full font-medium transition-all ${
                   howMode === "network"
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "bg-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Build Your Niche Network
+                Create Your Niche Network
               </button>
               <button
                 type="button"
                 onClick={() => setHowMode("hiring")}
-                className={`h-12 px-8 text-base md:text-lg rounded-full font-medium transition-all ${
+                className={`h-12 px-6 md:px-8 text-sm md:text-base rounded-full font-medium transition-all ${
                   howMode === "hiring"
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "bg-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Hire From The Niche Network
+                Hire Through The Niche Network
               </button>
-        </div>
-      </div>
+            </div>
+          </div>
 
-          {/* Copy that changes with mode – brief summary above the step-by-step flow */}
-          <div className="mt-8 text-sm md:text-base text-neutral-200 leading-relaxed min-h-[96px] md:min-h-[72px] flex flex-col items-center justify-center gap-4">
-            {howMode === "network" ? (
-              <p className="text-center">
-                Use The Niche to build a verified, context-rich network: curate a highly personalized portfolio of your professional identity, curate your verified network of connections, and unlock warm introductions powered the intelligence from your digitalized professional network.
+          {howMode === "network" && (
+            <p className="text-base md:text-lg text-neutral-200 leading-relaxed max-w-5xl mx-auto text-center mt-8">
+              <p className="text-lg leading-relaxed max-w-7xl mx-auto bg-gradient-to-r from-purple-300 via-blue-100 to-purple-300 bg-clip-text text-transparent">
+                <b>The best opportunities have always been through word-of-mouth from your network - we&apos;re just digitalizing it.</b>
               </p>
-            ) : (
-              <>
-                <p className="text-center pb-4">
-                  As a company, plug into a context-rich, verified network of high-performing early technical talent.
-                </p>
+              <br></br>
+              By mapping the real people backing your career, contextualized through your own words, The Niche surfaces opportunities that your most trusted networks are already looking at or vetted. Curate a network of only your most trusted professional contacts. 
+            </p>
+          )}
+      
+          {howMode === "hiring" && (
+              <div className="flex flex-col items-center gap-4 mt-8">
+                <p className="text-base md:text-lg text-neutral-200 leading-relaxed max-w-5xl text-center">
+              <p className="text-lg leading-relaxed max-w-7xl mx-auto bg-gradient-to-r from-purple-300 via-blue-100 to-purple-300 bg-clip-text text-transparent">
+                <b>The best hires have always been through word-of-mouth from your network - we&apos;re just digitalizing it.</b>
+              </p>
+              <br></br>
+              As a company, plug into a context-rich, verified network of high-performing early technical talent.
+            </p>
                 <Button
                   asChild
                   className="h-12 px-8 text-lg rounded-lg bg-primary text-primary-foreground"
                 >
-                  <a
-                    href="https://calendly.com/nicole_chen/an-intro-to-the-niche"
-                    target="_blank"
-                    rel="noreferrer"
+                  <Link
+                    href="/hiring"
                   >
-                    Schedule a call
-                  </a>
+                    schedule a call
+                  </Link>
                 </Button>
-              </>
+              </div>
             )}
-          </div>
           
-          {/* Auto-advancing 3-step flow: one step visible at a time, below the summary text */}
-          {howMode === "network" && (
-            <div ref={howStepsRef} className="mt-12 space-y-6 max-w-7xl mx-auto">
-              <div className="flex flex-col md:flex-row items-center gap-12">
-                {/* Video / animation side */}
-                <div className="w-full md:w-7/12">
-                  <div className="w-full h-80 md:h-[24rem] rounded-3xl overflow-hidden bg-black shadow-inner">
-                    {howSteps[activeStep].videoSrc ? (
-                      <video
-                        key={howSteps[activeStep].videoSrc}
-                        className="w-full h-full object-cover transform scale-[1.2]"
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                      >
-                        <source src={howSteps[activeStep].videoSrc as string} type="video/mp4" />
-                      </video>
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-tr from-emerald-200 via-cyan-200 to-indigo-200 flex items-center justify-center">
-                        <span className="text-sm md:text-base text-neutral-200 px-6 text-center">
-                          Your network routes warm introductions to the right people.
-                        </span>
-                          </div>
-                        )}
-                        </div>
-                      </div>
-
-                {/* Text side */}
-                <div className="w-full md:w-5/12 text-left">
-                  <h4 className="text-lg md:text-xl font-semibold text-neutral-200 mb-2">
-                    {howSteps[activeStep].title}
-                  </h4>
-                  <p className="text-xs md:text-sm text-neutral-300">
-                    {howSteps[activeStep].body}
-                  </p>
+          {/* Network Visualizations and Company Cards */}
+            <div ref={howStepsRef} className="mt-12 space-y-16 max-w-5xl mx-auto">
+              {/* Section 1: Network Visualizations */}
+              <div className="space-y-6">
+                <h3 className="text-2xl md:text-3xl font-semibold text-right px-6">
+                  Insights and Warm Intros to Opportunities in Your Network
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {dummyCompanies.map((company) => (
+                    <CompanyCard
+                      key={company._id}
+                      company={company}
+                      disableNavigation={true}
+                      network_connections={dummyNetworkCompanies?.get(company.company)}
+                    />
+                  ))}
                 </div>
+               
               </div>
 
-              {/* Step indicators / manual controls */}
-              <div className="flex justify-center gap-2 mt-4">
-                {howSteps.map((_, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setActiveStep(idx)}
-                    className={`h-2.5 rounded-full transition-all ${
-                      activeStep === idx ? "w-8 bg-neutral-900" : "w-2.5 bg-neutral-300"
-                    }`}
-                    aria-label={`Go to step ${idx + 1}`}
-                  />
-              ))}
+              {/* Section 2: Company Opportunities */}
+              <div className="space-y-6">
+                <h6 className="text-2xl md:text-3xl font-semibold text-left px-6">
+                  Insights About Your Reputation Within Your Network
+                </h6>
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                  <div className="lg:col-span-1">
+                    <ConnectionBreakdownChart connections={dummyConnections} />
+                  </div>
+                  <div className="lg:col-span-3">
+                    <ProfessionalReputationCard connections={dummyConnections} />
+                  </div>
+                </div>
+                {/* Step indicators */}
+                
+              </div>
             </div>
-          </div>
-          )}
         </div>
       </section>
       <LayoutDialogs />

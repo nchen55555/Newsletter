@@ -51,6 +51,18 @@ export function NetworkConnectionsGrid({
     return connection?.rating;
   };
 
+  const getExistingAlignmentValue = (profile: ProfileData): number | undefined => {
+    if (!currentUserData || !profile || !profile.id) return undefined;
+
+    const userConnections = Array.isArray(currentUserData.connections_new) ? currentUserData.connections_new : [];
+    const userPendingConnections = Array.isArray(currentUserData.pending_connections_new) ? currentUserData.pending_connections_new : [];
+    const pid = String(profile.id);
+
+    const connection = userConnections.find((conn: ConnectionData) => String(conn.connect_id) === pid)
+      || userPendingConnections.find((conn: ConnectionData) => String(conn.connect_id) === pid);
+    return connection?.alignment_value;
+  };
+
   // Get existing note for a connection (only from requested_connections_new and connections_new)
   const getExistingNote = (profile: ProfileData): string | undefined => {
     if (!currentUserData || !profile || !profile.id) return undefined;
@@ -106,6 +118,7 @@ export function NetworkConnectionsGrid({
           initialNote={getExistingNote(connection)}
           size="compact"
           isExternalView={isExternalView}
+          alignmentValue={getExistingAlignmentValue(connection)}
         />
       ))}
       {/* See All Connections card */}

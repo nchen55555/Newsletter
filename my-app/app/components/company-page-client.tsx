@@ -1,30 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { Container } from "@/app/components/container";
 import { CompanyData } from "@/app/types";
-import { Globe } from "lucide-react";
+import { Globe, Users } from "lucide-react";
 import { Navigation } from "@/app/components/header";
-import { type PortableTextComponents, type PortableTextBlock } from '@portabletext/react';
+import { type PortableTextBlock } from '@portabletext/react';
 import ApplyButton from "@/app/components/apply";
+import EarlyInterestButton from "@/app/components/early_interest";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import Share from "@/app/components/share";
-import { client } from "@/lib/sanity/client";
-import imageUrlBuilder from "@sanity/image-url";
-import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { VerificationProtectedContent } from "@/app/components/verification-protected-content";
 import { NetworkConnectionsGrid } from "@/app/components/network-connections-grid";
 import { ProfileData } from "@/app/types";
 import { SidebarLayout } from "@/app/components/sidebar-layout";
 import { useSubscriptionContext } from "@/app/components/subscription_context";
 import { Button } from "@/components/ui/button"
-
-const { projectId, dataset } = client.config();
-const urlFor = (source: SanityImageSource) =>
-  projectId && dataset
-    ? imageUrlBuilder({ projectId, dataset }).image(source)
-    : null;
 
 
 type CompanyWithImageUrl = CompanyData & {
@@ -118,7 +109,7 @@ export default function CompanyPageClient({
               onClick={() => window.open(`/articles/${company.company}`, '_blank')}
               className="gap-2"
             >
-              <span className="hidden sm:inline">Read Our Article</span>
+              <span className="hidden sm:inline">Read Our Interview</span>
             </Button>
             )}
             <RainbowBookmark company={company.company} />
@@ -131,6 +122,7 @@ export default function CompanyPageClient({
             >
               <Globe></Globe>
             </Button>
+            {company.partner ? (
             <ApplyButton
               company_title={title}
               company={company.company.toString()}
@@ -139,34 +131,51 @@ export default function CompanyPageClient({
               onIntroRequested={onIntroRequested}
               hiringTags={company.hiring_tags}
             />
+            ) : (
+              <EarlyInterestButton company={company.company.toString()} company_title={title} />
+            )}
         </div>
 
         {!isLoadingBookmarks && (
           <VerificationProtectedContent 
-            sectionTitle={`${title} is Trending in Your Network`}
+            sectionTitle={`Who Else In Your Network is Looking at ${title}?`}
             className="mt-12 mb-12"
-          >            
-          <NetworkConnectionsGrid
-              connections={bookmarkedUsers.map((user) => ({
-                id: user.id,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                profile_image_url: user.profile_image_url || '',
-                bio: user.bio || '',
-                email: '',
-                linkedin_url: user.linkedin_url || '',
-                resume_url: '',
-                personal_website: '',
-                phone_number: '',
-                access_token: '',
-                school: ''
-              } as ProfileData))}
-              showSeeAll={true}
-              onSeeAllConnections={() => {}}
-              maxDisplay={bookmarkedUsers.length}
-              appliedToTheNiche={true}
-              isExternalView={true}
-            />
+          >
+            {bookmarkedUsers.length === 0 ? (
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 h-48 flex flex-col items-center justify-center text-center space-y-2">
+                  <Users className="w-8 h-8 text-gray-400" />
+                  <div className="text-sm font-medium text-gray-600">
+                    No one from your network has engaged with this company yet
+                  </div>
+                  <div className="text-xs text-gray-500 max-w-xs">
+                    As more people in your trusted network bookmark {title}, they&apos;ll appear here.
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <NetworkConnectionsGrid
+                connections={bookmarkedUsers.map((user) => ({
+                  id: user.id,
+                  first_name: user.first_name,
+                  last_name: user.last_name,
+                  profile_image_url: user.profile_image_url || '',
+                  bio: user.bio || '',
+                  email: '',
+                  linkedin_url: user.linkedin_url || '',
+                  resume_url: '',
+                  personal_website: '',
+                  phone_number: '',
+                  access_token: '',
+                  school: ''
+                } as ProfileData))}
+                showSeeAll={true}
+                onSeeAllConnections={() => {}}
+                maxDisplay={bookmarkedUsers.length}
+                appliedToTheNiche={true}
+                isExternalView={false}
+              />
+            )}
           </VerificationProtectedContent>
         )}      
       </div>

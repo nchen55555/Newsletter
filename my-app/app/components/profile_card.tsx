@@ -14,6 +14,7 @@ function ProfileCard({
   onClick,
   connectionStatus = 'none',
   connectionRating,
+  alignmentValue,
   initialNote,
   size = 'default',
   isExternalView = false,
@@ -23,6 +24,7 @@ function ProfileCard({
   connectionStatus?: ConnectionStatusType;
   initialNote?: string;
   connectionRating?: number;
+  alignmentValue?: number;
   size?: 'default' | 'compact';
   isExternalView?: boolean;
 }) {
@@ -39,7 +41,11 @@ function ProfileCard({
     return connectionRating;
   };
 
-  const handleConnectSubmit = async (scaleValue: number, note?: string) => {
+  const getExistingAlignmentValue = () => {
+    return alignmentValue;
+  };
+
+  const handleConnectSubmit = async (scaleValue: number, alignmentValue?: number, note?: string) => {
     setIsSubmittingConnect(true);
     setConnectVerificationStatus("pending");
 
@@ -50,6 +56,7 @@ function ProfileCard({
         body: JSON.stringify({
           connect_id: profile.id,
           rating: scaleValue,
+          alignment_value: alignmentValue,
           note: note || "",
         }),
         credentials: "include",
@@ -121,8 +128,10 @@ function ProfileCard({
               onSubmit={handleConnectSubmit}
               connectionStatus={getConnectionStatus()}
               existingRating={getExistingConnectionRating()}
+              existingAlignmentValue={getExistingAlignmentValue()}
               initialNote={initialNote}
               compact={true}
+              profileImageUrl={profile.profile_image_url}
             />
          )}
         </div>

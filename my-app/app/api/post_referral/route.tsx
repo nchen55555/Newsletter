@@ -51,13 +51,11 @@ export async function POST(req: NextRequest) {
 
 
     const emailContent = {
-        message: `A mutual friend of ours, ${capitalizedName}, has referred and requested you join <a href="https://theniche.tech" style="color: #0066cc; text-decoration: none;">The Niche</a> as part of their verified, professional network. Accept their request by creating a profile through the link above. 
-        <br></br>  
-        The Niche is an exclusive network that digitalizes the real relationships behind your career, curating for you a highly-personalized feed of opportunities that your most trusted networks are currently looking at, have already vetted, or are interviewing at. We partner with some of the highest-growth startups in the tech industry to surface these opportunities as well as to facilitate warm introductions direct unlocked through your Niche network. 
-        <br></br>  
-        The best opportunities have always been through word-of-mouth or referral - we're just digitalizing it. 
-        <br></br>  
-        The network is accessible only by referral so congratulations on receiving this email! If you have any questions or if you're interested in chatting more as well, feel free to let us know. We are excited to welcome you to the private beta of The Niche network.
+        message: `${capitalizedName} has referred and requested you join <a href="https://theniche.tech" style="color: #0066cc; text-decoration: none;">The Niche</a> as part of their verified, professional network. Accept their request by <a href="https://theniche.tech" style="color: #0066cc; text-decoration: none;">creating a profile</a> on The Niche. 
+        <br></br>
+        The best opportunities have always been through word-of-mouth or referral - we're just digitalizing it.  The Niche is an exclusive network that surfaces warm introductions to opportunities your most trusted professional network are already looking at or have vetted. Take advantage of our network-driven hiring to unlock opportunities at our partners including Unify, Moment, Crosby, Warp, and more!
+        <br></br>
+        The network is accessible only by referral so congratulations on receiving this email! If you have any questions, feel free to reach back out to us at nicole@theniche.tech.
         `
       };
       // Check if API key exists
@@ -71,7 +69,7 @@ export async function POST(req: NextRequest) {
       const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
   
       const { data, error } = await resend.emails.send({
-        from: 'Nicole Chen <nicole@theniche.tech>',
+        from: 'Referrals at The Niche <referrals@theniche.tech>',
         to: [referralEmail],
         subject: `${capitalizedName} Referred You to Their Niche Network`,
         html: `

@@ -1,10 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
-import ProfileInfoChatbot from './profile_info_chatbot'
 import { useRouter} from 'next/navigation'
 import { ProfileFormState, ProfileData} from '@/app/types'
 import { useSubscriptionContext } from './subscription_context'
 import { Container } from './container'
+import ProfileOnboarding from './profile_onboarding'
 
 interface MultiStepProfileFormProps extends ProfileData {
   access_token: string,
@@ -105,10 +105,10 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
         setFormError("LinkedIn URL is required.");
         return;
       }
-      if (!form.bio) {
-        setFormError("Bio is required.");
-        return;
-      }
+      // if (!form.bio) {
+      //   setFormError("Bio is required.");
+      //   return;
+      // }
       // if (!form.school) {
       //   setFormError("School is required.");
       //   return;
@@ -131,20 +131,20 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       formData.append('school', form.school);
       
       // Handle resume: use file if provided, otherwise keep existing URL
-      if (form.resume_file) {
-        formData.append('resume_file', form.resume_file);
-      } else if (!form.resume_url) {
-        setFormError('Resume is required.');
-        return;
-      }
+      // if (form.resume_file) {
+      //   formData.append('resume_file', form.resume_file);
+      // } else if (!form.resume_url) {
+      //   setFormError('Resume is required.');
+      //   return;
+      // }
 
       // Handle profile image: use file if provided, otherwise keep existing URL
-      if (form.profile_image) {
-        formData.append('profile_image', form.profile_image);
-      } else if (!form.profile_image_url) {
-        setFormError('Profile image is required.');
-        return;
-      }
+      // if (form.profile_image) {
+      //   formData.append('profile_image', form.profile_image);
+      // } else if (!form.profile_image_url) {
+      //   setFormError('Profile image is required.');
+      //   return;
+      // }
 
       // Handle transcript: use file if provided, otherwise keep existing URL
       // if (form.transcript_file) {
@@ -155,13 +155,13 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
       // }
 
       // Add new ProfileInfoChatbot fields
-      if (form.interests) {
-        formData.append('interests', form.interests);
-      }
+      // if (form.interests) {
+      //   formData.append('interests', form.interests);
+      // }
       
-      if (form.network_recommendations && form.network_recommendations.length > 0) {
-        formData.append('network_recommendations', JSON.stringify(form.network_recommendations));
-      }
+      // if (form.network_recommendations && form.network_recommendations.length > 0) {
+      //   formData.append('network_recommendations', JSON.stringify(form.network_recommendations));
+      // }
 
       formData.append('applied', 'true')
 
@@ -194,7 +194,16 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
           <div className="absolute inset-0 pointer-events-none"></div>
           <Container >
             <div className="px-8 py-16">
-            <ProfileInfoChatbot 
+            <ProfileOnboarding 
+            form={form} 
+              onComplete={(isComplete) => {
+                if (isComplete) {
+                  // Automatically submit when chatbot flow completes
+                  handleStep1Submit({ preventDefault: () => {} } as React.FormEvent);
+                }
+              }}
+              initialStep={props.onboarding_step} />
+            {/* <ProfileInfoChatbot 
               form={form} 
               setForm={setForm} 
               onComplete={(isComplete) => {
@@ -204,7 +213,7 @@ export default function MultiStepProfileForm(props: MultiStepProfileFormProps) {
                 }
               }}
               initialStep={props.onboarding_step}
-            />
+            /> */}
 
             {formError && (
               <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
