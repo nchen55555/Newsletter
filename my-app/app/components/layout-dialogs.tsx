@@ -47,7 +47,7 @@ export function LayoutDialogs() {
               setIsOpen(true)
             }
           }
-          else if (!skipOnboarding && isSubscribed) {
+          else if (!skipOnboarding && isSubscribed && !userData.applied) {
             router.push('/profile?flow=onboarding')
           }
         }
