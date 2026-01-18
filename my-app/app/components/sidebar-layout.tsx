@@ -62,7 +62,7 @@ export function SidebarLayout({ children, title, defaultOpen}: SidebarLayoutProp
               opportunities={opportunities}
             />
           </div>
-          <div className="flex-shrink-0 flex gap-2 hidden md:block">
+          <div className="flex-shrink-0 flex hidden md:block">
             <Button
               variant="outline"
               size="sm"

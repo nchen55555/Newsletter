@@ -58,7 +58,8 @@
     "resend": "^6.0.2",
     "sanity": "^4.0.0",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "twilio": "^5.11.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

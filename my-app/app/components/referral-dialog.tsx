@@ -39,6 +39,7 @@ export function ReferralDialog({
   const [copySuccess, setCopySuccess] = useState(false);
   const [referralName, setReferralName] = useState("");
   const [referralEmail, setReferralEmail] = useState("");
+  const [referralPhone, setReferralPhone] = useState("");
   const [referralBackground, setReferralBackground] = useState("");
   const [referralFormError, setReferralFormError] = useState<string | null>(null);
   const [referralFormSuccess, setReferralFormSuccess] = useState(false);
@@ -124,8 +125,8 @@ export function ReferralDialog({
 
     console.log("Form submission started - profileLoading:", profileLoading, "currentUserId:", currentUserId);
 
-    if (!referralEmail || !referralBackground) {
-      setReferralFormError("Please fill in all required fields.");
+    if ((!referralEmail && !referralPhone) || !referralBackground) {
+      setReferralFormError("Please provide at least an email or phone number and the background.");
       return;
     }
 
@@ -159,6 +160,7 @@ export function ReferralDialog({
           name: referrerName,
           referralName: referralName,
           referralEmail: referralEmail,
+          referralPhone: referralPhone,
           referralBackground: referralBackground,
           id: currentUserId
         }),
@@ -168,6 +170,7 @@ export function ReferralDialog({
         setReferralFormSuccess(true);
         setReferralName("");
         setReferralEmail("");
+        setReferralPhone("");
         setReferralBackground("");
       } else {
         setReferralFormError("Failed to submit referral. Please try again.");
@@ -193,6 +196,7 @@ export function ReferralDialog({
         // Only clear form if it was successfully submitted
         setReferralName("");
         setReferralEmail("");
+          setReferralPhone("");
         setReferralBackground("");
       }
     }
@@ -345,17 +349,39 @@ export function ReferralDialog({
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="referralEmail" className="text-base font-medium">Email *</Label>
-                  <Input 
-                    id="referralEmail" 
-                    name="referralEmail"
-                    type="email"
-                    value={referralEmail} 
-                    onChange={(e) => setReferralEmail(e.target.value)}
-                    placeholder="person@email.com"
-                    className="h-12 text-lg px-4" 
-                    required
-                  />
+                  <Label className="text-base font-medium">Contact Info *</Label>
+                  <p className="text-xs text-neutral-400">
+                    Provide at least one way for us to contact your referral (email or phone, or both).
+                  </p>
+                  <div className="flex flex-col md:flex-row items-stretch gap-4">
+                    <div className="flex-1 space-y-1">
+                      <Label htmlFor="referralEmail" className="text-sm font-medium">Email</Label>
+                      <Input 
+                        id="referralEmail" 
+                        name="referralEmail"
+                        type="email"
+                        value={referralEmail} 
+                        onChange={(e) => setReferralEmail(e.target.value)}
+                        placeholder="person@email.com"
+                        className="h-12 text-lg px-4" 
+                      />
+                    </div>
+                    <div className="hidden md:block w-px bg-neutral-800/60" />
+                    <div className="flex-1 space-y-1">
+                      <Label htmlFor="referralPhone" className="text-sm font-medium">Phone (disabled for now)</Label>
+                      <Input 
+                        id="referralPhone" 
+                        name="referralPhone"
+                        type="tel"
+                        value={referralPhone} 
+                        onChange={(e) => setReferralPhone(e.target.value)}
+                        placeholder="+1 (555) 123-4567"
+                        className="h-12 text-lg px-4" 
+                        disabled={true}
+                      />
+                    </div>
+                  </div>
+                  
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="referralBackground" className="text-base font-medium">How Do You Know Them?</Label>
