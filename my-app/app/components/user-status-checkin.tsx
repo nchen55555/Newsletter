@@ -183,19 +183,6 @@ export function UserStatusCheckin({
     }
   }
 
-  if (isSubmitted) {
-    return (
-      <div className="flex flex-col items-center justify-center space-y-4 py-8 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-        <h3 className="text-xl font-semibold text-center dark:text-neutral-100">
-          Thanks for the update!
-        </h3>
-        <p className="text-sm text-neutral-600 dark:text-neutral-300 text-center">
-          If your status ever changes, you can update it on your profile.
-        </p>
-      </div>
-    )
-  }
-
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-4xl">

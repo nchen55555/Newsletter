@@ -53,7 +53,7 @@ export default function ProfileOnboarding({
       ? currentUserData.pending_connections_new.length
       : 0
   const canShowNextButton =
-    (currentStep.id !== 'networking' || networkingConnectionsCount >= 1) && (currentStep.id !== 'referrals' || userReferralsCount >= 2) && (currentStep.id !== 'overview')
+    (currentStep.id !== 'networking' || networkingConnectionsCount >= 2) && (currentStep.id !== 'referrals' || userReferralsCount >= 2) && (currentStep.id !== 'overview')
 
   // --- Data loading helpers ---
 
