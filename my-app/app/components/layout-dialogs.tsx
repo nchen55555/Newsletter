@@ -59,7 +59,7 @@ export function LayoutDialogs() {
     loadUserProfile()
   }, [setIsOpen, pathname, router])
 
-  const handleStatusUpdate = (status: string, timeline?: string, outreachFrequency?: number) => {
+  const handleStatusUpdate = () => {
     setIsOpen(false)
     
     // You could add additional logic here like showing a success message,

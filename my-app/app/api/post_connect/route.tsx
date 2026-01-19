@@ -220,7 +220,7 @@ export async function POST(req: NextRequest) {
       html: `
         <p>Hi ${targetProfile.first_name},</p>
         <p>${emailContent.message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
-        <p><a href="https://theniche.tech/people/${encodeSimple(connect_id)}" style="color: #0066cc; text-decoration: none;">Visit your connection with ${senderName} on the Niche Niche</a></p>
+        <p><a href="https://theniche.tech/people/${encodeSimple(connect_id)}" style="color: #0066cc; text-decoration: none;">Visit your connection with ${senderName} on the Niche</a></p>
         <p>Best,<br><br>The Niche Team</p>
       `,
     });

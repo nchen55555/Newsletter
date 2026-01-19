@@ -13,6 +13,7 @@ import { motion} from 'framer-motion'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { ProtectedContent } from '../components/protected-content'
+import { SanityDocument } from 'next-sanity'
 
 interface TourStep {
   id: string
@@ -65,7 +66,7 @@ export default function TourPage() {
   
   // Real data from backend
   const [emailTracker, setEmailTracker] = useState('')
-  const [companyPost, setCompanyPost] = useState<MediaLibraryItem | null>(null)
+  const [companyPost, setCompanyPost] = useState<SanityDocument | null>(null)
 
   
   // Tour step completion tracking
@@ -513,7 +514,7 @@ const copyEmail = async () => {
             {selectedCompany && (
               <CompanyPageClient 
                 company={selectedCompany}
-                companyPost={companyPost}
+                companyPost={companyPost ?? undefined}
                 isDemo={true}
                 onIntroRequested={() => markActionCompleted('opportunities', 'requestIntro')}
               />

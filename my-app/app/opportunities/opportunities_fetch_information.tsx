@@ -4,7 +4,6 @@ import { SanityDocument } from "next-sanity"
 import { SanityImageSource } from "@sanity/image-url/lib/types/types"
 import { Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { VerificationProtectedContent } from "../components/verification-protected-content";
 import { CompanyCard } from "../companies/company-cards";
 import { CommitmentPledgeDialog } from "../components/commitment-pledge-dialog";
 import { InformationDialog } from "../components/information-dialog";

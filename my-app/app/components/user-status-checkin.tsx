@@ -103,7 +103,6 @@ export function UserStatusCheckin({
   const [selectedStatus, setSelectedStatus] = useState<UserStatus | null>(null)
   const [selectedTimeline, setSelectedTimeline] = useState<string | null>(null)
   const [selectedOutreachFrequency, setSelectedOutreachFrequency] = useState<number | null>(null)
-  const [isSubmitted, setIsSubmitted] = useState(false)
 
   const needsTimeline = (status: UserStatus) => {
     return ['request_intros', 'recommend_opportunities', 'actively_searching'].includes(status)
@@ -166,7 +165,6 @@ export function UserStatusCheckin({
       })
       
       if (response.ok) {
-        setIsSubmitted(true)
         // Wait a moment to show success, then call onStatusUpdate
         setTimeout(() => {
           onStatusUpdate(finalStatus, finalTimeline || undefined, finalOutreach || undefined)
