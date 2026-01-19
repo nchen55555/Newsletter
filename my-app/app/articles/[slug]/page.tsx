@@ -2,7 +2,7 @@ import { client } from "@/lib/sanity/client";
 import { type SanityDocument } from "next-sanity";
 import ClientPostPage from './client_page';
 
-const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]`;
+export const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]`;
 
 const options = { next: { revalidate: 900 } }; // 15 minutes - articles change less frequently
 

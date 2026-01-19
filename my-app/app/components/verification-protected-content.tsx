@@ -52,7 +52,7 @@ export function VerificationProtectedContent({
       <div className={`space-y-6 ${className}`}>
         {sectionTitle && (
           <div>
-            <h2 className="text-2xl font-bold text-neutral-200 mb-2">{sectionTitle}</h2>
+            <h1 className="text-4xl font-semibold text-neutral-200 mb-4">{sectionTitle}</h1>
           </div>
         )}
         <div className="animate-pulse">

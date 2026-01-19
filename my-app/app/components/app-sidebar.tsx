@@ -57,14 +57,14 @@ export function AppSidebar() {
   }, [isSubscribed])
 
   const navItems = [
-    {
-      title: "Articles",
-      href: "/articles",
-      icon: FileText,
-      isActive: pathname === "/articles",
-      show: isSubscribed,
-      disabled: false,
-    },
+    // {
+    //   title: "Articles",
+    //   href: "/articles",
+    //   icon: FileText,
+    //   isActive: pathname === "/articles",
+    //   show: isSubscribed,
+    //   disabled: false,
+    // },
     {
       title: "Opportunity Feed",
       href: "/opportunities",

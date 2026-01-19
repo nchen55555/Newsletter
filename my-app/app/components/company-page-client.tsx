@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { Container } from "@/app/components/container";
 import { CompanyData } from "@/app/types";
-import { Globe, Users } from "lucide-react";
+import { Globe, Users, ChevronDown } from "lucide-react";
 import { Navigation } from "@/app/components/header";
-import { type PortableTextBlock } from '@portabletext/react';
 import ApplyButton from "@/app/components/apply";
 import EarlyInterestButton from "@/app/components/early_interest";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
@@ -16,6 +15,8 @@ import { ProfileData } from "@/app/types";
 import { SidebarLayout } from "@/app/components/sidebar-layout";
 import { useSubscriptionContext } from "@/app/components/subscription_context";
 import { Button } from "@/components/ui/button"
+import PostContent from "@/app/articles/[slug]/post_content";
+import { type SanityDocument } from "next-sanity";
 
 
 type CompanyWithImageUrl = CompanyData & {
@@ -33,7 +34,7 @@ interface BookmarkedUser {
 
 interface CompanyPageClientProps {
   company: CompanyWithImageUrl;
-  companyPost?: { body?: PortableTextBlock[] } | null;
+  companyPost?: SanityDocument;
   isDemo?: boolean;
   onIntroRequested?: () => void;
 }
@@ -47,6 +48,7 @@ export default function CompanyPageClient({
   
   const [bookmarkedUsers, setBookmarkedUsers] = useState<BookmarkedUser[]>([]);
   const [isLoadingBookmarks, setIsLoadingBookmarks] = useState(true);
+  const [showMoreConnections, setShowMoreConnections] = useState(false);
 
   const hasPost = !!companyPost
 
@@ -106,14 +108,21 @@ export default function CompanyPageClient({
             {hasPost && (<Button
               variant="outline"
               size="lg"
-              onClick={() => window.open(`/articles/${company.company}`, '_blank')}
+              onClick={() => {
+                const section = document.getElementById("company-interview");
+                if (section) {
+                  section.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }}
               className="gap-2"
             >
               Read Our Interview
             </Button>
             )}
             <RainbowBookmark company={company.company} />
+          
             <Share company={company.company} />
+             
             {company.external_media && (<Button
               variant="outline"
               size="lg"
@@ -156,8 +165,9 @@ export default function CompanyPageClient({
                 </div>
               </div>
             ) : (
+              <>
               <NetworkConnectionsGrid
-                connections={bookmarkedUsers.map((user) => ({
+                connections={bookmarkedUsers.slice(0, showMoreConnections ? 18 : 4).map((user) => ({
                   id: user.id,
                   first_name: user.first_name,
                   last_name: user.last_name,
@@ -173,13 +183,31 @@ export default function CompanyPageClient({
                 } as ProfileData))}
                 showSeeAll={true}
                 onSeeAllConnections={() => {}}
-                maxDisplay={bookmarkedUsers.length}
+                maxDisplay={Math.min(bookmarkedUsers.length, showMoreConnections ? 18 : 4)}
                 appliedToTheNiche={true}
-                isExternalView={false}
+                isExternalView={true}
               />
-            )}
+              {bookmarkedUsers.length > 4 && (
+                <div
+                  className="mt-6 text-center cursor-pointer hover:text-neutral-700 transition-colors"
+                  onClick={() => setShowMoreConnections(!showMoreConnections)}
+                >
+                  <div className="flex items-center justify-center gap-2 text-sm text-neutral-500">
+                    <span>{showMoreConnections ? 'Show less' : 'Load more connections'}</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${showMoreConnections ? 'rotate-180' : ''}`} />
+                  </div>
+                </div>
+              )}
+              </>
+            )
+            }
           </VerificationProtectedContent>
-        )}      
+        )}  
+        {companyPost && (
+          <div id="company-interview">
+            <PostContent post={companyPost} />
+          </div>
+        )}
       </div>
     </Container>
   )

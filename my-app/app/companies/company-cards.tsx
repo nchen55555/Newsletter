@@ -65,7 +65,7 @@ export function CompanyCard({
     router.push(`/companies/${company.company}`);
   };
 
-  const warm_intro_available = network_connections?.quality_score && network_connections.quality_score >= 3.0
+  const warm_intro_available = network_connections?.quality_score && network_connections.quality_score >= 2.0
 
 
   return (

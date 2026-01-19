@@ -65,15 +65,13 @@ export default function RainbowBookmark({
   return (
     <Button
       variant={bookmarked ? "default" : "outline"}
-      size="icon"
-      aria-label={bookmarked ? "Remove bookmark" : "Add bookmark"}
+      size="lg"
       onClick={handleBookmark}
       disabled={loading}
-      className={`transition-all duration-300 ${loading ? "opacity-50" : ""}`}
+      aria-label="Bookmark"
+      className={`gap-2 transition-all duration-300 ${loading ? "opacity-50" : ""}`}
     >
-      <Bookmark 
-        className={`h-4 w-4 transition-all duration-300 ${bookmarked ? "fill-current" : ""}`}
-      />
+      <Bookmark className="h-4 w-4" />
     </Button>
   );
 }

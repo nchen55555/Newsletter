@@ -19,7 +19,6 @@ const urlFor = (source: SanityImageSource) =>
 // Query for company data from mediaLibrary
 const COMPANY_QUERY = `*[_type == "mediaLibrary" && company == $companyId][0]`;
 
-// Query for company post/article
 const COMPANY_POST_QUERY = `*[_type == "post" && company == $companyId][0]`;
 
 type CompanyWithImageUrl = CompanyData & {

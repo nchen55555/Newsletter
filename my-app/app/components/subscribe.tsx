@@ -155,7 +155,7 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
         </>
         )}
 
-        <Dialog open={showSubscribeDialog} onOpenChange={setShowSubscribeDialog}>
+        <Dialog open={showSubscribeDialog} onOpenChange={() => setShowSubscribeDialog(true)}>
           <DialogTrigger asChild>
             <span style={{ display: 'none' }} />
           </DialogTrigger>

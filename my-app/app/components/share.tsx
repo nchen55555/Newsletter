@@ -76,11 +76,12 @@ export default function Share({
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          size="icon"
-          aria-label="Share company"
-          className="transition-all duration-300"
+          size="lg"
+          aria-label="Share"
+          className="gap-2 transition-all duration-300"
         >
           <Send className="h-4 w-4" />
+          Share
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
