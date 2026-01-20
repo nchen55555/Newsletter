@@ -20,21 +20,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email and LinkedIn URL are required' }, { status: 400 });
     }
 
-    // Check for existing subscriber
-    const { data: existingSubscribers, error: existingSubscriberError } = await supabase
-      .from('subscribers')
-      .select('email')
-      .eq('email', email);
-      
-    if (existingSubscriberError) {
-      console.error('Supabase query error:', existingSubscriberError);
-      return NextResponse.json({ error: existingSubscriberError.message }, { status: 500 });
-    }
-
-    if (existingSubscribers && existingSubscribers.length > 0) {
-      return NextResponse.json({ existingSubscriber: true }, { status: 400 });
-    }
-
     // Get optional files from form data
     const resume_file = formData.get('resume_file');
 
@@ -61,7 +46,7 @@ export async function POST(req: NextRequest) {
     // Insert new subscriber record first to get the ID
     const { data: newSubscriber, error: insertError } = await supabase
       .from('subscribers')
-      .insert([insertData])
+      .upsert(insertData, {onConflict: 'email'})
       .select('id')
       .single();
 

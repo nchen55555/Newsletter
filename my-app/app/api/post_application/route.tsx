@@ -70,8 +70,6 @@ export async function POST(req: NextRequest) {
         }, { status: 500 });
       }
   
-      console.log('Email sent successfully:', data);
-
         return NextResponse.json({ success: true});
 
     } catch (error) {

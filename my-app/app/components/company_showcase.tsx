@@ -23,8 +23,6 @@ export default function CompanyShowcase({ mediaLibrary }: CompanyShowcaseProps) 
     return builder.image(source);
   }
 
-  // Debug: log the mediaLibrary to see what companies we have
-  console.log('CompanyShowcase mediaLibrary:', mediaLibrary.map(item => ({ id: item._id, company: item.company, alt: item.alt })));
 
   // Find unify and moment by company field - try different variations
   let unify = mediaLibrary.find(item => item.company === "6" || item.company === "unify" || item.alt?.toLowerCase().includes('unify'));

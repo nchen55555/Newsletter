@@ -296,7 +296,6 @@ async function handleProfileUpdate(req: NextRequest) {
     if (formData.get('github_url') != null) updateData.github_url = String(formData.get('github_url'));
     if (formData.get('professional_agreement') !== null) {
       updateData.professional_agreement = String(formData.get('professional_agreement'));
-      console.log("Professional agreement set to:", updateData.professional_agreement);
     }
 
 
@@ -316,11 +315,9 @@ async function handleProfileUpdate(req: NextRequest) {
     if (formData.get('custom_links')) {
       try {
         const newCustomLinksString = String(formData.get('custom_links'));
-        console.log('Received custom_links:', newCustomLinksString);
         
         // Simply replace the entire custom_links object
         updateData.custom_links = newCustomLinksString;
-        console.log('Setting custom_links to:', updateData.custom_links);
       } catch (error) {
         console.error('Error handling custom_links:', error);
       }
@@ -359,7 +356,6 @@ async function handleProfileUpdate(req: NextRequest) {
           if (dbError) {
             console.error('Async profile update error:', dbError);
           } else {
-            console.log('Profile updated successfully for user ID:');
           }
         } catch (error) {
           console.error('Unexpected async update error:', error);

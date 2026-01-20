@@ -71,7 +71,6 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
       
       // Check if we have a valid user ID
       if (!referrerUserId || referrerUserId <= 0) {
-        console.log("No valid referrer user ID found");
         setReferrerName("");
         setLoading(false);
         return;

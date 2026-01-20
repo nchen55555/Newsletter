@@ -57,7 +57,6 @@ export default function CalendarAuthGate({ children, onAuthRequired, dialogType,
       localStorage.setItem('googleAuthFlowType', 'calendar_auth');
       // Store current URL so we can redirect back to the same page
       const returnUrl = window.location.href;
-      console.log('Calendar auth: storing return URL:', returnUrl);
       localStorage.setItem('calendarAuthReturnUrl', returnUrl);
       // Store dialog info to reopen after auth
       if (dialogType && company) {
@@ -68,7 +67,6 @@ export default function CalendarAuthGate({ children, onAuthRequired, dialogType,
         }));
       }
       
-      console.log('Calendar auth: attempting OAuth with redirectTo:', returnUrl);
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

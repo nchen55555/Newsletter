@@ -25,15 +25,6 @@ export async function POST(request: NextRequest) {
       date_added,
     } = await request.json()
 
-    console.log('Received application data:', {
-      id,
-      company_name,
-      stage,
-      action_required,
-      action_required_description,
-      date_added,
-    })
-
     // Get subscriber ID
     const { data: subscriber, error: subError } = await supabase
       .from('subscribers')
@@ -85,9 +76,7 @@ export async function POST(request: NextRequest) {
         .single()
       
       if (createError) throw createError
-      
-      console.log('Successfully created application:', newApp)
-      
+            
       return NextResponse.json({ 
         success: true,
         application: { id: newApp.id }

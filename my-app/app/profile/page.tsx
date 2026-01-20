@@ -6,6 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileData } from "@/app/types";
 import { PersonalProfile } from "../components/personal_profile";
 import { ProtectedContent } from "../components/protected-content";
+import { SidebarLayout } from "../components/sidebar-layout";
+import { Container } from "../components/container";
 
 function ProfileContent() {
   const [data, setData] = useState<ProfileData | null>(null);
@@ -27,12 +29,23 @@ function ProfileContent() {
     fetchProfileData();
   }, []);
 
-  if (!data) return <Skeleton className="h-12 w-full" />; // or customize size;
 
   const shouldShowForm = isOnboardingFlow;
 
-  // If user hasn't applied yet, show the form only
-  // if (!data.applied) {
+  if (!data) {
+    return (
+      <SidebarLayout title="Profile">
+      <Container>
+      <div className="flex flex-col items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neutral-900 mb-4"></div>
+          <p className="text-sm font-medium text-neutral-700">Loading your profile</p>
+      </div>
+      </Container>
+      </SidebarLayout>
+    );
+  }
+
+  
     return (
       <ProtectedContent>
       {shouldShowForm ? (

@@ -34,8 +34,8 @@ export function CommitmentPledgeDialog({ open, onAccept }: CommitmentPledgeDialo
   };
 
   return (
-    <Dialog open={open} onOpenChange={() => {}} modal={true}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open}>
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold text-center mb-4">
             The Niche Commitment Pledge

@@ -12,8 +12,6 @@ export async function POST(req: NextRequest) {
       from = 'Nicole <nicole@theniche.tech>' 
     } = body;
 
-    console.log('Email request received for:', { email, subject });
-
     if (!email) {
       console.error('Missing required field: email');
       return NextResponse.json({ 
@@ -45,8 +43,6 @@ export async function POST(req: NextRequest) {
 
     const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
 
-    console.log('Attempting to send email to:', email);
-
     const greeting = first_name ? `Hi ${first_name},` : 'Hello,';
 
     const message = `Thank you for filling out your profile and information with <a href="https://theniche.tech">The Niche</a>! Based on your profile and interests, we would recommend connecting you with Unify, Reve, Footprint, Pylon, and Blockit to match your interests in Product and Engineering. 
@@ -71,8 +67,6 @@ export async function POST(req: NextRequest) {
         details: error.message 
       }, { status: 500 });
     }
-
-    console.log('Email sent successfully:', { email, emailId: data?.id });
 
     return NextResponse.json({ 
       success: true, 

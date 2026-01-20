@@ -124,7 +124,6 @@ export async function POST(req: NextRequest) {
           }, { status: 500 });
         }
     
-        console.log('Email sent successfully:', data);
 
     }
     if (referralPhone) {
@@ -136,8 +135,6 @@ export async function POST(req: NextRequest) {
         console.error('Twilio env vars missing');
       } else {
         const normalizedPhone = normalizePhoneForTwilio(referralPhone);
-        console.log('Normalized phone:', normalizedPhone);
-
 
 
         if (!normalizedPhone) {

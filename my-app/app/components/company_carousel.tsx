@@ -58,8 +58,6 @@ export default function CompanyCarousel({
 
   const currentNetworkConnections = network_connections?.get(currentCompany.company)
 
-  console.log("currentNetworkConnections", currentIndex, currentNetworkConnections)
-
   return (
     <div className="relative max-w-md mx-auto">
       {/* Carousel Container */}

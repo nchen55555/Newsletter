@@ -68,7 +68,6 @@ export default function PeoplePage() {
         setVerifiedConnections(data.connections_new || []);
         setPendingConnections(data.pending_connections_new || []);
         setRequestedConnections(data.requested_connections_new || []);
-        console.log("User Profile Data: ", data);
         setCurrentUserData(data);
         setShowInformationDialog((data.connections_new || []).length < 5);
         setConnectionsLoaded(true);
@@ -97,7 +96,6 @@ export default function PeoplePage() {
   const getExistingNote = (profile: ProfileData): string | undefined => {
     const connection = verifiedConnections.find((conn: ConnectionData) => conn.connect_id === profile.id)
       || pendingConnections.find((conn: ConnectionData) => conn.connect_id === profile.id);
-    console.log("getting note ", connection)
     return connection?.note;
   };
 

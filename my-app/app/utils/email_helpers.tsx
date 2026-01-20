@@ -196,9 +196,7 @@ export async function findOrCreateCompany(
   domainName: string  // Now expecting domain name (e.g., "google.com")
 ): Promise<Company> {
   if (!domainName) throw new Error('Domain name is required')
-  
-  console.log('Looking for company with domain:', domainName)
-  
+    
   // First try to find company by domain
   const { data: existingCompany, error: domainFindError } = await supabase
     .from('companies')
@@ -207,7 +205,6 @@ export async function findOrCreateCompany(
     .single()
   
   if (!domainFindError && existingCompany) {
-    console.log('Found existing company by domain:', existingCompany)
     return existingCompany as Company
   }
   
@@ -228,9 +225,7 @@ export async function findOrCreateCompany(
     company_name: domainName,  // Store domain as company name
     domain: domainName         // Also store in domain field
   }
-  
-  console.log('Creating new company with data:', newCompanyData)
-  
+    
   const { data: newCompany, error: createError } = await supabase
     .from('companies')
     .insert(newCompanyData)
@@ -269,7 +264,6 @@ export async function findOrCreateCompany(
     throw createError
   }
   
-  console.log('Created new company:', newCompany)
   return newCompany as Company
 }
 

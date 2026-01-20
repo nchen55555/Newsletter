@@ -43,8 +43,6 @@ export async function POST(req: NextRequest) {
 
     const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
 
-    console.log('Attempting to send welcome email to:', email);
-
     const { data, error } = await resend.emails.send({
       from: 'Nicole <nicole@theniche.tech>',
       to: [email],
@@ -64,8 +62,6 @@ export async function POST(req: NextRequest) {
         details: error.message 
       }, { status: 500 });
     }
-
-    console.log('Welcome email sent successfully:', { email, emailId: data?.id });
 
     return NextResponse.json({ 
       success: true, 

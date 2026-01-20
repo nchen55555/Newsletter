@@ -78,7 +78,6 @@ export async function GET() {
     }
 
     const connectionIds = Array.from(connectionInfoMap.keys())
-    console.log("Connection IDs ", connectionIds)
 
     // Fetch bookmarked companies for all connections
     const { data: connections, error: connectionsError } = await supabase

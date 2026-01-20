@@ -123,8 +123,6 @@ export function ReferralDialog({
     setReferralFormError(null);
     setReferralFormSuccess(false);
 
-    console.log("Form submission started - profileLoading:", profileLoading, "currentUserId:", currentUserId);
-
     if ((!referralEmail && !referralPhone) || !referralBackground) {
       setReferralFormError("Please provide at least an email or phone number and the background.");
       return;

@@ -16,8 +16,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { id, visibility_profile_settings } = body
 
-    console.log('visibility_profile_settings', visibility_profile_settings)
-
     // Validate status
     // Update user status in the profiles table
     const { error: updateError } = await supabase

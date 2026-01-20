@@ -49,8 +49,6 @@ export async function GET(request: NextRequest) {
     `)
     .in('email', referralEmails);
 
-  console.log("subscribers from referrals ", subscribers);
-
   if (subscribersError) {
     console.error('Error fetching subscriber profiles:', subscribersError);
     // Still return referrals even if we can't get subscriber profiles

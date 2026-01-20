@@ -13,17 +13,33 @@ export async function GET() {
       return NextResponse.json({ isSubscribed: false })
     }
     
-    // Check if email exists in subscribers table
-    const { count, error: subError } = await supabase
+    // Fetch subscriber data to check for required fields
+    const { data: subscriber, error: subError } = await supabase
       .from('subscribers')
-      .select('*', { count: 'exact', head: true })
+      .select('first_name, last_name, linkedin_url, phone_number')
       .eq('email', session.user.email)
-    
-    if (subError) throw subError
-    
-    return NextResponse.json({ 
-      isSubscribed: count !== null && count > 0,
-      email: session.user.email 
+      .single()
+
+    if (subError) {
+      // If no subscriber found, they're not subscribed
+      if (subError.code === 'PGRST116') {
+        return NextResponse.json({ isSubscribed: false })
+      }
+      throw subError
+    }
+
+    // Check that all required fields are not null AND not empty
+    const hasAllRequiredFields = subscriber &&
+      subscriber.first_name && subscriber.first_name.trim() !== '' &&
+      subscriber.last_name && subscriber.last_name.trim() !== '' &&
+      subscriber.linkedin_url && subscriber.linkedin_url.trim() !== '' &&
+      subscriber.phone_number && subscriber.phone_number.trim() !== ''
+
+    console.log("is subscribed? ", hasAllRequiredFields, "subscriber:", subscriber)
+
+    return NextResponse.json({
+      isSubscribed: hasAllRequiredFields,
+      email: session.user.email
     })
 
   } catch (error) {

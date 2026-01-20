@@ -136,8 +136,6 @@ export default function Post({
     
     const profiles = await Promise.all(profilePromises);
     setConnectionProfiles(profiles.filter(profile => profile !== null));
-    console.log("Connections and filtered ", connections, filtered, connectionProfiles);
-
   };
 
   const handlePost = async () => {

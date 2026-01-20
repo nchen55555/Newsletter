@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import ProfileAvatar from "./profile_avatar";
+import { PricingV2TrunkingCountryInstanceOriginatingCallPrices } from "twilio/lib/rest/pricing/v2/country";
 
 export const connectionLabels = [
   "Stranger",            
@@ -42,12 +43,7 @@ export function ConnectionScale({
   const handleSubmit = () => {
     if (selectedValue === null) return;
 
-    if (selectedAlignmentValue === null) return;
-    // When not in audience mode and showing a connect button, require a short note
-    if (mode !== 'audience' && showConnectButton && connectionNote.trim().length < 50) {
-      return;
-    }
-    onSubmit(selectedValue, selectedAlignmentValue, connectionNote.trim());
+    onSubmit(selectedValue, selectedAlignmentValue ?? undefined, connectionNote ?? undefined);
   };
 
   const connectionLabels = [

@@ -116,47 +116,11 @@ export default function Opportunities({ featuredOpportunities, showIntro = false
         !networkCompanies.has(opportunity.company)
     );
 
-    // if (showOnboarding) {
-    //   return (
-    //     <div className="animate-in fade-in-50 duration-700 text-center items-center justify-center">
-    //           {!isLoading && (
-    //             <div className="flex flex-col gap-4 w-full">
-    //                     <VerificationProtectedContent
-    //                       sectionTitle=""
-    //                       fallbackTitle="Build Your Network to Access Opportunities"
-    //                       fallbackDescription="Request to join The Niche network to view personalized opportunities and connect with startup founders"
-    //                       className="mb-16 w-full"
-    //                     >
-    //                     {bookmarkedCompanies.length > 0 && (
-    //                         <div className="w-full text-center">
-    //                           {/* Sequential Typewriter for all onboarding content */}
-    //                           {networkCompanies.size > 0 && (
-    //                             <div className="mb-12">
-    //                               <SequentialTypewriter
-    //                                 sections={onboardingSections}
-    //                               />
-    //                             </div>
-    //                           )}
-    //                           </div>
-    //                       )}
-    //                     </VerificationProtectedContent>
-    //                 </div>
-    //         )}
-    //         {isLoading && (
-    //           <div className="flex flex-col items-center justify-center min-h-screen">
-    //             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neutral-900 mb-4"></div>
-    //             <p className="text-sm font-medium text-neutral-400">Loading your opportunities database</p>
-    //           </div>
-    //         )}
-    //         </div>
-    //   )
-    // }
-
     return (
       
         <div >
           {/* Intro dialog when coming from onboarding */}
-          {(showIntroDialog  || bookmarkedCompanies.length === 0) && featuredOpportunities.length > 0 && (
+          {(showIntroDialog  || bookmarkedCompanies.length === 0) && !isLoading && (
             <InformationDialog
               open={showIntroDialog}
               onOpenChange={() => setShowIntroDialog(true)}
@@ -225,12 +189,11 @@ export default function Opportunities({ featuredOpportunities, showIntro = false
           )}
 
           {/* Commitment Pledge Dialog - Non-cancellable until accepted */}
-          {!((showIntroDialog  || bookmarkedCompanies.length === 0) && featuredOpportunities.length > 0) && !isLoading && !hasAcceptedCommitment && (
             <CommitmentPledgeDialog
-              open={true}
+              open={!isLoading && !hasAcceptedCommitment && !(showIntroDialog  || bookmarkedCompanies.length === 0)}
               onAccept={handleAcceptCommitment}
             />
-          )}
+
 
 
           {/* Main opportunities layout (header + gated content) */}
@@ -243,115 +206,95 @@ export default function Opportunities({ featuredOpportunities, showIntro = false
                             Welcome, {first_name}
                         </h1>
                     </div>
-                        {/* <VerificationProtectedContent
-                          sectionTitle=""
-                          fallbackTitle="Build Your Network to Access Opportunities"
-                          fallbackDescription="Request to join The Niche network to view personalized opportunities and connect with startup founders"
-                          className="mb-16 w-full"
-                        > */}
-                        {hasAcceptedCommitment && (
-                            <div className="w-full">
-                              {/* Where Your Network is Looking Section */}
-                                <div className="mb-12">
-                                  <div className="flex items-center gap-2 mb-6">
-                                    <h2 className="text-xl font-semibold text-foreground">
-                                      Where Your Network is Looking
-                                    </h2>
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <button
-                                            type="button"
-                                            className="text-neutral-400 hover:text-neutral-200 inline-flex items-center justify-center"
-                                            aria-label="Why your network section matters"
-                                          >
-                                            <Info className="w-4 h-4" />
-                                          </button>
-                                        </TooltipTrigger>
-                                        <TooltipContent className="max-w-sm text-xs leading-relaxed space-y-2 text-black">
-                                          <p className="font-semibold">
-                                            Why it matters
-                                          </p>
-                                          <p>
-                                            See which opportunities your trusted network is focusing their attention on. Shared interest amongst your closest professional circles is a strong predictor of fit. 
-                                          </p>
-                                          <p className="font-semibold">
-                                            The Niche has partnered with select opportunities where your network&apos;s convergence unlocks direct warm introductions to founders and heads of talent to expedite your interest directly to their inbox.
-                                          </p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </div>
-                                  {/* <div className="mb-4 flex items-start gap-2">
-                                    <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                    <div>
-                                      <p className="text-sm font-semibold text-neutral-200">Why it matters</p>
-                                    </div>
-                                  </div>
-                                  <div className="text-sm text-neutral-400 mb-6">
-                                    See which opportunities your trusted network is focusing their attention on. Shared interest amongst your closest professional circles is a strong predictor of fit. Companies know their best hires come validated by contextualized networks, not cold applications. 
-                                  </div>
-                                    <div className="text-sm text-neutral-200 mb-6">
-                                    <b>The Niche has partnered with select opportunities where your network&apos;s convergence unlocks direct warm introductions to founders and heads of talent to expedite your interest directly to their inbox. </b>
-                                  </div> */}
-                                  {networkCompanies.size > 0 ? (<div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                    {featuredOpportunities
-                                      .filter(company => networkCompanies.has(company.company))
-                                      .sort((a, b) => {
-                                        const weightA = networkCompanies.get(a.company)?.weight || 0
-                                        const weightB = networkCompanies.get(b.company)?.weight || 0
-                                        return weightB - weightA // Sort descending (highest weight first)
-                                      })
-                                      .map((company) => (
-                                        <CompanyCard
-                                          appliedToNiche={appliedToNiche}
-                                          key={company._id}
-                                          company={company}
-                                          showHighMutualInterest={false}
-                                          external={false}
-                                          network_connections={networkCompanies.get(company.company)}
-                                        />
-                                      ))}
-                                  </div>
-                                  ) : 
-                                  (<Alert>
-                                    <Info className="h-4 w-4" />
-                                    <AlertDescription>
-                                    See which opportunities your trusted network is focusing their attention on. Shared interest amongst your closest professional circles is a strong predictor of fit. Expand your verified network and bookmark companies that interest you to get personalized recommendations and warm intros here. 
-                                    </AlertDescription>
-                                  </Alert>)}
-                                </div>
+                      <div className="w-full">
+                        {/* Where Your Network is Looking Section */}
+                          <div className="mb-12">
+                            <div className="flex items-center gap-2 mb-6">
+                              <h2 className="text-xl font-semibold text-foreground">
+                                Where Your Network is Looking
+                              </h2>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="text-neutral-400 hover:text-neutral-200 inline-flex items-center justify-center"
+                                      aria-label="Why your network section matters"
+                                    >
+                                      <Info className="w-4 h-4" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-sm text-xs leading-relaxed space-y-2 text-black">
+                                    <p className="font-semibold">
+                                      Why it matters
+                                    </p>
+                                    <p>
+                                      See which opportunities your trusted network is focusing their attention on. Shared interest amongst your closest professional circles is a strong predictor of fit. 
+                                    </p>
+                                    <p className="font-semibold">
+                                      The Niche has partnered with select opportunities where your network&apos;s convergence unlocks direct warm introductions to founders and heads of talent to expedite your interest directly to their inbox.
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                            {networkCompanies.size > 0 ? (<div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
+                              {featuredOpportunities
+                                .filter(company => networkCompanies.has(company.company))
+                                .sort((a, b) => {
+                                  const weightA = networkCompanies.get(a.company)?.weight || 0
+                                  const weightB = networkCompanies.get(b.company)?.weight || 0
+                                  return weightB - weightA // Sort descending (highest weight first)
+                                })
+                                .map((company) => (
+                                  <CompanyCard
+                                    appliedToNiche={appliedToNiche}
+                                    key={company._id}
+                                    company={company}
+                                    showHighMutualInterest={false}
+                                    external={false}
+                                    network_connections={networkCompanies.get(company.company)}
+                                  />
+                                ))}
+                            </div>
+                            ) : 
+                            (<Alert>
+                              <Info className="h-4 w-4" />
+                              <AlertDescription>
+                              See which opportunities your trusted network is focusing their attention on. Shared interest amongst your closest professional circles is a strong predictor of fit. Expand your verified network and bookmark companies that interest you to get personalized recommendations and warm intros here. 
+                              </AlertDescription>
+                            </Alert>)}
+                          </div>
 
-                              {/* Other Opportunities Section */}
-                              <div className="mb-12">
-                                <h2 className="text-xl font-semibold mb-6 text-foreground">
-                                  Other
-                                </h2>
-                              {/* All Opportunities Grid */}
-                                {featuredOpportunities.length > 0 ? (
-                                  <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                    {otherOpportunities.map((company) => (
-                                      <CompanyCard
-                                        appliedToNiche={appliedToNiche}
-                                        key={company._id}
-                                        company={company}
-                                        showHighMutualInterest={false}
-                                        external={false}
-                                      />
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <Alert>
-                                    <Info className="h-4 w-4" />
-                                    <AlertDescription>
-                                      Your recommendations are still generating. Expand your verified network and bookmark companies to get personalized recommendations.
-                                    </AlertDescription>
-                                  </Alert>
-                                )}
-                              </div>
-                              </div>
+                        {/* Other Opportunities Section */}
+                        <div className="mb-12">
+                          <h2 className="text-xl font-semibold mb-6 text-foreground">
+                            Other
+                          </h2>
+                        {/* All Opportunities Grid */}
+                          {featuredOpportunities.length > 0 ? (
+                            <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
+                              {otherOpportunities.map((company) => (
+                                <CompanyCard
+                                  appliedToNiche={appliedToNiche}
+                                  key={company._id}
+                                  company={company}
+                                  showHighMutualInterest={false}
+                                  external={false}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <Alert>
+                              <Info className="h-4 w-4" />
+                              <AlertDescription>
+                                Your recommendations are still generating. Expand your verified network and bookmark companies to get personalized recommendations.
+                              </AlertDescription>
+                            </Alert>
                           )}
-                        {/* </VerificationProtectedContent> */}
+                        </div>
+                        </div>
+                      
                     </div> 
             )}
             {isLoading && (

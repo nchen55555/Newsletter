@@ -114,6 +114,14 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
               window.location.href = returnUrl;
             }
           }
+          else if (flowType === 'login') {
+            if (isSubscribedNow) {
+              router.push('/profile');
+            }
+            else {
+              router.push('/login');
+            }
+          }
           localStorage.removeItem('googleAuthFlowType');
         });
       }
@@ -131,7 +139,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       refreshSubscription,
       userEmail,
       showSubscribeDialog,
-      setShowSubscribeDialog, loading }}>
+      setShowSubscribeDialog,
+      loading }}>
       {children}
     </SubscriptionContext.Provider>
   );

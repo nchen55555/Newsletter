@@ -64,8 +64,6 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log(`Fetched ${subscribers?.length || 0} subscribers with GitHub data`);
-
     return NextResponse.json({
       success: true,
       subscribers: subscribers || [],

@@ -32,7 +32,6 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
       const storedReferralId = localStorage.getItem('referral_id');
       if (storedReferralId) {
         const parsed = parseInt(storedReferralId);
-        console.log("parsed", parsed)
         if (!isNaN(parsed)) {
           setEffectiveReferralId(parsed);
         }

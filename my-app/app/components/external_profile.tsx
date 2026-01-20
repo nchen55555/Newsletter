@@ -220,7 +220,6 @@ export function ExternalProfile(props: ExternalProfileProps) {
     // Find the connection object for the current user
     const connection = currentUserData.connections_new?.find(conn => conn.connect_id === props.id)
     || currentUserData.pending_connections_new?.find(conn => conn.connect_id === props.id);
-    console.log("getting note ", connection, currentUserData.pending_connections_new)
     return connection?.note;
   };
 
@@ -347,7 +346,6 @@ export function ExternalProfile(props: ExternalProfileProps) {
   // }, [props.id, userThreads.length]);
 
   const fetchConnectionProfiles = useCallback(async () => {
-    console.log("fetchConnectionProfiles", props.connections_new);
     if (!props.connections_new || props.connections_new.length === 0) {
       setConnectionProfiles([]);
       return;
@@ -386,7 +384,6 @@ export function ExternalProfile(props: ExternalProfileProps) {
       });
 
       const profiles = await Promise.all(profilePromises);
-      console.log("profiles", profiles);
       setConnectionProfiles(
         profiles.filter((p) => p !== null) as ProfileData[]
       );
