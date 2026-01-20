@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Eye, MessageCircle, UserPlus, Target, Search } from 'lucide-react'
+import { Eye, MessageCircle, Target, Search } from 'lucide-react'
 import { toast } from 'sonner'
 
 export type UserStatus = 'perusing' | 'open_to_outreach' | 'request_intros' | 'recommend_opportunities' | 'actively_searching'
@@ -16,22 +16,17 @@ interface UserCheckInComponentProps {
 const statusOptions = [
   {
     value: 'perusing' as UserStatus,
-    title: 'Just Perusing',
+    title: 'Not Planning to Interact with Opportunities, Just Perusing',
     icon: Eye
   },
   {
     value: 'open_to_outreach' as UserStatus,
-    title: 'Will Hop on Calls If Outreached To',
+    title: 'Will Hop on Calls If Outreached To But Not Requesting Any',
     icon: MessageCircle
   },
   {
-    value: 'request_intros' as UserStatus,
-    title: 'Receptive to Requesting Intros but Not Immediately Planning',
-    icon: UserPlus
-  },
-  {
     value: 'recommend_opportunities' as UserStatus,
-    title: 'Planning to Request Intros',
+    title: 'Interested in Requesting Intros',
     icon: Target
   },
   {
@@ -195,7 +190,7 @@ export function UserCheckInComponent({
       </div>
       
       <div className="">
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
       {statusOptions.map((option) => {
         const IconComponent = option.icon
         return (
@@ -225,9 +220,9 @@ export function UserCheckInComponent({
       {selectedStatus && needsTimeline(selectedStatus) && (
         <div className="space-y-4 border-t border-neutral-200 dark:border-neutral-700 pt-6">
           <div className="text-sm text-neutral-500 dark:text-neutral-400">
-            What is your timeline?
+            What is your timeline if an opportunity interests you?
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
             {timelineOptions.map((option) => (
               <button
                 key={option.value}

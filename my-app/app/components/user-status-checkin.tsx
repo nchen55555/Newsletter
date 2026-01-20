@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Eye, MessageCircle, UserPlus, Target, Search} from 'lucide-react'
+import { Eye, MessageCircle, Target, Search} from 'lucide-react'
 
 type UserStatus = 'perusing' | 'open_to_outreach' | 'request_intros' | 'recommend_opportunities' | 'actively_searching'
 
@@ -14,22 +14,17 @@ interface UserStatusCheckinProps {
 const statusOptions = [
   {
     value: 'perusing' as UserStatus,
-    title: 'Just Perusing',
+    title: 'Not Planning to Interact with Opportunities, Just Perusing',
     icon: Eye
   },
   {
     value: 'open_to_outreach' as UserStatus,
-    title: 'Will Hop on Calls If Outreached To',
+    title: 'Will Hop on Calls If Outreached To But Not Requesting Any',
     icon: MessageCircle
   },
   {
-    value: 'request_intros' as UserStatus,
-    title: 'Receptive to Intros but Not Planning on Requesting Any',
-    icon: UserPlus
-  },
-  {
     value: 'recommend_opportunities' as UserStatus,
-    title: 'Will Request Intros',
+    title: 'Interested in Requesting Intros',
     icon: Target
   },
   {
@@ -183,7 +178,7 @@ export function UserStatusCheckin({
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent className="sm:max-w-4xl" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>Update Your Status</DialogTitle>
         </DialogHeader>
@@ -196,7 +191,7 @@ export function UserStatusCheckin({
       <div className="space-y-6">
         {/* Status Selection - Always visible */}
         <div className="space-y-4">
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {statusOptions.map((option) => {
               const IconComponent = option.icon
               return (
