@@ -131,7 +131,46 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ 
+    // Generate bio from LinkedIn URL asynchronously (don't await)
+    if (linkedin_url) {
+      (async () => {
+        try {
+          console.log('Generating bio from LinkedIn URL asynchronously');
+          const baseUrl = process.env.NODE_ENV === 'development'
+            ? 'http://localhost:3000'
+            : process.env.BASE_URL;
+          const bioResponse = await fetch(`${baseUrl}/api/generate-bio-from-linkedin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              linkedin_url: String(linkedin_url),
+              user_id: newSubscriber.id,
+              first_name: first_name ? String(first_name) : '',
+              last_name: last_name ? String(last_name) : ''
+            })
+          });
+
+          if (bioResponse.ok) {
+            const { bio, profilePhoto, profileData } = await bioResponse.json();
+            console.log('Bio generated:', bio);
+
+            // Update the subscriber record with the generated bio
+            const { error: bioUpdateError } = await supabase
+              .from('subscribers')
+              .update({ bio, profile_image_url: profilePhoto })
+              .eq('id', newSubscriber.id);
+
+            if (bioUpdateError) {
+              console.error('Failed to update bio:', bioUpdateError);
+            }
+          }
+        } catch (error) {
+          console.error('Async bio generation error:', error);
+        }
+      })();
+    }
+
+    return NextResponse.json({
       success: true,
       subscriberId: newSubscriber.id,
       resumeUrl: resume_url

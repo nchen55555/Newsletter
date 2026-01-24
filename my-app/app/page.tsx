@@ -5,6 +5,8 @@ import { type NetworkCompanies } from "@/app/opportunities/opportunities_fetch_i
 import { client } from '@/lib/sanity/client';
 import { COMPANIES_QUERY, CACHE_OPTIONS } from '@/lib/sanity/queries';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   // Fetch opportunities data from Sanity
   const opportunities: CompanyData[] = await client.fetch(COMPANIES_QUERY, {}, CACHE_OPTIONS.COMPANIES);

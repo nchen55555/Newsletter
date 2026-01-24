@@ -62,13 +62,11 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
   });
 
   const [formError, setFormError] = useState<string | null>(null)
-  const [formSuccess, setFormSuccess] = useState(false)
   const [loading, setLoading] = useState(false) // <-- new loading states
 
   async function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFormError(null)
-    setFormSuccess(false)
     setLoading(true) // start loading
 
     try {
@@ -123,7 +121,6 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
       })
 
       if (res.ok) {
-        setFormSuccess(true)
         setShowSubscribeDialog(false) // Close dialog immediately
         refreshSubscription()
         router.push('/profile?flow=onboarding')
@@ -145,12 +142,6 @@ export function Subscribe({referral_id}: {referral_id?: number}) {
       { !isSubscribed && ( 
         <>
             <GoogleLogin buttonText="create profile" flowType="subscribe" referral_id={effectiveReferralId} />
-            {formSuccess && (
-            <Alert>
-                <CheckCircle2Icon />
-                <AlertTitle>Success! </AlertTitle>
-            </Alert>
-            )}
         </>
         )}
 

@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search, UserPlus } from 'lucide-react'
 import { ProfileData, ConnectionData } from '@/app/types'
-import ProfileCard from './profile_card'
 import ProfileAvatar from './profile_avatar'
 import { ConnectDialog } from './connect_dialog'
 
@@ -15,6 +14,15 @@ interface PeopleSearchProps {
   loadingProfiles: boolean
   currentUserId: number
   onConnectionUpdate?: () => void
+}
+
+interface SimilarUser {
+  id: number
+  first_name: string
+  last_name: string
+  bio?: string | null
+  profile_image_url?: string | null
+  linkedin_url?: string | null
 }
 
 export function PeopleSearch({ 
@@ -30,6 +38,62 @@ export function PeopleSearch({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'error' | 'pending'>('idle')
   const [statusMessage, setStatusMessage] = useState('')
+  const [similarProfiles, setSimilarProfiles] = useState<ProfileData[]>([])
+  const [loadingSimilar, setLoadingSimilar] = useState(false)
+
+  // Fetch similar profiles on mount
+  useEffect(() => {
+    const fetchSimilarProfiles = async () => {
+      if (!currentUserId) return;
+
+      setLoadingSimilar(true);
+      try {
+        const response = await fetch(`/api/linkedin-similarity?user_id=${currentUserId}&limit=6`);
+        if (response.ok) {
+          const data: { similarUsers: SimilarUser[] } = await response.json();
+          console.log('API response:', data);
+          // Map the RPC results to ProfileData objects
+          const profiles = data.similarUsers.map((user) => {
+            const baseProfile = allProfiles.find(p => p.id === user.id);
+            if (baseProfile) {
+              // Override a few presentation fields on top of full backend profile
+              return {
+                ...baseProfile,
+                bio: user.bio ?? baseProfile.bio,
+                profile_image_url: user.profile_image_url ?? baseProfile.profile_image_url,
+                linkedin_url: user.linkedin_url ?? baseProfile.linkedin_url,
+              } as ProfileData;
+            }
+
+            // Fallback: construct a minimal ProfileData (using sensible defaults)
+            return {
+              id: user.id,
+              email: "",
+              first_name: user.first_name,
+              last_name: user.last_name,
+              school: "",
+              linkedin_url: user.linkedin_url ?? "",
+              resume_url: "",
+              personal_website: "",
+              phone_number: "",
+              access_token: "",
+              profile_image_url: user.profile_image_url ?? "",
+              bio: user.bio ?? "",
+            } as ProfileData;
+          });
+
+          setSimilarProfiles(profiles);
+          console.log('Similar profiles:', profiles);
+        }
+      } catch (error) {
+        console.error('Failed to fetch similar profiles:', error);
+      } finally {
+        setLoadingSimilar(false);
+      }
+    };
+
+    fetchSimilarProfiles();
+  }, [currentUserId, allProfiles]);
 
   // Filter profiles based on search query
   const searchResults = allProfiles.filter(profile => {
@@ -183,85 +247,149 @@ export function PeopleSearch({
   return (
     <div className="space-y-6">
       {/* Search Bar */}
-      <div className="max-w-3xl w-full mx-auto relative mb-10">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5 z-10" />
+      <div className="max-w-4xl w-full mx-auto relative mb-16 mt-12">
+        <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 text-neutral-400 w-6 h-6 z-10" />
         <Input
           type="text"
-          placeholder="Add the people who you want to define your career trajectory ..."
+          placeholder="Add 2 or more people who you want to define your career trajectory ..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-12 pr-4 h-12 w-full rounded-xl border-neutral-300 text-base md:text-lg
-             focus:border-black focus:ring-black"
+          className="pl-16 pr-6 h-16 w-full rounded-2xl border-2 border-neutral-300 text-lg md:text-xl shadow-sm
+             focus:border-black focus:ring-2 focus:ring-black transition-all"
         />
       </div>
 
-      {/* Recommended Profiles - show 4 random people when no search query */}
+      {/* Recommended Profiles - show similar people when no search query */}
       {!searchQuery.trim() && (
-        <div className="mb-8">
-          <h4 className="text-lg font-semibold mb-4 text-center">
-            You Might Know These People
+        <div className="mb-8 max-w-3xl mx-auto mt-8">
+          <h4 className="text-base font-medium mb-4 text-center text-neutral-500">
+            {similarProfiles.length > 0 ? 'People Similar To You' : 'You Might Know These People'}
           </h4>
-          <div className="grid grid-cols-5 gap-4">
-            {allProfiles
-              .filter(profile => profile.id !== currentUserId)
-              .sort(() => Math.random() - 0.5)
-              .slice(0, 5)
+          {loadingSimilar ? (
+            <div className="text-center py-8 text-neutral-400">
+              Loading recommendations...
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {(similarProfiles.length > 0 ? similarProfiles : allProfiles
+                .filter(profile => profile.id !== currentUserId)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 5))
               .map((profile) => (
-                <div key={profile.id}>
-                  <ProfileCard
-                    profile={profile}
-                    onClick={() => {}}
-                    connectionStatus={getConnectionStatus(profile)}
-                    connectionRating={getExistingRating(profile)}
-                    initialNote={getExistingNote(profile)}
-                    alignmentValue={getExistingAlignmentValue(profile)}
-                  />
+                <div key={profile.id} className="border border-neutral-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <ProfileAvatar
+                      name={`${profile.first_name} ${profile.last_name}`}
+                      imageUrl={profile.profile_image_url || undefined}
+                      size={40}
+                      editable={false}
+                      className="w-10 h-10 rounded-full flex-shrink-0"
+                    />
+                    <div className="flex-1 text-left min-w-0">
+                      <h3 className="text-sm font-semibold text-neutral-200">
+                        {profile.first_name} {profile.last_name}
+                      </h3>
+                      {profile.bio && (
+                        <p className="text-xs text-neutral-400 line-clamp-1 mt-0.5">
+                          {profile.bio}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex-shrink-0">
+                    {(() => {
+                      const status = getConnectionStatus(profile);
+                      if (status === 'connected') {
+                        return (
+                          <Button disabled className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs h-8 px-3">
+                            <UserPlus className="w-3 h-3" />
+                            Connected
+                          </Button>
+                        );
+                      } else if (status === 'pending_sent') {
+                        return (
+                          <Button disabled className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs h-8 px-3">
+                            <UserPlus className="w-3 h-3" />
+                            Accept Connection
+                          </Button>
+                        );
+                      } else {
+                        return (
+                          status === 'requested' ? (
+                            <Button
+                              className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs h-8 px-3"
+                              onClick={() => {
+                                handleConnectClick(profile);
+                                handleDialogChange(true);
+                              }}
+                            >
+                              <UserPlus className="w-3 h-3" />
+                              Request Pending
+                            </Button>
+                          ) : (
+                            <Button
+                              className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs h-8 px-3"
+                              onClick={() => {
+                                handleConnectClick(profile);
+                                handleDialogChange(true);
+                              }}
+                            >
+                              <UserPlus className="w-3 h-3" />
+                              Connect
+                            </Button>
+                          )
+                        );
+                      }
+                    })()}
+                  </div>
                 </div>
               ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Search Results - Profile Rows */}
       {searchQuery.trim() && (
-        <div className="space-y-4 mb-8">
+        <div className="space-y-2 mb-8 max-w-3xl mx-auto">
           {searchResults.length > 0 ? (
             searchResults.slice(0, 6).map((profile) => (
-              <div key={profile.id} className="border border-neutral-200 rounded-2xl p-6 flex items-start justify-between gap-4">
-                <div className="flex items-center gap-4 flex-1 min-w-0">
+              <div key={profile.id} className="border border-neutral-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <ProfileAvatar
                     name={`${profile.first_name} ${profile.last_name}`}
                     imageUrl={profile.profile_image_url || undefined}
-                    size={64}
+                    size={40}
                     editable={false}
-                    className="w-16 h-16 rounded-full flex-shrink-0"
+                    className="w-10 h-10 rounded-full flex-shrink-0"
                   />
                   <div className="flex-1 text-left min-w-0">
-                    <h3 className="text-lg font-semibold text-neutral-200">
+                    <h3 className="text-sm font-semibold text-neutral-200">
                       {profile.first_name} {profile.last_name}
                     </h3>
                     {profile.bio && (
-                      <p className="text-sm text-neutral-400 line-clamp-2 mt-1 pr-2">
+                      <p className="text-xs text-neutral-400 line-clamp-1 mt-0.5">
                         {profile.bio}
                       </p>
                     )}
                   </div>
                 </div>
-                
-                <div className="flex-shrink-0 ml-4">
+
+                <div className="flex-shrink-0">
                   {(() => {
                     const status = getConnectionStatus(profile);
                     if (status === 'connected') {
                       return (
-                        <Button disabled className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
-                          <UserPlus className="w-4 h-4" />
+                        <Button disabled className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs h-8 px-3">
+                          <UserPlus className="w-3 h-3" />
                           Connected
                         </Button>
                       );
                     } else if (status === 'pending_sent') {
                       return (
-                        <Button disabled className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
-                          <UserPlus className="w-4 h-4" />
+                        <Button disabled className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs h-8 px-3">
+                          <UserPlus className="w-3 h-3" />
                           Accept Connection
                         </Button>
                       );
@@ -269,24 +397,24 @@ export function PeopleSearch({
                       return (
                         status === 'requested' ? (
                           <Button
-                            className="inline-flex items-center justify-center gap-2 whitespace-nowrap"
+                            className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs h-8 px-3"
                             onClick={() => {
                               handleConnectClick(profile);
                               handleDialogChange(true);
                             }}
                           >
-                            <UserPlus className="w-4 h-4" />
+                            <UserPlus className="w-3 h-3" />
                             Request Pending
                           </Button>
                         ) : (
                           <Button
-                            className="inline-flex items-center gap-2 whitespace-nowrap"
+                            className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs h-8 px-3"
                             onClick={() => {
                               handleConnectClick(profile);
                               handleDialogChange(true);
                             }}
                           >
-                            <UserPlus className="w-4 h-4" />
+                            <UserPlus className="w-3 h-3" />
                             Connect
                           </Button>
                         )

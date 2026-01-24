@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers';
 import { Resend } from 'resend';
 
 export async function POST(req: NextRequest) {

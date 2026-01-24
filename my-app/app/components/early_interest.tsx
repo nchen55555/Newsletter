@@ -355,7 +355,7 @@ export default function EarlyInterestButton({ company, company_title }: { compan
                     value={additionalInfo} 
                     onChange={(e) => setAdditionalInfo(e.target.value)} 
                     required 
-                    placeholder={"Tell us why you're interested in connecting and what draws you to this opportunity."} 
+                    placeholder={"What are you interested in connecting about?"} 
                     className={`w-full min-h-[120px] text-sm px-4 py-3 mt-2 border rounded-lg resize-none 'border-neutral-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent'`}
                   />
                 </div>

@@ -229,7 +229,7 @@ export default function Opportunities({ featuredOpportunities, showIntro = false
                                       Why it matters
                                     </p>
                                     <p>
-                                      See which opportunities your trusted network is focusing their attention on. Shared interest amongst your closest professional circles is a strong predictor of fit. 
+                                      See which opportunities on The Niche your trusted network is focusing their attention on. Shared interest amongst your closest professional circles is a strong predictor of fit. 
                                     </p>
                                     <p className="font-semibold">
                                       The Niche has partnered with select opportunities where your network&apos;s convergence unlocks direct warm introductions to founders and heads of talent to expedite your interest directly to their inbox.
@@ -238,7 +238,15 @@ export default function Opportunities({ featuredOpportunities, showIntro = false
                                 </Tooltip>
                               </TooltipProvider>
                             </div>
-                            {networkCompanies.size > 0 ? (<div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {networkCompanies.size > 0 ? (
+                              <>
+                              <Alert>
+                              <Info className="h-4 w-4" />
+                              <AlertDescription>
+                              See which opportunities on The Niche your trusted network is focusing their attention on. Unlock warm introductions through our network-driven partnerships to the founders of those opportunities, surfaced by not only your network&apos;s interest in the opportunity, but also the quality of your network&apos;s recommendation to you.
+                              </AlertDescription>
+                            </Alert>
+                              <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
                               {featuredOpportunities
                                 .filter(company => networkCompanies.has(company.company))
                                 .sort((a, b) => {
@@ -257,11 +265,12 @@ export default function Opportunities({ featuredOpportunities, showIntro = false
                                   />
                                 ))}
                             </div>
+                            </>
                             ) : 
                             (<Alert>
                               <Info className="h-4 w-4" />
                               <AlertDescription>
-                              See which opportunities your trusted network is focusing their attention on. Shared interest amongst your closest professional circles is a strong predictor of fit. Expand your verified network and bookmark companies that interest you to get personalized recommendations and warm intros here. 
+                              See which opportunities on The Niche your trusted network is focusing their attention on. Unlock warm introductions through our network-driven partnerships to the founders of those opportunities, surfaced by not only your network&apos;s interest in the opportunity, but also the quality of your network&apos;s recommendation to you.
                               </AlertDescription>
                             </Alert>)}
                           </div>

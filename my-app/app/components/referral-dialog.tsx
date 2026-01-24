@@ -366,7 +366,7 @@ export function ReferralDialog({
                     </div>
                     <div className="hidden md:block w-px bg-neutral-800/60" />
                     <div className="flex-1 space-y-1">
-                      <Label htmlFor="referralPhone" className="text-sm font-medium">Phone (disabled for now)</Label>
+                      <Label htmlFor="referralPhone" className="text-sm font-medium">Phone</Label>
                       <Input 
                         id="referralPhone" 
                         name="referralPhone"
@@ -375,7 +375,6 @@ export function ReferralDialog({
                         onChange={(e) => setReferralPhone(e.target.value)}
                         placeholder="+1 (555) 123-4567"
                         className="h-12 text-lg px-4" 
-                        disabled={true}
                       />
                     </div>
                   </div>

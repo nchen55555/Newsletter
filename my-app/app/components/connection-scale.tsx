@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import ProfileAvatar from "./profile_avatar";
-import { PricingV2TrunkingCountryInstanceOriginatingCallPrices } from "twilio/lib/rest/pricing/v2/country";
 
 export const connectionLabels = [
   "Stranger",            
@@ -114,7 +113,7 @@ export function ConnectionScale({
                 </div>
               <div className="space-y-2">
                 <Label className="text-sm sm:text-base font-medium">
-                  How much should we index the opportunities recommended to you on {personName || "this person"}&apos;s interests and activity?
+                  How aligned is your career trajectory to {personName || "this person"}&apos;s?
                 </Label>
                 <i className="text-xs leading-snug mb-4">
                     Your notes and ratings are only visible to you.
@@ -146,7 +145,7 @@ export function ConnectionScale({
               {mode === 'connection' && selectedValue !== 1 && showConnectButton && (
                 <div className="space-y-2">
                   <Label className="text-sm sm:text-base font-medium flex items-end gap-2">
-                    <span>Describe your professional relationship. Why do you want to index on {personName || "this person"}?</span>
+                    <span>Describe your professional relationship. </span>
                   </Label>
                   <i className="text-xs leading-snug">
                     Your notes and ratings are only visible to you.

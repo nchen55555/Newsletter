@@ -6,14 +6,15 @@ import { ProfileFormState, ProfileData } from '@/app/types'
 import { PeopleSearch } from './people-search'
 import { ReferralDialog } from './referral-dialog'
 import { useRouter } from 'next/navigation'
+import ProfileAvatar from './profile_avatar'
 
-type StepId = 'overview' | 'networking' | 'referrals'
+type StepId = 'overview' | 'profilePicture' | 'networking' | 'referrals'
 
 interface ProfileOnboardingProps {
   form: ProfileFormState
   onComplete?: (isComplete: boolean) => Promise<void> | void
   /**
-   * Optional initial step index (0 = overview, 1 = networking, 2 = referrals)
+   * Optional initial step index (0 = overview, 1 = profilePicture, 2 = networking, 3 = referrals)
    */
   initialStep?: number
 }
@@ -28,6 +29,7 @@ export default function ProfileOnboarding({
   const steps: { id: StepId; label: string }[] = useMemo(
     () => [
       { id: 'overview', label: 'Overview' },
+      { id: 'profilePicture', label: 'Profile Picture' },
       { id: 'networking', label: 'Network' },
       { id: 'referrals', label: 'Referrals' },
     ],
@@ -43,6 +45,9 @@ export default function ProfileOnboarding({
   const [currentUserData, setCurrentUserData] = useState<ProfileData | null>(null)
   const [showReferralDialog, setShowReferralDialog] = useState(false)
   const [userReferralsCount, setUserReferralsCount] = useState(0)
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(form.profile_image_url || null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [profileBio, setProfileBio] = useState<string | null>(form.bio || null)
 
   const currentStep = steps[currentStepIndex]
   const isLastStep = currentStepIndex === steps.length - 1
@@ -53,7 +58,7 @@ export default function ProfileOnboarding({
       ? currentUserData.pending_connections_new.length
       : 0
   const canShowNextButton =
-    (currentStep.id !== 'networking' || networkingConnectionsCount >= 2) && (currentStep.id !== 'referrals' || userReferralsCount >= 2) && (currentStep.id !== 'overview')
+    (currentStep.id !== 'networking' || networkingConnectionsCount >= 2) && (currentStep.id !== 'referrals' || userReferralsCount >= 2) && (currentStep.id !== 'overview') && (currentStep.id !== 'profilePicture' || !uploadingImage)
 
   // --- Data loading helpers ---
 
@@ -80,6 +85,8 @@ export default function ProfileOnboarding({
         if (response.ok) {
           const userData = await response.json()
           setCurrentUserData(userData)
+          setProfileImageUrl(userData.profile_image_url || null)
+          setProfileBio(userData.bio || null)
         } else {
           setCurrentUserData(null)
         }
@@ -125,6 +132,9 @@ export default function ProfileOnboarding({
   }
 
   const goNext = async () => {
+    if (currentStep.id === 'profilePicture') {
+      await handleBioSave()
+    }
     const nextIndex = currentStepIndex + 1
     const completing = nextIndex >= steps.length
 
@@ -150,7 +160,7 @@ export default function ProfileOnboarding({
           Welcome to Your Niche Profile
         </h1>
         <p className="text-lg text-neutral-400">
-          Curate a professional network of your most trusted contacts, and unlock warm intros to opportunities they&apos;ve validated. We surface personalized opportunities based on your network&apos;s activity and warm intro you direct on the platform. Two steps to onboard. 
+          Curate a professional network of your most trusted contacts, and unlock warm intros to opportunities they&apos;ve validated. We surface personalized opportunities based on your network&apos;s activity and warm intro you direct on the platform.
         </p>
         <div className="flex justify-center gap-4 pt-4">
           <Button
@@ -165,16 +175,117 @@ export default function ProfileOnboarding({
     )
   }
 
+  const handleProfileImageUpload = async (file: File) => {
+    setUploadingImage(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('profile_image', file)
+      formData.append('id', String(form.id))
+
+      const response = await fetch('/api/post_profile', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.profileImageUrl) {
+          setProfileImageUrl(data.profileImageUrl)
+        }
+      } else {
+        console.error('Failed to upload profile image')
+      }
+    } catch (error) {
+      console.error('Error uploading profile image:', error)
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleBioSave = async () => {
+    try {
+      const formData = new FormData()
+      formData.append('bio', profileBio || '')
+      formData.append('id', String(form.id))
+
+      const response = await fetch('/api/post_profile', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      })
+
+      if (response.ok) {
+        console.log('Bio saved successfully')
+      } else {
+        console.error('Failed to save bio')
+      }
+    } catch (error) {
+      console.error('Error saving bio:', error)
+    }
+  }
+
+  const renderProfilePicture = () => {
+    return (
+      <div className="space-y-8 max-w-5xl mx-auto">
+        <div className="space-y-2 text-center">
+          <h2 className="text-3xl font-semibold text-neutral-200">
+            Complete Your Profile
+          </h2>
+          <p className="text-neutral-400">
+            Add a photo and bio to help your network recognize you. 
+          </p>
+        </div>
+
+        <div className="flex w-full max-w-6xl mx-auto gap-10 items-start">
+          {/* Profile Picture Section */}
+          <div className="flex flex-col items-center space-y-4 flex-shrink-0">
+            <ProfileAvatar
+              name={`${form.first_name} ${form.last_name}`}
+              imageUrl={profileImageUrl}
+              size={240}
+              editable={true}
+              onSelectFile={handleProfileImageUpload}
+            />
+            {uploadingImage && (
+              <div className="text-sm text-neutral-400">
+                Uploading...
+              </div>
+            )}
+          </div>
+
+          {/* Bio Section */}
+            <div className="flex-1 min-w-[500px] space-y-3">
+            <label className="text-sm font-medium text-neutral-200">Bio</label>
+            <div className="w-full">
+              <textarea
+                value={profileBio ?? ""}
+                onChange={(e) => setProfileBio(e.target.value)}
+                className="w-full text-sm leading-relaxed text-neutral-200 bg-transparent border border-neutral-700 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-neutral-500 min-h-[180px]"
+                placeholder="Tell us about yourself..."
+              />
+            </div>
+                        
+            
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const renderNetworking = () => {
     return (
       <div className="w-full">
         <div className="mb-6 text-center space-y-2">
-          <h2 className="text-3xl font-semibold text-neutral-200">
-            Curate Your Niche Network
+          <h2 className="text-3xl font-semibold text-neutral-200 mb-8">
+            Personalize Your Niche Network
           </h2>
-          <p className="text-neutral-400 max-w-4xl mx-auto">
-            Add 2 to 3 people who best represent your work and trajectory. It&apos;s in your best interest to only add people who you trust and would like to index your career trajectory on as we use network-driven personalization to surface opportunities for you.
-          </p>
+          {networkingConnectionsCount > 0 && (
+            <div className="p-2 rounded-lg border border-neutral-800 text-sm text-neutral-300">
+              {networkingConnectionsCount} connection{networkingConnectionsCount === 1 ? '' : 's'} added
+            </div>
+          )}
         </div>
         <PeopleSearch
           allProfiles={allProfiles}
@@ -237,6 +348,8 @@ export default function ProfileOnboarding({
     switch (currentStep.id) {
       case 'overview':
         return renderOverview()
+      case 'profilePicture':
+        return renderProfilePicture()
       case 'networking':
         return renderNetworking()
       case 'referrals':
@@ -253,7 +366,7 @@ export default function ProfileOnboarding({
         <div className="grid grid-cols-3 items-center mb-4">
           {/* Left: step description + skip */}
           <div className="flex items-center gap-3">
-            <div className="text-sm text-neutral-400">3 steps</div>
+            <div className="text-sm text-neutral-400">4 steps</div>
             <button
               type="button"
               onClick={() => {

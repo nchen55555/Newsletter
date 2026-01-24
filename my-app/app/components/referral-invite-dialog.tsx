@@ -6,6 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { decodeSimple } from "@/app/utils/simple-hash";
 import { Subscribe } from "./subscribe";
 import Image from "next/image";
+import ProfileAvatar from "./profile_avatar";
+import Link from "next/link";
 
 interface ReferralInviteDialogProps {
   companyName?: string;
@@ -14,12 +16,13 @@ interface ReferralInviteDialogProps {
 export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) {
   const [open, setOpen] = useState(false);
   const [referrerName, setReferrerName] = useState<string>("");
+  const [referrerProfileImage, setReferrerProfileImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   const searchParams = useSearchParams();
 
-   // Calculate referrer ID directly from URL (memoized)
+   // Calculate referrer ID directly from URL (memoized) - this is the encoded ID for linking
   const referrerIdFromUrl = useMemo(() => {
     const refParam = searchParams.get('referral_id');
     if (!refParam) return undefined;
@@ -86,8 +89,12 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
             const lastName = profile.last_name;
             if (firstName || lastName) {
               setReferrerName(`${firstName}${lastName ? ' ' + lastName : ''}`);
-            } else {  
+            } else {
               setReferrerName("");
+            }
+            // Store profile image for avatar
+            if (profile.profile_image_url) {
+              setReferrerProfileImage(profile.profile_image_url);
             }
           } else {
             setReferrerName("");
@@ -128,39 +135,66 @@ export function ReferralInviteDialog({companyName }: ReferralInviteDialogProps) 
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md" showCloseButton={false}>
         <DialogHeader className="text-center">
-          <div className="flex justify-center mt-4 mb-3">
-            <Image
-              src="https://ubompjslcfgbkidmfuym.supabase.co/storage/v1/object/public/avatar_profiles/theniche.png"
-              alt="The Niche Logo"
-              width={80}
-              height={80}
-              className="rounded-full"
-            />
-          </div>
-          <DialogTitle className="text-xl font-semibold text-center">
-            {referrerName 
-              ? `${referrerName} has shared with you an opportunity`
-              : 'Join The Niche Network'
-            }
+          {referrerName && (
+            <Link
+              href={`/profile/${searchParams.get('referral_id')}`}
+              className="flex items-center justify-center gap-3 mb-4 hover:opacity-80 transition-opacity"
+            >
+              <ProfileAvatar
+                name={referrerName}
+                imageUrl={referrerProfileImage || undefined}
+                size={48}
+                editable={false}
+                className="ring-2 ring-neutral-200"
+              />
+              <div className="text-left">
+                <p className="text-sm text-neutral-500">Referred by</p>
+                <p className="font-semibold text-neutral-200">{referrerName}</p>
+              </div>
+            </Link>
+          )}
+          {!referrerName && (
+            <div className="flex justify-center mt-4 mb-3">
+              <Image
+                src="https://ubompjslcfgbkidmfuym.supabase.co/storage/v1/object/public/avatar_profiles/theniche.png"
+                alt="The Niche Logo"
+                width={80}
+                height={80}
+              />
+            </div>
+          )}
+          <DialogTitle className="text-2xl font-semibold text-center">
+            Join The Niche Network
           </DialogTitle>
-          <DialogDescription className="text-center mt-3 text-base">
-            {referrerName ? (
+          {companyName && (
+            <div className="mt-3 inline-block px-4 py-2 bg-neutral-100 rounded-full">
+              <p className="text-sm">
+                Warm intro to <strong>{companyName}</strong> waiting
+              </p>
+            </div>
+          )}
+          <DialogDescription className="text-center mt-3 text-base text-neutral-400">
+            {referrerName && companyName ? (
               <>
-                Welcome to The Niche! <strong>{referrerName}</strong> thinks you would be a great fit for{" "}
-                <strong>{companyName || `this company`}</strong> and wants to extend you an invite for you to use The Niche Network to for a warm intro there. 
+                <strong>{referrerName}</strong> thinks you would be a great fit for{" "}
+                <strong>{companyName}</strong> and wants to extend you an invite to use The Niche Network for a warm intro.
+              </>
+            ) : referrerName ? (
+              <>
+                Discover opportunities that your most trusted circles are already looking at or have vetted directly and unlock network-driven warm introductions.
               </>
             ) : (
               <>
-                Welcome to The Niche! Discover opportunities that your most trusted circles are already looking at or have vetted directly and unlock network-driven warm introductions to these opportunities. 
+                Discover opportunities that your most trusted circles are already looking at or have vetted directly and unlock network-driven warm introductions to these opportunities.
               </>
             )}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="flex flex-col gap-3 mt-6 text-center">
           <Subscribe referral_id={referrerIdFromUrl} />
         </div>
-        
+
       </DialogContent>
     </Dialog>
   );

@@ -1,6 +1,7 @@
 "use client";
 import { motion } from 'framer-motion';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Subscribe } from "@/app/components/subscribe";
@@ -10,12 +11,12 @@ import { Send, MessageSquareShare, CalendarPlus} from "lucide-react";
 import { LandingPageSearch } from './landing-page-search';
 import { SidebarLayout } from "./sidebar-layout";
 import { Navigation } from "./header";
-import { useMemo } from 'react';
 import { ConnectionData, CompanyWithImageUrl, CompanyData } from "@/app/types";
 import { ProfessionalReputationCard } from "./professional_reputation_card";
 import { ConnectionBreakdownChart } from "./connection-breakdown-chart";
 import { CompanyCard } from "../companies/company-cards";
 import { type NetworkCompanies } from "@/app/opportunities/opportunities_fetch_information";
+import { ReferralInviteDialog } from './referral-invite-dialog';
 
 interface LandingClientProps {
   children?: React.ReactNode;
@@ -27,6 +28,7 @@ interface LandingClientProps {
 
 export default function LandingClient({ children, dummyConnections = [], dummyCompanies = [], dummyNetworkCompanies, opportunities = [] }: LandingClientProps) {
   const { isSubscribed } = useSubscriptionContext();
+  const searchParams = useSearchParams();
 
   // Typewriter for the third line of the hero headline
   const heroWords = useMemo(() => ["Inner Circle", "Network", "of Engineers", "of Colleagues", "of Co-Founders"], []);
@@ -37,6 +39,7 @@ export default function LandingClient({ children, dummyConnections = [], dummyCo
   const [activeStep, setActiveStep] = useState(0);
   const [isHowSectionInView, setIsHowSectionInView] = useState(false);
   const howStepsRef = useRef<HTMLDivElement | null>(null);
+  const [referralDialogOpen, setReferralDialogOpen] = useState(false);
 
   const howSteps = [
     {
@@ -114,6 +117,14 @@ export default function LandingClient({ children, dummyConnections = [], dummyCo
     return () => clearTimeout(timeout);
   }, [activeStep, isHowSectionInView, howSteps.length]);
 
+  // Open referral dialog automatically when a base referral link is present (?ref=...)
+  useEffect(() => {
+    const refParam = searchParams.get('ref');
+    if (refParam) {
+      setReferralDialogOpen(true);
+    }
+  }, [searchParams]);
+
   const typedHeroWord = heroWords[wordIndex]?.substring(0, subIndex) ?? "";
   const displayedHeroWord = typedHeroWord || "\u00A0";
 
@@ -138,7 +149,7 @@ export default function LandingClient({ children, dummyConnections = [], dummyCo
             </h1>
 
             <p className="text-lg leading-relaxed max-w-7xl mx-auto bg-gradient-to-r from-purple-300 via-blue-100 to-purple-300 bg-clip-text text-transparent">
-              <b>Warm introductions to opportunities your network has already validated.</b>
+              <b>Warm introductions through our platform to opportunities your network has already validated.</b>
             </p>
             
             <p className="text-lg leading-relaxed max-w-4xl mx-auto">
@@ -326,6 +337,9 @@ export default function LandingClient({ children, dummyConnections = [], dummyCo
             </div>
         </div>
       </section>
+      {referralDialogOpen && (
+        <ReferralInviteDialog/>
+      )}
     </div>
   )
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Info, Loader2, CircleCheck, CircleMinus, Users } from "lucide-react";
+import { Info, Loader2, Users } from "lucide-react";
 import { CompanyData } from "@/app/types";
 import RainbowBookmark from "@/app/components/rainbow_bookmark";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -65,7 +65,7 @@ export function CompanyCard({
     router.push(`/companies/${company.company}`);
   };
 
-  const warm_intro_available = network_connections?.quality_score && network_connections.quality_score >= 2.0
+  const warm_intro_available = network_connections?.quality_score && network_connections.quality_score >= 0.5
 
 
   return (
@@ -121,7 +121,7 @@ export function CompanyCard({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-1 px-2 py-1 rounded-full">
-                      <Users className="h-3 w-3 text-neutral-400" />
+                      <Users className="h-5 w-5 text-neutral-400" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -134,22 +134,20 @@ export function CompanyCard({
             )}
           </div>
           {warm_intro_available ? (
-            <div className="flex items-center gap-1 text-xs text-neutral-400 border border-neutral-400 rounded px-2 py-1">
-              <CircleCheck className="h-3 w-3" />
-              <span>Warm Intro Available</span>
+             <div className="flex items-center gap-1 text-[10px] text-neutral-400 border border-neutral-400 rounded px-1.5 py-0.5 cursor-help">
+              <span>Sufficient Network Recommendation for a Warm Intro from The Niche</span>
             </div>
           ) : (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 text-xs text-neutral-400 border border-neutral-400 rounded px-2 py-1 cursor-help">
-                    <CircleMinus className="h-3 w-3" />
-                    <span>Insufficient Network Overlap for Warm Intro</span>
+                  <div className="flex items-center gap-1 text-[10px] text-neutral-400 border border-neutral-400 rounded px-1.5 py-0.5 cursor-help">
+                    <span>Insufficient Network Recommendation for a Warm Intro from The Niche</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
                   <p className="text-sm">
-                    The Niche has partnered with select opportunities where the context and recommendation behind your network can unlock warm introductions. 
+                    Intro-able opportunities are identified by not only your network&apos;s interest in the opportunity, but also the quality of your network&apos;s recommendation to you.
                   </p>
                 </TooltipContent>
               </Tooltip>

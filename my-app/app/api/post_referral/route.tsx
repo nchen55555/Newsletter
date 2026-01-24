@@ -3,6 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { Resend } from 'resend';
 import twilio from 'twilio';
+import { encodeSimple } from '@/app/utils/simple-hash';
 
 // Normalize phone numbers into E.164 format for Twilio
 function normalizePhoneForTwilio(input: string): string | null {
@@ -67,16 +68,20 @@ export async function POST(req: NextRequest) {
     const capitalizeFirstLetter = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     const capitalizedName = name ? name.split(' ').map((word: string) => capitalizeFirstLetter(word)).join(' ') : '';
     const capitalizedReferralName = referralName ? referralName.split(' ').map((word: string) => capitalizeFirstLetter(word)).join(' ') : '';
+
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    const encodedRef = encodeSimple(id);
+    const referralLink = `${baseUrl}?ref=${encodedRef}`;
+
     
     // Require at least one contact method (email or phone) and a valid referrer id
     if (!id || (!referralEmail && !referralPhone)){
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
-    
-    if (referralEmail) {
-      const { error: dbError } = await supabase
+
+    const { error: dbError } = await supabase
         .from('referrals')
-        .insert({ referral_name: referralName, referral_email: referralEmail, referral_background: referralBackground, referrer: id })
+        .insert({ referral_name: referralName, referral_phone_number: referralPhone, referral_email: referralEmail, referral_background: referralBackground, referrer: id })
 
       if (dbError) {
         console.error('Referral update error', dbError);
@@ -85,10 +90,10 @@ export async function POST(req: NextRequest) {
           details: dbError.message 
         }, { status: 500 });
       }
-
-
+    
+    if (referralEmail) {
       const emailContent = {
-          message: `${capitalizedName} has referred and requested you join <a href="https://theniche.tech" style="color: #0066cc; text-decoration: none;">The Niche</a> as part of their verified, professional network. Accept their request by <a href="https://theniche.tech" style="color: #0066cc; text-decoration: none;">creating a profile</a> on The Niche. 
+          message: `${capitalizedName} has referred and requested you join <a href="${referralLink}" style="color: #0066cc; text-decoration: none;">The Niche</a> as part of their verified, professional network. Accept their request by <a href="${referralLink}" style="color: #0066cc; text-decoration: none;">creating a profile</a> on The Niche. 
           <br></br>
           The best opportunities have always been through word-of-mouth or referral - we're just digitalizing it.  The Niche is an exclusive network that surfaces warm introductions to opportunities your most trusted professional network are already looking at or have vetted. Take advantage of our network-driven hiring to unlock opportunities at our partners including Unify, Moment, Crosby, Warp, and more!
           <br></br>
@@ -105,7 +110,7 @@ export async function POST(req: NextRequest) {
     
         const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
     
-        const { data, error } = await resend.emails.send({
+        const { error } = await resend.emails.send({
           from: 'Referrals at The Niche <referrals@theniche.tech>',
           to: [referralEmail],
           subject: `${capitalizedName} Referred You to Their Niche Network`,
@@ -127,6 +132,7 @@ export async function POST(req: NextRequest) {
 
     }
     if (referralPhone) {
+
       const accountSid = process.env.PUBLIC_TWILIO_ACCOUNT_SID;
       const authToken = process.env.PUBLIC_TWILIO_AUTH_TOKEN;
       const fromNumber = process.env.PUBLIC_TWILIO_FROM_NUMBER;
@@ -135,7 +141,6 @@ export async function POST(req: NextRequest) {
         console.error('Twilio env vars missing');
       } else {
         const normalizedPhone = normalizePhoneForTwilio(referralPhone);
-
 
         if (!normalizedPhone) {
           console.error('Invalid referral phone format, skipping SMS:', referralPhone);
@@ -146,7 +151,7 @@ export async function POST(req: NextRequest) {
             await client.messages.create({
               from: fromNumber,
               to: normalizedPhone, // must be E.164, e.g. "+14155551234"
-              body: `Hi ${capitalizedReferralName}, ${capitalizedName} referred you to join their professional network on The Niche. Create your profile at https://theniche.tech to join their network.`,
+              body: `Hi ${capitalizedReferralName}, ${capitalizedName} referred you to The Niche and wants you to join their professional network. Create your profile at ${referralLink} to join their network.`,
             });
           } catch (err) {
             console.error('Twilio SMS error:', err);

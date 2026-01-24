@@ -497,7 +497,7 @@ export default function ApplyButton({
                     value={additionalInfo} 
                     onChange={(e) => !isDemo && setAdditionalInfo(e.target.value)} 
                     required 
-                    placeholder={isDemo ? "Demo mode - text is pre-filled" : "Tell us why you're interested in connecting and what draws you to this opportunity."} 
+                    placeholder={isDemo ? "Demo mode - text is pre-filled" : "What are you interested in connecting about?"} 
                     className={`w-full min-h-[120px] text-sm px-4 py-3 mt-2 border rounded-lg resize-none ${
                       isDemo 
                         ? 'border-gray-300 bg-gray-50 text-gray-700 cursor-not-allowed' 
