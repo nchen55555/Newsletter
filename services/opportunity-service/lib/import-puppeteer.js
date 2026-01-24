@@ -10,7 +10,6 @@ const sanityClient = createClient({
 });
 
 async function scrapeStartups() {
-  console.log('Launching browser...');
   const browser = await puppeteer.launch({
     args: chromium.args,
     defaultViewport: chromium.defaultViewport,
@@ -20,13 +19,11 @@ async function scrapeStartups() {
   
   const page = await browser.newPage();
   
-  console.log('Loading startups.gallery...');
   await page.goto('https://startups.gallery', {
     waitUntil: 'networkidle2', // Wait for all network requests to finish
     timeout: 30000
   });
   
-  console.log('Extracting company data...');
   const companies = await page.evaluate(() => {
     const results = [];
     const seen = new Set();
@@ -83,7 +80,6 @@ async function scrapeStartups() {
   
   await browser.close();
   
-  console.log(`✓ Extracted ${companies.length} companies`);
   return companies;
 }
 
@@ -115,7 +111,6 @@ export async function importCompanies() {
         // Download image
         const imageResponse = await fetch(company.image);
         if (!imageResponse.ok) {
-          console.log(`⚠️  Failed to fetch image for ${company.title}`);
           continue;
         }
         const imageBuffer = await imageResponse.arrayBuffer();
