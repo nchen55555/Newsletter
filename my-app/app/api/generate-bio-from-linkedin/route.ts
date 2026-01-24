@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const runtime = "nodejs";
 
-const APIFY_TOKEN = process.env.APIFY_API_TOKEN || "apify_api_hV1hS7dQJMEeIMENotBuTODZmOXB800oI7bo";
+const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
 
 interface LinkedInExperience {
   position?: string;

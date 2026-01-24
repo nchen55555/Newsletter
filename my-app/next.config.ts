@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
         pathname: '/storage/v1/object/public/**', // public buckets
       },
     ],
-    domains: ['cdn.sanity.io', 'media.licdn.com'],
+    domains: ['cdn.sanity.io', 'media.licdn.com', 'ubompjslcfgbkidmfuym.supabase.co'],
   },
   env: {
     NEXT_DISABLE_SYNC_DYNAMIC_APIS_WARNING: 'true',
