@@ -194,9 +194,7 @@ Write 2-3 sentences. Focus on current work/role and what they're passionate abou
       (async () => {
         try {
           console.log('Generating LinkedIn embedding asynchronously');
-          const baseUrl = process.env.NODE_ENV === 'development'
-            ? 'http://localhost:3000'
-            : process.env.BASE_URL;
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
           const embeddingResponse = await fetch(`${baseUrl}/api/linkedin_embedding`, {
             method: 'POST',
