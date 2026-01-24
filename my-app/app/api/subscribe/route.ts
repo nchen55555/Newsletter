@@ -136,9 +136,7 @@ export async function POST(req: NextRequest) {
       (async () => {
         try {
           console.log('Generating bio from LinkedIn URL asynchronously');
-          const baseUrl = process.env.NODE_ENV === 'development'
-            ? 'http://localhost:3000'
-            : process.env.BASE_URL;
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
           const bioResponse = await fetch(`${baseUrl}/api/generate-bio-from-linkedin`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
